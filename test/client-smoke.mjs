@@ -74,9 +74,9 @@ ok('apply 挂监听并返回 disposer（假 document 记数）', () => {
   sandbox.document.addEventListener = () => adds++
   sandbox.document.removeEventListener = () => removes++
   const dispose = mod.apply({})
-  assert.equal(adds, 3)
+  assert.equal(adds, 4)
   dispose()
-  assert.equal(removes, 3)
+  assert.equal(removes, 4)
 })
 
 console.log(`\n${n} 项全过`)

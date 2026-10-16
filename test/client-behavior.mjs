@@ -55,8 +55,17 @@ const documentFake = {
 
 const fetchCalls = []
 let fetchReply = { ok: true, candidates: [] }
+const store = new Map()
 const sandbox = {
-  window: { __ModuleLoader__: { load(spec) { sandbox.__captured = spec } }, getSelection: () => null, innerHeight: 800, HTMLTextAreaElement: FakeTextArea },
+  window: {
+    __ModuleLoader__: { load(spec) { sandbox.__captured = spec } },
+    getSelection: () => null,
+    innerHeight: 800,
+    innerWidth: 1200,
+    HTMLTextAreaElement: FakeTextArea,
+    localStorage: { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k) },
+    getComputedStyle: () => ({ font: '13px monospace' }),
+  },
   document: documentFake,
   fetch: (url) => { fetchCalls.push(String(url)); return Promise.resolve({ json: () => Promise.resolve(fetchReply) }) },
   console, Symbol, Object, Array, Promise, Error, JSON, String, Number, Math, RegExp, setTimeout, clearTimeout,
@@ -84,7 +93,7 @@ function keydown(ed, k) {
   handlers.keydown(ev)
   return ev
 }
-const input = (ed) => handlers.input({ target: ed })
+const input = (ed, data) => handlers.input({ target: ed, data: data })
 const tick = () => new Promise((r) => setTimeout(r, 0))
 
 ok('空框打 ( → 配对成 ()，caret 落中间', () => {
@@ -215,6 +224,58 @@ await okAsync('接受候选后弹层不复开（滚雪球的另一半）', async
   keydown(ed, { key: 'Tab' })
   assert.equal(ed.value, '临时目录/attrib-index.diff', 'Tab 要把整段 token 换成候选')
   assert.equal(popupEl().style.display, 'none', '自己插进去的文本不能再触发一次弹层')
+})
+
+ok('Shift 组合键打出的开符也要配对（{ " 这些必须按 Shift，原先被挡掉）', () => {
+  const a = mkEd('')
+  keydown(a, { key: '{', shift: true })
+  assert.equal(a.value, '{}', 'Shift+[ 的 { 要配对：' + a.value)
+  assert.equal(a.selectionStart, 1)
+  const b = mkEd('')
+  keydown(b, { key: '"', shift: true })
+  assert.equal(b.value, '""', '双引号同理：' + b.value)
+})
+
+ok('框选后打符号：走 beforeinput 把选区框起来（中文输入法/全角没有可用的 keydown）', () => {
+  const ed = mkEd('xyz', 3)
+  ed.selectionStart = 0
+  ed.selectionEnd = 3
+  const ev = { target: ed, data: '（', prevented: false, preventDefault() { this.prevented = true } }
+  handlers.beforeinput(ev)
+  assert.equal(ev.prevented, true, '要拦住宿主自己插那个字符')
+  assert.equal(ed.value, '（xyz）', '要框成 开符+选区+闭符：' + ed.value)
+  assert.equal(ed.selectionStart, 1)
+  assert.equal(ed.selectionEnd, 4, '选区要留在内层内容上')
+})
+
+await okAsync('行内灰字提示：首位候选比已打的前缀多出来的那截贴在光标后（VSCode inline suggestion 手感）', async () => {
+  fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'inputValue', detail: '本文' }] }
+  const ed = mkEd('inputV')
+  input(ed)
+  await tick()
+  const g = body.children.find((c) => c.id === 'dsh-cp-ghost')
+  assert.ok(g, '要有灰字层')
+  assert.equal(g.textContent, 'alue', '灰字内容应是候选多出来的后缀：' + (g && g.textContent))
+  assert.equal(g.style.display, 'block')
+  keydown(ed, { key: 'Escape' })
+  assert.equal(g.style.display, 'none', 'Esc 之后要收起')
+})
+
+await okAsync('语言习惯：接受过哪套词表的候选，下次没写围栏就按它上词表', async () => {
+  store.clear()
+  fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'def', detail: 'python 词表', lang: 'python' }] }
+  const ed = mkEd('de')
+  input(ed)
+  await tick()
+  keydown(ed, { key: 'Tab' })               // 接受 → 记一笔 python 习惯
+  assert.equal(ed.value, 'def')
+  assert.match(store.get('dsh-composer-pro:lang-habit') || '', /python/, '习惯要落盘：' + store.get('dsh-composer-pro:lang-habit'))
+  const before = fetchCalls.length
+  const ed2 = mkEd('pri')
+  input(ed2)
+  assert.equal(fetchCalls.length, before + 1)
+  assert.match(fetchCalls[fetchCalls.length - 1], /lang=python/, '没写围栏也要带上习惯语言：' + fetchCalls[fetchCalls.length - 1])
+  store.clear()
 })
 
 ok('apply 返回的 disposer 会摘监听、关弹层', () => {
