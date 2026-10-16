@@ -1,6 +1,6 @@
 {
   "name": "dsh-composer-pro",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "把 DSH 输入框的使用手感对齐 VSCode：括号/引号自动配对与环绕选区、智能跳闭合、补全弹层（本文词 word-based + 各语言词表：HTML 标签/JS·Python·Java 关键字/CSS 属性 + 工作区文件路径 + 已配置模型名）。交互参照 VSCode，词表数据借自 monaco-editor / codemirror / MDN BCD，均未复制源代码，出处见 THIRD-PARTY.md",
   "type": "module",
   "main": "lib/index.js",

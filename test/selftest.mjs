@@ -41,13 +41,20 @@ ok('配对表形状：开括号都有闭括号，闭括号都能回指', () => {
   for (const [o, c] of Object.entries(PAIRS)) assert.equal(typeof c, 'string')
 })
 
-ok('rankCandidates：前缀 > 包含 > 子序列，同分短优先', () => {
+ok('rankCandidates：文件只认路径段前缀（收紧后），词表候选才用子序列', () => {
   const cands = ['lib/index.js', 'README.md', 'src/libsdk/auth.ts', 'docs/readme-notes.md'].map((v) => ({ kind: 'file', value: v }))
   const r = rankCandidates(cands, 'lib', 12).map((c) => c.value)
-  assert.deepEqual(r, ['lib/index.js', 'src/libsdk/auth.ts'], '前缀先于包含，不沾的必须出局：' + r.join(','))
-  const g = rankCandidates([{ value: 'docs/gemma.md' }, { value: 'src/gm-utils.ts' }], 'gm', 12).map((c) => c.value)
-  assert.deepEqual(g, ['src/gm-utils.ts', 'docs/gemma.md'], '包含(gm-utils)要先于子序列(gemma)：' + g.join(','))
-  assert.equal(rankCandidates(cands, 'zzz-nope', 12).length, 0, '完全不沾的不该混进来')
+  assert.deepEqual(r, ['lib/index.js', 'src/libsdk/auth.ts'], '路径段前缀先于段内，不沾的必须出局：' + r.join(','))
+  // 2026-10-16 真机回归：维护者打 i 时列出一堆不相干文件（attrib-index.diff 之类）还被迫逐个核对
+  const junk = ['临时目录/attrib-index.diff', 'src/main.ts'].map((v) => ({ kind: 'file', value: v }))
+  assert.equal(rankCandidates(junk, 'i', 12).length, 0, '单个字母不该用子序列/中段匹配拉出别的文件')
+  assert.equal(rankCandidates(junk, 'attrib', 12)[0].value, '临时目录/attrib-index.diff', '段前缀要命中')
+  assert.equal(rankCandidates(junk, 'index', 12)[0].value, '临时目录/attrib-index.diff', '段内中段（≥3 字符）仍要给')
+  // 非文件候选保留子序列，但至少 3 个字符
+  const words = [{ kind: 'word', value: 'javascript' }, { kind: 'word', value: 'const' }]
+  assert.deepEqual(rankCandidates(words, 'jsc', 5).map((c) => c.value), ['javascript'], '词表候选允许子序列（j-s-c 在 javascript 里依次出现）')
+  assert.deepEqual(rankCandidates(words, 'java', 5).map((c) => c.value), ['javascript'], '前缀命中')
+  assert.equal(rankCandidates([{ kind: 'word', value: 'abcxyz' }], 'az', 5).length, 0, '两个字符不给子序列')
 })
 
 ok('parseModelIds：只认深缩进的模型条目行', () => {

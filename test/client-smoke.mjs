@@ -40,11 +40,11 @@ ok('tokenBefore：取 caret 前 token', () => {
   assert.equal(H.tokenBefore('@qwen3'), '@qwen3')
   assert.equal(H.tokenBefore('结束 '), '')
 })
-ok('keyAction：Ctrl+Space=complete / 弹层开 Tab=accept、Shift+Enter 放行 / Esc=dismiss', () => {
+ok('keyAction：Ctrl+Space=complete / 弹层开时只有 Tab=accept / 回车一律放行 / Esc=dismiss', () => {
   assert.equal(H.keyAction({ key: ' ', code: 'Space', ctrl: true }), 'complete')
   assert.equal(H.keyAction({ key: 'Tab', __popupOpen: true }), 'accept')
   assert.equal(H.keyAction({ key: 'Enter', shift: true, __popupOpen: true }), null, 'Shift+Enter 要放行给宿主换行')
-  assert.equal(H.keyAction({ key: 'Enter', __popupOpen: true }), 'accept')
+  assert.equal(H.keyAction({ key: 'Enter', __popupOpen: true }), null, '回车必须发送：弹层开着也不吃它（2026-10-16 真机回归）')
   assert.equal(H.keyAction({ key: 'Escape' }), 'dismiss')
   assert.equal(H.keyAction({ key: '(' }), 'pairopen')
   assert.equal(H.keyAction({ key: ')' }), 'pairclose')

@@ -30,7 +30,7 @@ class FakeEl {
   closest() { return null }
   focus() {}
   setAttribute() {}
-  dispatchEvent() { return true }
+  dispatchEvent(ev) { if (ev && ev.type === 'input' && handlers.input) handlers.input({ target: this }); return true }
   getBoundingClientRect() { return { left: 10, top: 500 } }
   addEventListener() {}
   removeEventListener() {}
@@ -59,7 +59,8 @@ const sandbox = {
   window: { __ModuleLoader__: { load(spec) { sandbox.__captured = spec } }, getSelection: () => null, innerHeight: 800, HTMLTextAreaElement: FakeTextArea },
   document: documentFake,
   fetch: (url) => { fetchCalls.push(String(url)); return Promise.resolve({ json: () => Promise.resolve(fetchReply) }) },
-  console, Symbol, Object, Array, Promise, Error, JSON, String, Number, Math, RegExp, Event: class {}, setTimeout, clearTimeout,
+  console, Symbol, Object, Array, Promise, Error, JSON, String, Number, Math, RegExp, setTimeout, clearTimeout,
+  Event: class { constructor(type, init) { this.type = type; Object.assign(this, init || {}) } },
 }
 vm.createContext(sandbox)
 vm.runInContext(src, sandbox, { filename: 'lib/client.js' })
@@ -186,6 +187,27 @@ await okAsync('围栏语言提示：```python 后的记号按 python 上词表',
   assert.equal(fetchCalls.length, before + 1)
   assert.match(fetchCalls[fetchCalls.length - 1], /lang=python/, '要把语言提示带给服务端：' + fetchCalls[fetchCalls.length - 1])
   await tick()
+})
+
+await okAsync('回车不吃弹层（真机回归：连按回车把候选反复插进正文）', async () => {
+  fetchReply = { ok: true, candidates: [{ kind: 'file', value: '临时目录/attrib-index.diff', detail: 'w' }] }
+  const ed = mkEd('attrib')
+  input(ed)
+  await tick()
+  assert.equal(popupEl().style.display, 'block', '先让弹层开着')
+  const ev = keydown(ed, { key: 'Enter' })
+  assert.equal(ev.prevented, false, '回车必须放行给宿主（发送），不能被弹层拦下')
+  assert.equal(ed.value, 'attrib', '回车不该把候选插进正文')
+})
+
+await okAsync('接受候选后弹层不复开（滚雪球的另一半）', async () => {
+  fetchReply = { ok: true, candidates: [{ kind: 'file', value: '临时目录/attrib-index.diff', detail: 'w' }] }
+  const ed = mkEd('attrib')
+  input(ed)
+  await tick()
+  keydown(ed, { key: 'Tab' })
+  assert.equal(ed.value, '临时目录/attrib-index.diff', 'Tab 要把整段 token 换成候选')
+  assert.equal(popupEl().style.display, 'none', '自己插进去的文本不能再触发一次弹层')
 })
 
 ok('apply 返回的 disposer 会摘监听、关弹层', () => {
