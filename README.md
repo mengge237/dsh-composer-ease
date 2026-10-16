@@ -1,77 +1,135 @@
-# dsh-composer-pro
+# dsh-composer-pro（DSH 输入框增强 · Composer Pro）
 
-把 DSH 输入框（composer）的手感对齐 **VSCode**：打括号/引号自动配对、选中一段再打括号=环绕、
-再打闭合符=跳过、退格删空对、补全弹层（`Ctrl+Space`，打满两个字母也自动弹）。
-补全数据三类：**本文词**（草稿里出现过的标识符，VSCode word-based 口径，本地即时算）、
-**各语言词表**（HTML 标签 / JS·Python·Java 关键字 / CSS 属性名，见 `lib/words.js`）、
-**工作区文件路径**（深度 ≤3，跳过 node_modules）与 **settings 真源里配置的模型名**，外加几个常用代码片段。
+![概览](docs/banner.svg)
 
-## 键位（对照 VSCode）
+把 DeepSeek Harness（DSH）Web 输入框的手感对齐 **VS Code**：括号引号自动配对、选中一段再打括号就环绕起来、
+光标右边已是闭符时再打它直接跳过、退格删掉一对空括号；再给一个补全弹层——**草稿里出现过的词、各语言关键字与标签、
+工作区文件路径、settings 里配的模型名**，打满两个字母自己弹。
 
-| 操作 | 键 | 行为 |
+标准 DSH bundle 插件：一条命令安装、**不 require 任何第三方包**、**不写任何文件**、**不改宿主一行源码**，也不需要任何令牌。
+浏览器半边是纯 DOM（不依赖 react、不引编辑器库），服务端半边只有两个只读路由。
+
+## 装在哪、怎么装
+
+| 你要装在哪 | 装法 | 注意 |
 |---|---|---|
-| 自动配对 | `(` `[` `{` `"` `'` 反引号 | 光标前是路径/标识符字符时**不**配对（保护 `E:/path` 与 `call(` 场景） |
-| 环绕选区 | 选中后打任意开括号 | `选区` → `(选区)`，选区保持选中 |
+| **DSH Web（`dsh web`）** | `dsh plugin --profile web add https://github.com/mengge237/dsh-composer-pro` | 推荐。也可以装本机源码目录：`dsh plugin --profile web add "<本地路径>"` |
+| **官方桌面端（Electron）** | 用**桌面端自己的插件管理器**装 | 别用 `dsh plugin --profile desktop`（那条路被 Electron 独占，CLI 会拒绝）；桌面端会话里让 DSH 自己装 |
+| **开发（改代码）** | 源码目录 + `file:` 装法 | 客户端半边**每次请求现读磁盘**，改完刷新页面即生效；**服务端半边（`lib/index.js`、`lib/words.js`）改完要重启 `dsh web`** |
+
+卸载：`dsh plugin --profile web remove dsh-composer-pro`（不留任何数据文件，没有要清理的东西）。
+
+## 特性
+
+### 编辑手感（对齐 VS Code）
+
+- **自动配对**：`(` `[` `{` `"` `'` 反引号成对插入，光标落在中间；光标前是标识符或路径字符时**不**配对（保护 `call(` 与 `E:/path` 这类写法）
+- **环绕选区**：选中一段再打开括号 → `(选中内容)`，并且**选区还原到内层内容**上，接着打字就是改内容
+- **跳过闭符**：光标右边已经是该配对的闭符时，再打它只移动光标，不重复插
+- **删空对**：光标夹在 `()` 中间按退格，一次删掉两侧
+- **语言提示**：草稿里写了代码围栏（```` ```js ```` / ```` ```python ````）就按该语言上词表
+
+### 补全候选（四类）
+
+- **本文词**：草稿里已经出现过的标识符，按出现次数排序，**本地即时算、不等网络**（VSCode 的 word based suggestions 口径）
+- **语言词表**：HTML 标签 112、JS 关键字 47、Python 129、Java 56、CSS 属性 600、HTML 全局属性 27（数据来源见「来源与许可」）
+- **工作区文件**：深度 ≤3、跳过 `node_modules`，按**路径段前缀**匹配（见「候选匹配规则」）
+- **模型名与片段**：从 settings 真源读出的模型 id，加上几个常用代码片段
+
+### 触发与接受
+
+- 打满 **2 个标识符字符自动弹**；`Ctrl+Space` 手动弹；行首或空白后打 `/`、`@` 也弹
+- **`Tab` 接受**（或鼠标点某一行）；`↑↓` 选择；`Esc` 关闭
+- **回车不吃弹层**：聊天框里回车就是发送。这条是 2026-10-16 真机事故换来的——原来回车也算接受，弹层开着时连按回车会把候选一遍遍插进正文
+
+### 性能
+
+- 工作区文件索引与模型 id 各带 **20 秒 TTL 缓存**：首次全盘走一遍约 23ms，之后命中 0~1ms
+- 每个按键只发一次本地请求（loopback），后发先至的旧响应按序号丢弃
+
+## 键位（对照 VS Code）
+
+| 操作 | 键 / 触发 | 行为 |
+|---|---|---|
+| 自动配对 | `(` `[` `{` `"` `'` 反引号 | 光标前是路径/标识符字符时**不**配对 |
+| 环绕选区 | 选中后打任意开括号 | `选区` → `(选区)`，选区保持在内层 |
 | 跳过闭合 | 光标右已是应得的闭符时再打它 | 不重复插，移过去 |
-| 删空对 | 光标夹在 `()` 中间按 Backspace | 一次删两侧 |
-| 补全 | 打满 2 个标识符字符自动弹；`Ctrl+Space` 手动 | 弹层：本文词优先，其后语言词表/文件/模型/片段，前缀 > 包含 > 子序列，≤12 条 |
-| 接受 | **只有 `Tab`**（或鼠标点那一行） | **回车不吃弹层**：聊天框里回车必须发送——2026-10-16 维护者真机踩到「连按回车把候选一遍遍插进正文」（`i临时目录/attrib-index.dif临时目录/…` 那种滚雪球），改成接受只留 Tab |
-| 关闭/选择 | `Esc` 关闭、`↑↓` 选择、`Shift+Enter` 换行 | 接受之后弹层**不会自己复开**（自己插入的文本不触发再次取数） |
-| 触发式 | 行首或空白后打 `/`、`@` | 直接开补层（文件路径 / 模型名） |
-| 语言提示 | 草稿里写围栏 ```js / ```python / ```html | 按该语言上词表；没写就上公共池（HTML 标签 + JS 关键字），所以聊天框里打 `inp` 也能补 `input` |
+| 删空对 | 光标夹在 `()` 中间按退格 | 一次删两侧 |
+| 补全 | 打满 2 个标识符字符 / `Ctrl+Space` | 弹层：本文词优先，其后语言词表 / 文件 / 模型 / 片段 |
+| 接受 | **只有 `Tab`** 或点击某一行 | 回车保持发送；接受后弹层不会自己复开 |
+| 关闭与选择 | `Esc` / `↑` `↓` | `Shift+Enter` 仍是换行 |
 
-## 形态与边界
+## 候选匹配规则
 
-- 客户端半边是**纯 DOM**（不 require react，不引任何编辑器库），keydown 用**捕获阶段**先于
-  Lexical 自己的键位；输入走 `document.execCommand('insertText')` / textarea 原生 setter，
-  保证宿主 composer（Lexical contenteditable，0.1.6+ 带 `data-composer-input`）与老 textarea 形态都能进字。
-- 服务端半边两个只读路由，全部过本机信任栅栏（loopback Host + Origin 同源，抄 better-sidebar/whale 同一套判据）：
-  - `GET /dsh-composer-pro/words?prefix=&lang=` → 候选（语言词表 + 工作区文件 + 模型名 + 片段）；`lang` 认不出时只上公共池
-  - `GET /dsh-composer-pro/config.json` → 配对表、键位、词表规模与**借用出处**（诊断用）
-- 词表只有一个真源：`lib/words.js`（服务端读它；客户端不复制一份，避免两处漂移）。
-- **候选匹配规则（2026-10-16 收紧，别再放宽）**：文件候选**只认「某个路径段以查询开头」**（`attrib` → `临时目录/attrib-index.diff`），
-  段内中段匹配要查询 ≥3 字符，**纯子序列一概不给** —— 路径太长，子序列等于随机命中，会逼着人逐个核对别的文件
-  （维护者原话「被迫核对以外的文件」）。子序列只留给词表/模型/片段这类短候选，且同样要 ≥3 字符。
-- **缓存**：工作区文件索引与模型 id 各带 20s TTL（`filesCached` / `modelsCached`），
-  以前每敲一个键都全盘走一遍（深 3 层、封顶 400），实测首次 23ms、命中缓存 0~1ms。
-- **不做**：不改宿主 composer 的数据模型、不接管 Enter 发送、不注入样式以外的东西。
-- **选区操作的两个硬约束（2026-10-16 真机扫出来的，改这块前先看）**：
-  1. **不要用 `sel.modify(...)`** —— 宿主 composer 是 Lexical，真机上它不生效：配对后的光标、跳闭合、
-     删空对、环绕选区还原、Tab 替换 token 会「值对、位置全错」。一律走「摊平字符偏移 + 显式 Range」
-     （`flatText` / `caretOffset` / `setSelectionRange`）。
-  2. **我们的 keydown 在捕获阶段，早于 Lexical 自己的处理** —— 插入后立刻改选区会被 Lexical 随后的渲染覆盖，
-     contenteditable 这条路要用 `soon()` 推一拍再改。
-- v1 计划（未实现，先记账）：`Alt+↑/↓` 移动行、`Ctrl+D` 复制行、`Ctrl+/` 注释切换 ——
-  这三条要动 Lexical 文档模型，得走宿主编辑器 API 而不是 execCommand，别当成已有功能。
+- **文件候选只认「某个路径段以查询开头」**：`attrib` → `临时目录/attrib-index.diff` 排第一；段内中段匹配要求查询 ≥3 个字符
+- **不做松散模糊（纯子序列）**：路径本来就长，子序列几乎必中，等于「打一个字给你一堆别的文件」，会逼着人逐个核对
+- 子序列只留给词表 / 模型 / 片段这类短候选，且查询至少 3 个字符
 
-## 来源（按用户口径「照搬开源就写上来源」）
+## 已知边界
 
-- **键位与交互设计**：对齐 Visual Studio Code（MIT, microsoft/vscode）。本包**未复制其任何源码**，
-  只参照公开键位表与行为语义（word-boundary 抑制、surround、type-over closer、删除空对）；
-  「本文词补全」参照 VSCode 的 word based suggestions 口径（标识符形状、按出现次数排），自实现。
-- **补全词表数据**（`lib/words.js`，只借数据、不搬代码）：
-  | 数据 | 项目 | 许可证 | commit |
-  |---|---|---|---|
-  | JS / Python / Java 关键字 | [microsoft/monaco-editor](https://github.com/microsoft/monaco-editor) | MIT | `f54d769` |
-  | HTML 标签、全局属性 | [codemirror/lang-html](https://github.com/codemirror/lang-html) | MIT | `06eec80` |
-  | CSS 伪类、at 规则 | [codemirror/lang-css](https://github.com/codemirror/lang-css) | MIT | `7b7835b` |
-  | CSS 属性名 | [mdn/browser-compat-data](https://github.com/mdn/browser-compat-data) | CC0-1.0 | `0416078` |
+- **服务端半边改代码要重启 `dsh web`**（ESM 已载入内存不重读）；客户端半边刷新页面即生效
+- 语言词表的键位（如 `inp` → `input`）在**服务端**，因此首次装好或改完词表后，要重启一次才全线生效
+- 只在 **0.2.0-rc.2** 的 web 与桌面端两个 profile 上实测过（宿主版本更新后请重跑自检）
+- 老式 `textarea` 形态的输入框只有离线测试覆盖，真机上没样本
+- **不改宿主 composer 的数据模型**：所以 `Alt+↑/↓` 移动行、`Ctrl+D` 复制行、`Ctrl+/` 注释切换这类要动 Lexical 文档模型的操作**没有做**，别当已有功能
+- 补全只做「插入文本」，不做语义分析：它不知道你的代码里哪些符号可以用
 
-  抽取是静态的（正则取数组与对象键），没执行任何第三方代码；**许可证原文照录在 [THIRD-PARTY.md](THIRD-PARTY.md)**。
-  运行时不依赖这些项目（词表已冻成本包里的静态数组）。
-- **补全排序打分**（前缀>包含>子序列）：参照 VSCode IntelliSense 的 fuzz 排序惯例的简化版，自实现。
-- 未使用 Monaco / CodeMirror / Lexical 组件库（宿主 composer 本身就是 Lexical，本件只做外围增强）。
+## 目录结构
 
-## 安装 / 卸载 / 生效边界
+| 路径 | 用途 |
+|---|---|
+| `lib/index.js` | 服务端半边：两条只读路由（`/dsh-composer-pro/words`、`/config.json`）与本机信任栅栏 |
+| `lib/client.js` | 浏览器半边：keydown 捕获层、配对与环绕、补全弹层（纯 DOM，无第三方依赖） |
+| `lib/words.js` | 各语言词表（静态数组，出处与 commit 写在文件头） |
+| `test/` | 四支测试 + 真机验收报告（`REPORT-2026-10-16.md`） |
+| `docs/` | README 配图 |
+| `THIRD-PARTY.md` | 借用数据的来源与**许可证原文** |
+| `cordis.patch.yml` | DSH bundle 声明（`dsh.bundle.patch`） |
 
-```
-dsh plugin --profile web add "<本地路径>"
-dsh plugin --profile web remove dsh-composer-pro
+## 开发与测试
+
+```bash
+npm test        # 四支，37 项，0 网络：数据层 / 路由与信任栅栏 / bundle 形状 / 假 DOM 行为测试
 ```
 
-**生效边界（2026-10-16 实测钉死）**：加/删插件行可当场激活（patchReload live），但**改服务端半边的代码
-必须重启 `dsh web`** —— 实测改完 `lib/index.js` 后现场 `/config.json` 仍报旧版本号（ESM 已载入内存，不重读）。
-浏览器半边是**每次请求现读磁盘**，改完刷新页面即可（本文词补全就是这么验的）。
-自检：`npm test`（四支、35 项、0 网络）：`selftest.mjs` 数据层、`server-routes.mjs` 路由与信任栅栏、
-`client-smoke.mjs` bundle 形状与纯逻辑、`client-behavior.mjs` 假 DOM 驱动真监听（配对/跳闭合/删空对/接受候选/自动弹）。
-真机验收（headless 打真 composer，11 项）见 [test/REPORT-2026-10-16.md](test/REPORT-2026-10-16.md)。
+- `test/selftest.mjs`：候选排序、模型 id 解析、文件收集封顶、workspace.json v2 形状、词表命中
+- `test/server-routes.mjs`：路由形状、**本机信任栅栏**（非 loopback Host 与跨站 Origin 一律 403）、方法闸、`config.json` 载荷
+- `test/client-smoke.mjs`：bundle 头与导出形状、键位判据、本文词与围栏识别
+- `test/client-behavior.mjs`：**假 DOM 驱动真监听**——配对、环绕、跳闭合、删空对、Ctrl+Space 取数、Tab 接受替换、回车放行、接受后不复开
+- 真机验收（headless 打真 composer，11 项）：结果与复现命令见 [test/REPORT-2026-10-16.md](test/REPORT-2026-10-16.md)
+
+改这块前先读 README 的「形态与边界」与语言词表文件头：宿主 composer 是 **Lexical**，它不认 `sel.modify(...)`，
+选区操作必须走「摊平字符偏移 + 显式 Range」，且我们的监听在捕获阶段、早于宿主处理，插入后改选区要推一拍。
+
+## 常见问题
+
+- **打 `inp` 没出现 `input`？** 语言词表在服务端半边：装好之后（或改过词表之后）要重启一次 `dsh web`
+- **为什么回车不接受候选？** 聊天框里回车是发送键；接受请用 `Tab`（0.2.2 起如此，之前回车也算接受，会连插候选）
+- **为什么不再给一堆不相关的文件？** 0.2.2 起文件候选只认路径段前缀；要更宽的匹配请直接用 `/` 或 `@` 触发
+- **它会改我的文件吗？** 不会。只读工作区文件清单与 settings 真源，一个字节都不写
+- **桌面端怎么装？** 桌面端是独立 profile，用桌面端自己的插件管理器装（`dsh plugin --profile desktop` 会被拒）
+
+## 更新日志
+
+- **0.2.2**（2026-10-16）：回车不再被弹层吃掉；接受候选后弹层不再自动复开；文件候选改「路径段前缀」匹配；文件索引与模型 id 加 20s 缓存
+- **0.2.1**（2026-10-16）：修 Lexical 选区（改显式 Range）与捕获阶段时序（选区调整推一拍）；环绕选区后选区还原到内层
+- **0.2.0**（2026-10-16）：新增本文词补全、语言词表（HTML/JS/Python/Java/CSS）、打两个字符自动弹、围栏语言提示
+- **0.1.0**（2026-10-15）：首版——自动配对、环绕选区、跳闭合、删空对、Ctrl+Space 弹层（文件与模型名）
+
+## 来源与许可
+
+- **交互设计**参照 Visual Studio Code（MIT，microsoft/vscode）：word-boundary 抑制、surround、type-over closer、删除空对、
+  word based suggestions 的排序口径——**未复制其源码**，只对齐行为语义
+- **词表数据**借用自 monaco-editor、codemirror/lang-html、codemirror/lang-css、MDN browser-compat-data，
+  每条都在 [THIRD-PARTY.md](THIRD-PARTY.md) 里写明了仓库、commit、取用文件与**许可证原文**；抽取是静态的，运行时不依赖这些项目
+- 本插件自身：MIT（见 [LICENSE](LICENSE)）
+
+## English（short）
+
+`dsh-composer-pro` brings the VS Code editing feel to the DSH composer: auto-pairing brackets and quotes, surround
+selection, type-over closers, delete-empty-pair, and a completion popup fed by draft words (computed locally),
+per-language word tables (HTML tags, JS/Python/Java keywords, CSS property names), workspace file paths and the model
+ids configured in settings. It pops up after two identifier characters or on `Ctrl+Space`; `Tab` accepts, `Enter`
+stays the send key, `Esc` dismisses. Standard DSH bundle plugin: one command to install, no third-party runtime
+dependency, no file writes, no host source changes. See [THIRD-PARTY.md](THIRD-PARTY.md) for the borrowed data
+sources and license texts.
