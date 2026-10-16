@@ -41,20 +41,20 @@ ok('配对表形状：开括号都有闭括号，闭括号都能回指', () => {
   for (const [o, c] of Object.entries(PAIRS)) assert.equal(typeof c, 'string')
 })
 
-ok('rankCandidates：文件只认路径段前缀（收紧后），词表候选才用子序列', () => {
+ok('rankCandidates：用 VS Code 的 fuzzyScore 打分（前缀、词边界、连续都给分），文件另过可达性闸', () => {
   const cands = ['lib/index.js', 'README.md', 'src/libsdk/auth.ts', 'docs/readme-notes.md'].map((v) => ({ kind: 'file', value: v }))
   const r = rankCandidates(cands, 'lib', 12).map((c) => c.value)
-  assert.deepEqual(r, ['lib/index.js', 'src/libsdk/auth.ts'], '路径段前缀先于段内，不沾的必须出局：' + r.join(','))
-  // 2026-10-16 真机回归：维护者打 i 时列出一堆不相干文件（attrib-index.diff 之类）还被迫逐个核对
+  assert.deepEqual(r, ['lib/index.js', 'src/libsdk/auth.ts'], '只留路径段前缀命中的，且短者靠前：' + r.join(','))
+  // 2026-10-16 真机回归：维护者打 i 时列出一堆不相干文件、还被反复插进正文
   const junk = ['临时目录/attrib-index.diff', 'src/main.ts'].map((v) => ({ kind: 'file', value: v }))
-  assert.equal(rankCandidates(junk, 'i', 12).length, 0, '单个字母不该用子序列/中段匹配拉出别的文件')
+  assert.equal(rankCandidates(junk, 'i', 12).length, 0, '单字符文件查询要有闸，不能拉出别的文件')
   assert.equal(rankCandidates(junk, 'attrib', 12)[0].value, '临时目录/attrib-index.diff', '段前缀要命中')
-  assert.equal(rankCandidates(junk, 'index', 12)[0].value, '临时目录/attrib-index.diff', '段内中段（≥3 字符）仍要给')
-  // 非文件候选保留子序列，但至少 3 个字符
-  const words = [{ kind: 'word', value: 'javascript' }, { kind: 'word', value: 'const' }]
-  assert.deepEqual(rankCandidates(words, 'jsc', 5).map((c) => c.value), ['javascript'], '词表候选允许子序列（j-s-c 在 javascript 里依次出现）')
-  assert.deepEqual(rankCandidates(words, 'java', 5).map((c) => c.value), ['javascript'], '前缀命中')
-  assert.equal(rankCandidates([{ kind: 'word', value: 'abcxyz' }], 'az', 5).length, 0, '两个字符不给子序列')
+  // 命中位置随分数一起回来，客户端拿它加粗
+  const one = rankCandidates([{ kind: 'word', value: 'input' }], 'inp', 5)[0]
+  assert.deepEqual(one.matches, [0, 1, 2], '命中位置要在：' + JSON.stringify(one.matches))
+  // VS Code 口径：连续命中 > 有间隔 > 分散（同一组词里的相对分数）
+  const vs = rankCandidates([{ value: 'abc' }, { value: 'a-b-c' }, { value: 'axbxc' }].map((x) => ({ kind: 'word', ...x })), 'abc', 5).map((c) => c.value)
+  assert.deepEqual(vs, ['abc', 'a-b-c', 'axbxc'], 'VS Code 的连续/间隔/分散排序：' + vs.join(',') + '（axbxc 是负分）')
 })
 
 ok('parseModelIds：只认深缩进的模型条目行', () => {

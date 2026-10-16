@@ -23,7 +23,7 @@ class FakeEl {
   set innerHTML(v) { this._html = String(v); if (v === '') this.children = [] }
   get innerHTML() { return this._html }
   get innerText() {
-    const own = this._text || ''
+    const own = this._text || (this._html ? this._html.replace(/<[^>]*>/g, '') : '')
     const kids = this.children.map((c) => c.innerText || c.textContent || '').join(' ')
     return (own + (kids ? ' ' + kids : '')).trim()
   }

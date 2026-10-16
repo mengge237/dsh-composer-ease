@@ -10,6 +10,7 @@
 | HTML 标签、全局属性 | [codemirror/lang-html](https://github.com/codemirror/lang-html) | MIT | `06eec80` | `src/complete.ts` 的 `Tags` / `GlobalAttrs` |
 | CSS 伪类、at 规则 | [codemirror/lang-css](https://github.com/codemirror/lang-css) | MIT | `7b7835b` | `src/complete.ts` 的 `pseudoClasses` / `atRules` |
 | CSS 属性名 | [mdn/browser-compat-data](https://github.com/mdn/browser-compat-data) | CC0-1.0 | `0416078` | `css/properties/*.json` 的文件名（去掉 `-moz-`/`-webkit-` 前缀项） |
+| 模糊打分引擎与字符判据 | [microsoft/vscode](https://github.com/microsoft/vscode) | MIT | `0b4e063` | `src/vs/base/common/filters.ts`（`fuzzyScore`/`_doScore`/`fuzzyScoreGraceful*` 等）＋同目录 `charCode.ts`（只取用到的条目）与 `strings.ts`（只取 `isEmojiImprecise`） |
 
 抽取是静态的（正则取数组与对象键），没有执行任何第三方代码；复跑脚本与中间产物不随包分发。
 若某个项目的许可条款与本文件描述不一致，以各项目仓库里的 LICENSE 原文件为准。
@@ -189,4 +190,33 @@ Affirmer's express Statement of Purpose.
 
 For more information, please see
 <http://creativecommons.org/publicdomain/zero/1.0/>
+```
+
+## 4. microsoft/vscode（MIT）
+
+`lib/fuzzy.js` 是**逐字取自**该项目的模糊打分实现（只去掉了 TypeScript 类型注解、并把调试打印函数换成空实现；
+`enum Arrow` 与 `const enum CharCode` 换成等价值对象），用于补全候选的排序口径与命中位置标注：
+
+```
+MIT License
+
+Copyright (c) 2015 - present Microsoft Corporation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ```
