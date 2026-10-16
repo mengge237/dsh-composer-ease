@@ -194,7 +194,8 @@ For more information, please see
 
 ## 4. microsoft/vscode（MIT）
 
-`lib/fuzzy.js` 是**逐字取自**该项目的模糊打分实现（只去掉了 TypeScript 类型注解、并把调试打印函数换成空实现；
+`lib/fuzzy.js` 是**逐字取自**该项目的模糊打分实现（文件顶部**原样保留**上游逐字的版权与许可头
+`Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT License.`；只去掉了 TypeScript 类型注解、并把调试打印函数换成空实现；
 `enum Arrow` 与 `const enum CharCode` 换成等价值对象），用于补全候选的排序口径与命中位置标注：
 
 ```

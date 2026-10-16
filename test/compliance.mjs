@@ -66,6 +66,15 @@ ok('逐字搬来的代码必须带出处头（仓库 + commit + 改了什么）'
   assert.match(words, /一行代码都没有搬|只借用/, 'words.js 要写明只借数据')
 })
 
+ok('逐字搬来的文件里，上游的版权与许可声明要原样保留（MIT 的义务，别只写在 THIRD-PARTY）', () => {
+  const fuzzy = read('lib/fuzzy.js')
+  assert.match(fuzzy, /Copyright \(c\) Microsoft Corporation/, '要保留上游逐字的版权声明')
+  assert.match(fuzzy, /Licensed under the MIT License/, '要保留上游的许可指引（MIT 要求留住 notice）')
+  // 出处说明可以加，但不许把上游声明替换掉——这条是 2026-10-16 真踩过的：我自己写了头，
+  // 把 Microsoft 那段顶掉了，检疫闸当场报「找不到版权/许可头」。
+  assert.ok(fuzzy.indexOf('Copyright (c) Microsoft Corporation') < fuzzy.indexOf('dsh-composer-pro'), '上游声明要在最前面')
+})
+
 ok('运行时没有第三方依赖（装了也不需要别人的代码在我这儿跑）', () => {
   const deps = Object.keys(pkg.dependencies || {})
   const peer = Object.keys(pkg.peerDependencies || {})
