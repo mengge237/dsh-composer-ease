@@ -104,6 +104,13 @@ ok('标识符/路径后打 ( → 只插一个（保护 call( 与 E:/path 场景�
   assert.equal(b.value, 'E:/x/(')
 })
 
+ok('全角（ 走 input 事件补配对（IME 合成不一定带对应 keydown）', () => {
+  const ed = mkEd('（')
+  input(ed)
+  assert.equal(ed.value, '（）', '全角也要补出配对：' + ed.value)
+  assert.equal(ed.selectionStart, 1, 'caret 要落在中间（真机会再推一拍校正）')
+})
+
 ok('选中一段再打 ( → 环绕成 (选区)，选区保持选中', () => {
   const ed = mkEd('xyz', 3)
   ed.selectionStart = 0

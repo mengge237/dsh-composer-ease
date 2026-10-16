@@ -1,6 +1,6 @@
 {
   "name": "dsh-composer-pro",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "把 DSH 输入框做成 VS Code 手感：括号引号自动配对、选中环绕、跳闭合、删空对；补全弹层四类候选（本文词 / 语言词表 HTML·JS·Python·Java·CSS / 工作区文件路径 / settings 里的模型名），打满两个字母自动弹，Tab 接受、回车保持发送。标准 DSH bundle 插件：一条命令安装，不依赖第三方运行时、不写任何文件、不改宿主源码。词表数据借自 monaco-editor / codemirror / MDN BCD，出处与许可证原文见 THIRD-PARTY.md",
   "type": "module",
   "main": "lib/index.js",

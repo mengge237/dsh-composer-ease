@@ -35,6 +35,13 @@ ok('配对判据：光标前是路径/标识符字符就不自动配对（保护
   assert.equal(H.shouldPair('call('), true, '光标已在 ( 后：新括号该配')
   assert.equal(H.shouldPair('path/'), false, '结尾 / 视作路径中：不配')
 })
+ok('全角/中文成对符也在表里（中文输入法下的盲区，2026-10-16 补）', () => {
+  for (const [o, c] of [['（', '）'], ['【', '】'], ['「', '」'], ['《', '》'], ['“', '”'], ['‘', '’']]) {
+    assert.equal(H.PAIRS[o], c, o + ' 要配 ' + c)
+    assert.equal(H.CLOSERS[c], o, c + ' 要能回指 ' + o)
+    assert.equal(H.keyAction({ key: o }), 'pairopen', '全角开符也要走配对动作')
+  }
+})
 ok('tokenBefore：取 caret 前 token', () => {
   assert.equal(H.tokenBefore('路径 src/comp'), 'src/comp')
   assert.equal(H.tokenBefore('@qwen3'), '@qwen3')
