@@ -1,5 +1,7 @@
 # dsh-composer-pro（DSH 输入框增强 · Composer Pro）
 
+**[中文](README.md) · [English](README.en.md)**
+
 ![概览](docs/banner.svg)
 
 ![补全与配对](docs/demo.gif)
@@ -103,7 +105,7 @@
 | `lib/index.js` | 服务端半边：两条只读路由（`/dsh-composer-pro/words`、`/config.json`）与本机信任栅栏 |
 | `lib/client.js` | 浏览器半边：keydown 捕获层、配对与环绕、补全弹层（纯 DOM，无第三方依赖） |
 | `lib/words.js` | 各语言词表（静态数组，出处与 commit 写在文件头） |
-| `test/` | 四支测试 + 真机验收报告（`REPORT-2026-10-16.md`） |
+| `test/` | 五支测试 + 真机验收报告（`REPORT-2026-10-16.md`） |
 | `docs/` | README 配图 |
 | `THIRD-PARTY.md` | 借用数据的来源与**许可证原文** |
 | `cordis.patch.yml` | DSH bundle 声明（`dsh.bundle.patch`） |
@@ -118,9 +120,9 @@ npm test        # 五支，59 项，0 网络：数据层 / 路由与信任栅栏
 - `test/server-routes.mjs`：路由形状、**本机信任栅栏**（非 loopback Host 与跨站 Origin 一律 403）、方法闸、`config.json` 载荷
 - `test/client-smoke.mjs`：bundle 头与导出形状、键位判据、本文词与围栏识别
 - `test/client-behavior.mjs`：**假 DOM 驱动真监听**——配对、环绕、跳闭合、删空对、Ctrl+Space 取数、Tab 接受替换、回车放行、接受后不复开
-- `test/compliance.mjs`：**许可与条例自检（8 项）**——自家 MIT 署名、每个借用件在 THIRD-PARTY.md 里都有仓库+许可+钉住的 commit、
+- `test/compliance.mjs`：**许可与条例自检（9 项）**——自家 MIT 署名、每个借用件在 THIRD-PARTY.md 里都有仓库+许可+钉住的 commit、
   MIT/CC0 原文照录、逐字搬来的代码带出处头（含「改了什么」）、运行时零第三方依赖、仓里没有密钥、版本号与更新日志对得上、
-  登记表那侧 `npm` 键合法。反向对照过：删掉台账里一行、把版本号改成 9.9.9，它都会红
+  登记表那侧 `npm` 键合法、**上游版权声明原样保留且排在我们的说明之前**。反向对照过：删掉台账里一行、把版本号改成 9.9.9，它都会红
 - 真机验收（headless 打真 composer，11 项）：结果与复现命令见 [test/REPORT-2026-10-16.md](test/REPORT-2026-10-16.md)
 
 改这块前先读 README 的「形态与边界」与语言词表文件头：宿主 composer 是 **Lexical**，它不认 `sel.modify(...)`，
@@ -130,7 +132,7 @@ npm test        # 五支，59 项，0 网络：数据层 / 路由与信任栅栏
 
 - **打 `inp` 没出现 `input`？** 语言词表在服务端半边：装好之后（或改过词表之后）要重启一次 `dsh web`
 - **为什么回车不接受候选？** 聊天框里回车是发送键；接受请用 `Tab`（0.2.2 起如此，之前回车也算接受，会连插候选）
-- **选中一段再打括号没框住？** 0.3.0 起已修：半角走 keydown、全角与中文输入法走 eforeinput；若你用的是老版本，先升级
+- **选中一段再打括号没框住？** 0.3.0 起已修：半角走 keydown、全角与中文输入法走 beforeinput；若你用的是老版本，先升级
 - **为什么不再给一堆不相关的文件？** 0.2.2 起文件候选只认路径段前缀；要更宽的匹配请直接用 `/` 或 `@` 触发
 - **它会改我的文件吗？** 不会。只读工作区文件清单与 settings 真源，一个字节都不写
 - **桌面端怎么装？** 桌面端是独立 profile，用桌面端自己的插件管理器装（`dsh plugin --profile desktop` 会被拒）
@@ -143,7 +145,7 @@ npm test        # 五支，59 项，0 网络：数据层 / 路由与信任栅栏
   合规闸加一条判据盯死它。排序实现仍直接用上游那份（MIT 合规，不存在侵权，无需另写一套）
 - **0.4.1**（2026-10-16）：加**合规自检闸** `test/compliance.mjs`（8 项：署名/出处/许可证原文/出处头/零依赖/无密钥/版本一致/登记表条例），挂进 `npm test`；仓公开前先跑它
 - **0.4.0**（2026-10-16）：排序换成 **VS Code 的 fuzzyScore**（lib/fuzzy.js 逐字取自 microsoft/vscode，MIT）：前缀/词边界/驼峰/连续加分、间隔与分散扣分；列表按它的样子重画（命中字符加粗、右侧一个淡类型词），并去掉「本文出现 N 次」这类啰嗦标注
-- **0.3.0**（2026-10-16）：框选 + 打符号修复（Shift 组合键不再被挡、全角/中文输入法改走 eforeinput）；新增**行内灰字提示**（首位候选的后缀贴在光标后）；新增**语言习惯**（没写围栏时按你实际用过的语言上词表）
+- **0.3.0**（2026-10-16）：框选 + 打符号修复（Shift 组合键不再被挡、全角/中文输入法改走 beforeinput）；新增**行内灰字提示**（首位候选的后缀贴在光标后）；新增**语言习惯**（没写围栏时按你实际用过的语言上词表）
 - **0.2.3**（2026-10-16）：补全角/中文成对符（`（` `【` `「` `《` `“` `‘`，中文输入法下走 input 事件补配对）；补全弹层改成**贴光标定位**（优先下方、放不下才翻上方 6px、宽度固定、高度封顶可滚、列表没变不重画）
 - **0.2.2**（2026-10-16）：回车不再被弹层吃掉；接受候选后弹层不再自动复开；文件候选改「路径段前缀」匹配；文件索引与模型 id 加 20s 缓存
 - **0.2.1**（2026-10-16）：修 Lexical 选区（改显式 Range）与捕获阶段时序（选区调整推一拍）；环绕选区后选区还原到内层
@@ -158,12 +160,6 @@ npm test        # 五支，59 项，0 网络：数据层 / 路由与信任栅栏
   每条都在 [THIRD-PARTY.md](THIRD-PARTY.md) 里写明了仓库、commit、取用文件与**许可证原文**；抽取是静态的，运行时不依赖这些项目
 - 本插件自身：MIT（见 [LICENSE](LICENSE)）
 
-## English（short）
+---
 
-`dsh-composer-pro` brings the VS Code editing feel to the DSH composer: auto-pairing brackets and quotes, surround
-selection, type-over closers, delete-empty-pair, and a completion popup fed by draft words (computed locally),
-per-language word tables (HTML tags, JS/Python/Java keywords, CSS property names), workspace file paths and the model
-ids configured in settings. It pops up after two identifier characters or on `Ctrl+Space`; `Tab` accepts, `Enter`
-stays the send key, `Esc` dismisses. Standard DSH bundle plugin: one command to install, no third-party runtime
-dependency, no file writes, no host source changes. See [THIRD-PARTY.md](THIRD-PARTY.md) for the borrowed data
-sources and license texts.
+[English README](README.en.md)
