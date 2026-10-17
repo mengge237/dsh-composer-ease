@@ -225,6 +225,20 @@ ok('右边是空白时仍然补闭符（这一条别退化成"永远不补"）',
   assert.equal(ed.selectionStart, 1)
 })
 
+ok('上下文候选：页面上可见的对话文本里出现过的标识符，按前缀补出来（类型词标「上下文」）', () => {
+  body.textContent = '刚才那个 install_quarantine.py 和 verify_bank 都要跑；install_quarantine 只装过一次'
+  mod.__helpers__.contextReset()
+  const ed = mkEd('inst')
+  input(ed)
+  const rows = body.children.filter((c) => c.id === 'dsh-cp-ghost' ? false : true)
+  const pop = body.children.find((c) => c.id === 'dsh-cp-popup')
+  assert.ok(pop, '要弹出建议框')
+  const text = pop.children.map((r) => r.innerText).join('|')
+  assert.match(text, /install_quarantine/, '上下文里的词要出现：' + text)
+  assert.match(text, /上下文/, '类型词要标「上下文」：' + text)
+  body.textContent = ''
+})
+
 await okAsync('围栏语言提示：```python 后的记号按 python 上词表', async () => {
   const ed = mkEd('```python\ndef')
   const before = fetchCalls.length

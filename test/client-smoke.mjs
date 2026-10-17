@@ -77,6 +77,13 @@ ok('langHint：取草稿里最后一个围栏标记当语言提示', () => {
   assert.equal(H.langHint('```python\nx\n```\n再来 ```html'), 'html')
   assert.equal(H.langHint('没有围栏'), '')
 })
+ok('inferLang：没写围栏时按上下文推语言（维护者 2026-10-16 提「提示跟上下文不强关联」）', () => {
+  assert.equal(H.inferLang('写个脚本，def main(): import os'), 'python', 'def/import 多 → python')
+  assert.equal(H.inferLang('把 build.py 跑一遍，pip install 一下'), 'python', '.py + pip → python')
+  assert.equal(H.inferLang('<div class="x">foo</div>'), 'html', '标签 → html')
+  assert.equal(H.inferLang('这段 const a = await fetch(x)'), 'javascript', 'const/await → javascript')
+  assert.equal(H.inferLang('今天天气不错'), '', '没有技术线索就回空（交给习惯/公共池）')
+})
 ok('apply 挂监听并返回 disposer（假 document 记数）', () => {
   let adds = 0, removes = 0
   sandbox.document.addEventListener = () => adds++
