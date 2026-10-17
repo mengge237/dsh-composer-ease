@@ -177,6 +177,18 @@ await okAsync('数字开头与纯空白不触发补全（中文现在**要**触�
   assert.equal(fetchCalls.length, before, '纯空白不该发请求：' + fetchCalls.slice(before).join(','))
 })
 
+await okAsync('IME 合成期间不补全（打拼音 ye 不会被补成 yield，维护者 2026-10-16 报的灰字 eld）', async () => {
+  fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'yield', detail: 'JS 关键字', matches: [0, 1] }] }
+  const ed = mkEd('ye')
+  handlers.compositionstart({ target: ed })
+  const before = fetchCalls.length
+  input(ed)
+  assert.equal(fetchCalls.length, before, '合成中不该发请求：' + fetchCalls.slice(before).join(','))
+  const pop = popupEl()
+  assert.ok(!pop || !pop.children.length || pop.style.display === 'none', '合成中不该有弹层')
+  handlers.compositionend({ target: ed })
+})
+
 await okAsync('中文也触发补全，并且草稿里出现过的中文词能被提示（维护者 2026-10-16：文档/变量那个要求）', async () => {
   fetchReply = { ok: true, candidates: [] }
   const ed = mkEd('先写一段关于文档的说明，后面再提到文')

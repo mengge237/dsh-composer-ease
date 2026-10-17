@@ -111,7 +111,7 @@ Uninstall: `dsh plugin --profile web remove dsh-composer-pro` (no data files are
 ## Development and tests
 
 ```bash
-npm test        # five suites, 60 items, zero network: data layer / routes and trust fence / bundle shape / fake-DOM behaviour / licensing compliance
+npm test        # five suites, 61 items, zero network: data layer / routes and trust fence / bundle shape / fake-DOM behaviour / licensing compliance
 ```
 
 - `test/selftest.mjs`: candidate ranking, model id parsing, file collection caps, `workspace.json` v2 shape, word-table hits
@@ -137,6 +137,7 @@ deferred by one tick.
 
 ## Changelog
 
+- **0.6.1** (2026-10-16): no completion while an IME composition is in progress — typing pinyin such as `ye` is no longer hijacked by the JS keyword `yield`; the popup and the inline ghost text are dismissed during composition and re-evaluated once the characters are committed
 - **0.6.0** (2026-10-16): Chinese words are candidates too (CJK has no word separators, so runs are split into 2/3-gram tokens and a long trailing run is tried with 1-4 character suffixes), and the quote rule from VS Code was added — a symmetric quote directly after the same quote inserts a single character instead of a pair; deferred caret restores are epoch-guarded, auto-repeat no longer pairs, and `apply` is a singleton so a duplicate mount cannot process every keystroke twice
 - **0.5.0** (2026-10-16): context awareness — new "context candidates" (identifiers from the visible conversation text, completed by prefix and labelled "上下文") and "language inference" (`def`/`import`/`.py`, `<div>`, `const`/`await`, then habit); row layout follows VS Code (type icon on the left, bolded matches in the middle, muted type word on the right)
 - **0.4.3** (2026-10-16): quote feel — only a single opener is inserted when the character to the right is text; a symmetric quote already to the right is skipped instead of paired again; the caret is positioned immediately after insertion (it used to be deferred, so two fast quotes could miss the existing closer) and the deferred pass re-asserts an absolute position
