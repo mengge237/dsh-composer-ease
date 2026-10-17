@@ -19,7 +19,7 @@
 
 | 你要装在哪 | 装法 | 注意 |
 |---|---|---|
-| **DSH Web（`dsh web`）** | `dsh plugin --profile web add https://github.com/mengge237/dsh-composer-pro` | 推荐。也可以装本机源码目录：`dsh plugin --profile web add "<本地路径>"` |
+| **DSH Web（`dsh web`）** | `dsh plugin --profile web add https://github.com/mengge237-labs/dsh-composer-pro` | 推荐。也可以装本机源码目录：`dsh plugin --profile web add "<本地路径>"` |
 | **官方桌面端（Electron）** | 用**桌面端自己的插件管理器**装 | 别用 `dsh plugin --profile desktop`（那条路被 Electron 独占，CLI 会拒绝）；桌面端会话里让 DSH 自己装 |
 | **开发（改代码）** | 源码目录 + `file:` 装法 | 客户端半边**每次请求现读磁盘**，改完刷新页面即生效；**服务端半边（`lib/index.js`、`lib/words.js`）改完要重启 `dsh web`** |
 
