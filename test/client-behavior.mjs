@@ -196,6 +196,35 @@ await okAsync("'/' 触发引用式补全", async () => {
   await tick()
 })
 
+ok('在已有文字前打前引号：只插一个（右边是文字时不补闭符）', () => {
+  const ed = mkEd('abc', 3)
+  ed.selectionStart = ed.selectionEnd = 0            // 光标挪到最前
+  keydown(ed, { key: '"', shift: true })
+  assert.equal(ed.value, '"abc', '不许补成 ""abc：' + ed.value)
+})
+
+ok('右边已经是同一个引号：跳过去，不再补一对（否则越打越多）', () => {
+  const ed = mkEd('""', 2)
+  ed.selectionStart = ed.selectionEnd = 1            // 夹在一对空引号中间
+  const ev = keydown(ed, { key: '"', shift: true })
+  assert.equal(ed.value, '""', '不许变成 """"：' + ed.value)
+  assert.equal(ed.selectionStart, 2, '跳到闭符之后')
+  assert.equal(ev.prevented, true)
+})
+
+ok('全角/IME 路径同样看右边：右边有字就只插开符', () => {
+  const ed = mkEd('“文字', 1)                         // 宿主已经把「插入，光标在引号后
+  input(ed, '“')
+  assert.equal(ed.value, '“文字', '不许补成 “”文字：' + ed.value)
+})
+
+ok('右边是空白时仍然补闭符（这一条别退化成"永远不补"）', () => {
+  const ed = mkEd('')
+  keydown(ed, { key: '"', shift: true })
+  assert.equal(ed.value, '""', '行尾要补一对：' + ed.value)
+  assert.equal(ed.selectionStart, 1)
+})
+
 await okAsync('围栏语言提示：```python 后的记号按 python 上词表', async () => {
   const ed = mkEd('```python\ndef')
   const before = fetchCalls.length

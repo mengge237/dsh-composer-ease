@@ -35,6 +35,14 @@ ok('配对判据：光标前是路径/标识符字符就不自动配对（保护
   assert.equal(H.shouldPair('call('), true, '光标已在 ( 后：新括号该配')
   assert.equal(H.shouldPair('path/'), false, '结尾 / 视作路径中：不配')
 })
+ok('配对判据看右边：右边紧跟文字时只插一个开符（维护者 2026-10-16 踩到「在文字前打前引号被补成一对」）', () => {
+  assert.equal(H.shouldPair('', 'abc'), false, '右边是字母：只插前引号')
+  assert.equal(H.shouldPair('', '文'), false, '右边是汉字：只插前引号')
+  assert.equal(H.shouldPair('写一段', '文字'), false, '中文正文 + 右边有字：只插前引号')
+  assert.equal(H.shouldPair('', ' '), true, '右边是空白：该补闭符')
+  assert.equal(H.shouldPair('', ''), true, '行尾：该补闭符')
+  assert.equal(H.shouldPair('', '）'), true, '右边是闭符：该补（VS Code 同款）')
+})
 ok('全角/中文成对符也在表里（中文输入法下的盲区，2026-10-16 补）', () => {
   for (const [o, c] of [['（', '）'], ['【', '】'], ['「', '」'], ['《', '》'], ['“', '”'], ['‘', '’']]) {
     assert.equal(H.PAIRS[o], c, o + ' 要配 ' + c)
