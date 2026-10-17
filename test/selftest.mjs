@@ -108,4 +108,15 @@ ok('workspaceRoots 吃 v2 tables 形状；buildCandidates 出真候选', () => {
   assert.ok(cands.some((c) => c.kind === 'file' && c.value === 'hello.ts'), '文件候选要在：' + JSON.stringify(cands))
 })
 
+
+ok('中文「完整词义」闸：文档/变量/管理是词，档管/单字不是（撞碰测试）', () => {
+  const { isCompleteWord } = internals
+  assert.equal(isCompleteWord('文档'), true, '「文档」应判为完整词')
+  assert.equal(isCompleteWord('变量'), true)
+  assert.equal(isCompleteWord('管理'), true)
+  assert.equal(isCompleteWord('档管'), false, '「档管」是碎片，不许通过')
+  assert.equal(isCompleteWord('文'), false, '单字不算完整词义')
+  assert.equal(wordCandidates('档管', '').filter((c) => c.src === 'cjk-lexicon.js').length, 0, '碎片不给词典候选')
+})
+
 console.log(`\n${n} 项全过`)

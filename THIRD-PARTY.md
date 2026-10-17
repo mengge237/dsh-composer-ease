@@ -10,6 +10,7 @@
 | HTML 标签、全局属性 | [codemirror/lang-html](https://github.com/codemirror/lang-html) | MIT | `06eec80` | `src/complete.ts` 的 `Tags` / `GlobalAttrs` |
 | CSS 伪类、at 规则 | [codemirror/lang-css](https://github.com/codemirror/lang-css) | MIT | `7b7835b` | `src/complete.ts` 的 `pseudoClasses` / `atRules` |
 | CSS 属性名 | [mdn/browser-compat-data](https://github.com/mdn/browser-compat-data) | CC0-1.0 | `0416078` | `css/properties/*.json` 的文件名（去掉 `-moz-`/`-webkit-` 前缀项） |
+| 中文常用词表 | [fxsjy/jieba](https://github.com/fxsjy/jieba) | MIT | `extra_dict/dict.txt.big` | 抽「纯汉字、2~4 字、按频次靠前」的常用词（`lib/cjk-lexicon.js`），用于区分完整词与碎片 |
 | 模糊打分引擎与字符判据 | [microsoft/vscode](https://github.com/microsoft/vscode) | MIT | `0b4e063` | `src/vs/base/common/filters.ts`（`fuzzyScore`/`_doScore`/`fuzzyScoreGraceful*` 等）＋同目录 `charCode.ts`（只取用到的条目）与 `strings.ts`（只取 `isEmojiImprecise`） |
 
 抽取是静态的（正则取数组与对象键），没有执行任何第三方代码；复跑脚本与中间产物不随包分发。
@@ -220,4 +221,31 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```
+
+## 5. fxsjy/jieba（MIT）
+
+`lib/cjk-lexicon.js` 取自该项目的 `extra_dict/dict.txt.big`，只保留常用纯汉字词（2~4 字），用于中文前缀补全的「完整词义」判定：
+
+```
+The MIT License (MIT)
+
+Copyright (c) 2013 Sun Junyi
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```

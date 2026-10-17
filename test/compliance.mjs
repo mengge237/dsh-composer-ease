@@ -25,6 +25,7 @@ const BORROWED = [
   { repo: 'codemirror/lang-css', license: 'MIT', commit: '7b7835b', what: 'CSS 伪类与 at 规则' },
   { repo: 'mdn/browser-compat-data', license: 'CC0-1.0', commit: '0416078', what: 'CSS 属性名' },
   { repo: 'microsoft/vscode', license: 'MIT', commit: '0b4e063', what: '模糊打分引擎与字符判据（逐字搬代码）' },
+  { repo: 'fxsjy/jieba', license: 'MIT', commit: 'extra_dict/dict.txt.big', what: '中文常用词（只借数据）' },
 ]
 
 ok('自家许可是 MIT 且署名在（公开的前提）', () => {
@@ -60,7 +61,7 @@ ok('逐字搬来的代码必须带出处头（仓库 + commit + 改了什么）'
   assert.match(fuzzy, /THIRD-PARTY\.md/, 'fuzzy.js 要指回许可证原文')
   // 只借数据的那份也要写清「一行代码都没搬」与数据源
   const words = read('lib/words.js')
-  for (const b of BORROWED.filter((x) => x.repo !== 'microsoft/vscode')) {
+  for (const b of BORROWED.filter((x) => x.repo !== 'microsoft/vscode' && x.repo !== 'fxsjy/jieba')) {
     assert.ok(words.includes(b.repo), 'words.js 头部缺数据源 ' + b.repo)
   }
   assert.match(words, /一行代码都没有搬|只借用/, 'words.js 要写明只借数据')
@@ -73,6 +74,12 @@ ok('逐字搬来的文件里，上游的版权与许可声明要原样保留（M
   // 出处说明可以加，但不许把上游声明替换掉——这条是 2026-10-16 真踩过的：我自己写了头，
   // 把 Microsoft 那段顶掉了，检疫闸当场报「找不到版权/许可头」。
   assert.ok(fuzzy.indexOf('Copyright (c) Microsoft Corporation') < fuzzy.indexOf('dsh-composer-pro'), '上游声明要在最前面')
+})
+
+ok('中文词典的出处写在它自己的文件头（jieba MIT）', () => {
+  const lex = read('lib/cjk-lexicon.js')
+  assert.match(lex, /fxsjy\/jieba/, 'cjk-lexicon.js 要写明取自 fxsjy/jieba')
+  assert.match(lex, /THIRD-PARTY\.md/, '要指回许可证原文')
 })
 
 ok('运行时没有第三方依赖（装了也不需要别人的代码在我这儿跑）', () => {
