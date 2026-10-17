@@ -177,6 +177,15 @@ await okAsync('数字开头与纯空白不触发补全（中文现在**要**触�
   assert.equal(fetchCalls.length, before, '纯空白不该发请求：' + fetchCalls.slice(before).join(','))
 })
 
+await okAsync('碎片前缀：服务端 wordGate=false 时客户端整条收起（连本地词都不出）', async () => {
+  fetchReply = { ok: true, candidates: [{ kind: 'word', value: '文档管理', detail: '词典' }], wordGate: false }
+  const ed = mkEd('先写一段关于文档的说明，档管')
+  input(ed)
+  await tick()
+  const pop = popupEl()
+  assert.ok(!pop || !pop.children.length || pop.style.display === 'none', '碎片不许弹层：' + (pop ? pop.innerText : '无'))
+})
+
 await okAsync('IME 合成期间不补全（打拼音 ye 不会被补成 yield，维护者 2026-10-16 报的灰字 eld）', async () => {
   fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'yield', detail: 'JS 关键字', matches: [0, 1] }] }
   const ed = mkEd('ye')
@@ -190,9 +199,10 @@ await okAsync('IME 合成期间不补全（打拼音 ye 不会被补成 yield，
 })
 
 await okAsync('中文也触发补全，并且草稿里出现过的中文词能被提示（维护者 2026-10-16：文档/变量那个要求）', async () => {
-  fetchReply = { ok: true, candidates: [] }
+  fetchReply = { ok: true, candidates: [], wordGate: true }
   const ed = mkEd('先写一段关于文档管理系统的说明，后面再提到文档')
   input(ed)
+  await tick()          // 中文要等「完整词义」闸的结果才渲染
   const pop = popupEl()
   assert.ok(pop && pop.children.length, '打完整的「文档」要弹')
   const text = pop.children.map((r) => r.innerText).join('|')
@@ -201,6 +211,7 @@ await okAsync('中文也触发补全，并且草稿里出现过的中文词能�
   keydown(ed, { key: 'Escape' })
   const edOne = mkEd('先写一段关于文档的说明，后面再提文')
   input(edOne)
+  await tick()
   const popOne = popupEl()
   assert.ok(!popOne || !popOne.children.length || popOne.style.display === 'none', '单字「文」不许弹')
 })

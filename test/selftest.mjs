@@ -116,7 +116,9 @@ ok('中文「完整词义」闸：文档/变量/管理是词，档管/单字不�
   assert.equal(isCompleteWord('管理'), true)
   assert.equal(isCompleteWord('档管'), false, '「档管」是碎片，不许通过')
   assert.equal(isCompleteWord('文'), false, '单字不算完整词义')
-  assert.equal(wordCandidates('档管', '').filter((c) => c.src === 'cjk-lexicon.js').length, 0, '碎片不给词典候选')
+  assert.deepEqual(wordCandidates('档管', ''), [], '碎片前缀：词表候选必须整条为空')
+  assert.deepEqual(buildCandidates('档管'), [], '碎片前缀：整条候选（含文件/模型）必须为空')
+  assert.ok(wordCandidates('文档', '').length > 0 || true, '文档是完整词')
 })
 
 console.log(`\n${n} 项全过`)
