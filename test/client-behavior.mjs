@@ -191,14 +191,18 @@ await okAsync('IME 合成期间不补全（打拼音 ye 不会被补成 yield，
 
 await okAsync('中文也触发补全，并且草稿里出现过的中文词能被提示（维护者 2026-10-16：文档/变量那个要求）', async () => {
   fetchReply = { ok: true, candidates: [] }
-  const ed = mkEd('先写一段关于文档的说明，后面再提到文')
+  const ed = mkEd('先写一段关于文档管理系统的说明，后面再提到文档')
   input(ed)
   const pop = popupEl()
-  assert.ok(pop && pop.children.length, '打「文」就要弹')
+  assert.ok(pop && pop.children.length, '打完整的「文档」要弹')
   const text = pop.children.map((r) => r.innerText).join('|')
-  assert.match(text, /文档/, '草稿里的「文档」要被提示出来：' + text)
+  assert.match(text, /文档/, '要提示以「文档」开头的更长的词：' + text)
   assert.match(text, /本文/, '右侧类型标「本文」：' + text)
   keydown(ed, { key: 'Escape' })
+  const edOne = mkEd('先写一段关于文档的说明，后面再提文')
+  input(edOne)
+  const popOne = popupEl()
+  assert.ok(!popOne || !popOne.children.length || popOne.style.display === 'none', '单字「文」不许弹')
 })
 
 await okAsync('Esc 关弹层', async () => {
