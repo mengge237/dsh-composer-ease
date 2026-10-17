@@ -171,10 +171,22 @@ await okAsync('打两个字母自动弹（不用快捷键），本文词排在�
   assert.match(popupEl().innerText, /inputValue/, '网络回来后本地词仍在')
 })
 
-await okAsync('中文与数字开头不触发补全；空白后也不弹', async () => {
+await okAsync('数字开头与纯空白不触发补全（中文现在**要**触发，见下一条）', async () => {
   const before = fetchCalls.length
-  for (const v of ['这是一段中文', '临时目录', '结尾空格 ']) { const ed = mkEd(v); input(ed) }
-  assert.equal(fetchCalls.length, before, '这些都不该发请求：' + fetchCalls.slice(before).join(','))
+  for (const v of ['结尾空格 ']) { const ed = mkEd(v); input(ed) }
+  assert.equal(fetchCalls.length, before, '纯空白不该发请求：' + fetchCalls.slice(before).join(','))
+})
+
+await okAsync('中文也触发补全，并且草稿里出现过的中文词能被提示（维护者 2026-10-16：文档/变量那个要求）', async () => {
+  fetchReply = { ok: true, candidates: [] }
+  const ed = mkEd('先写一段关于文档的说明，后面再提到文')
+  input(ed)
+  const pop = popupEl()
+  assert.ok(pop && pop.children.length, '打「文」就要弹')
+  const text = pop.children.map((r) => r.innerText).join('|')
+  assert.match(text, /文档/, '草稿里的「文档」要被提示出来：' + text)
+  assert.match(text, /本文/, '右侧类型标「本文」：' + text)
+  keydown(ed, { key: 'Escape' })
 })
 
 await okAsync('Esc 关弹层', async () => {
