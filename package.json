@@ -11,6 +11,16 @@
     "THIRD-PARTY.md"
   ],
   "dsh": {
+    "compatibility": {
+      "dsh": ">=0.2.0-rc.2 <0.3.0",
+      "dshReleases": {
+        "0.2.0-rc.2": "compatible"
+      },
+      "profiles": [
+        "web",
+        "desktop"
+      ]
+    },
     "bundle": {
       "patch": "./cordis.patch.yml"
     },

@@ -1,7 +1,8 @@
 # dsh-composer-pro —— DSH bundle patch
 # 插入 web profile 配置树：服务端注册 /dsh-composer-pro/* 路由，浏览器侧半（exports["./client"]）
 # 进 boot 图提供键位与补全弹层。
-# 安装：dsh plugin --profile web add "<本地路径>"
+# 安装（npm）：dsh plugin --profile web add dsh-composer-pro
+# 本地开发：dsh plugin --profile web add "<本仓路径>/dsh-composer-pro"
 # 卸载：dsh plugin --profile web remove dsh-composer-pro
 # 客户端半边要重启 dsh web 才进 boot 图（服务端半边新加条目可热挂）。
 
