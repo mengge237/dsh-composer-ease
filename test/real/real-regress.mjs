@@ -153,6 +153,39 @@ await scene('手速·空框 " → 立刻上屏中文 → 立刻再打 "（零等
   await page.keyboard.press('Shift+Quote')
 })
 
+/* 维护者 2026-10-20 的原路径：先打「你好」→ 前面打 `"` → 再打 `"`。
+ * 这是唯一一条能把「`"你好""`」造出来的路（真机复现：选中文字打 `"` 会框成 `"你好"`，
+ * 光标落在闭符之后，再打 `"` 就堆出第三个）。两种落法都要守：
+ *   A 回最前打 `"`（没有选中）→ 再打同一个 = 补闭合到段尾；
+ *   B 选中文字打 `"`（框住）→ 再打同一个 = 不再堆。 */
+await scene('维护者路径A·你好 → Home → " → 立刻再打 " ', '"你好"', 4, async () => {
+  await ime('你好')
+  await page.keyboard.press('Home'); await page.waitForTimeout(180)
+  await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(200)
+  await page.keyboard.press('Shift+Quote')
+})
+await scene('维护者路径A·鼠标点行首 → " → 再打 " ', '"你好"', 4, async () => {
+  await ime('你好')
+  const r = await page.evaluate(() => { const b = document.querySelector('[data-composer-input]').getBoundingClientRect(); return { x: b.left + 4, y: b.top + b.height / 2 } })
+  await page.mouse.click(r.x, r.y); await page.waitForTimeout(180)
+  await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(200)
+  await page.keyboard.press('Shift+Quote')
+})
+await scene('维护者路径B·全选 → " (框住) → 再打 " ', '"你好"', 4, async () => {
+  await ime('你好')
+  await page.keyboard.press('Control+a'); await page.waitForTimeout(150)
+  await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(250)
+  const mid = await st()
+  if (mid.text !== '"你好"') throw new Error('造态失败（应为框住的结果）：' + JSON.stringify(mid))
+  await page.keyboard.press('Shift+Quote')
+})
+await scene('维护者路径B·框住后快打（10ms）再打 " ', '"你好"', 4, async () => {
+  await ime('你好')
+  await page.keyboard.press('Control+a'); await page.waitForTimeout(150)
+  await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(10)
+  await page.keyboard.press('Shift+Quote')
+})
+
 const pass = results.filter(r => r.pass).length
 console.log(`\n真机回归：${pass}/${results.length} 通过`)
 await browser.close()
