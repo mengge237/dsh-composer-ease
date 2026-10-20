@@ -612,11 +612,6 @@ if (process.env.CE_PENDING) {
     assert.equal(ed.value, '“abc”', '实得：' + ed.value)
   })
 
-  ok('已知缺口·全角空对（）里按 Backspace 应一次删两侧（现在只删一侧）', () => {
-    const ed = mkEd('（）', 1)
-    keydown(ed, { key: 'Backspace' })
-    assert.equal(ed.value, '', '实得：' + ed.value)
-  })
 
   ok('待实现·beforeinput 前方有未闭合开符，末尾再打 → 只插一个', () => {
     const ed = mkEd('“文字', 3)
@@ -625,7 +620,7 @@ if (process.env.CE_PENDING) {
     assert.equal(ed.value, '“文字“', '实得：' + ed.value)
   })
 } else {
-  console.log('  skip 3 条 beforeinput 目标规格（CE_PENDING=1 才跑）')
+  console.log('  skip 4 条目标规格/已知缺口（CE_PENDING=1 才跑）')
 }
 
 // ── 基础用法补测（维护者 2026-10-20：「引号是重灾区不代表其他做好了」）──────────
@@ -662,5 +657,14 @@ ok('基础·全角闭符 ）右边没有时交给默认插入（不拦、也不�
 })
 
 
+
+// ── 空对里按 Backspace 一次删两侧（2026-10-20 取证后修；半角/全角/中文标点都要过）──
+for (const [label, value] of [['半角 ()', '()'], ['方括号 []', '[]'], ['全角 （）', '\uff08\uff09'], ['中文引号 “”', '\u201c\u201d']]) {
+  ok(`空对·${label} 里按 Backspace 一次删两侧`, () => {
+    const ed = mkEd(value, 1)
+    keydown(ed, { key: 'Backspace' })
+    assert.equal(ed.value, '', '应删成空，实得码点：' + [...ed.value].map((c) => c.codePointAt(0).toString(16)).join(' '))
+  })
+}
 
 console.log(`\n${n} 项全过`)
