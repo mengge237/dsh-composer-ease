@@ -523,7 +523,7 @@ function bi(ed, data) {
 }
 
 // 1) 空框：每种开符都要补成一对，光标在中间
-for (const [open, close] of [['(', ')'], ['[', ']'], ['{', '}'], ['"', '"'], ["'", "'"], ['`', '`'], ['（', '）'], ['“', '”'], ['「', '」']]) {
+for (const [open, close] of [['(', ')'], ['[', ']'], ['{', '}'], ['"', '"'], ["'", "'"], ['`', '`'], ['（', '）'], ['“', '”'], ['「', '」'], ['〈', '〉'], ['《', '》']]) {
   ok(`矩阵·空框打 ${open} → 补成 ${open}${close}，caret 在中间`, () => {
     const ed = mkEd('')
     keydown(ed, { key: open })
@@ -550,6 +550,13 @@ for (const [open, close] of [['(', ')'], ['"', '"'], ['“', '”']]) {
     assert.equal(ed.selectionStart, 2, 'caret 应跳到闭符之后：' + ed.selectionStart)
   })
 }
+
+ok('矩阵·〈〉 中间再打 〈 → 跳过闭符，值不变', () => {
+  const ed = mkEd('\u3008\u3009', 1)
+  keydown(ed, { key: '\u3008' })
+  assert.equal(ed.value, '\u3008\u3009', '值不该变：' + ed.value)
+  assert.equal(ed.selectionStart, 2, 'caret 应跳到闭符之后：' + ed.selectionStart)
+})
 
 // 4) 框住选区
 for (const [open, close] of [['"', '"'], ['(', ')'], ['“', '”'], ['「', '」']]) {
@@ -659,7 +666,7 @@ ok('基础·全角闭符 ）右边没有时交给默认插入（不拦、也不�
 
 
 // ── 空对里按 Backspace 一次删两侧（2026-10-20 取证后修；半角/全角/中文标点都要过）──
-for (const [label, value] of [['半角 ()', '()'], ['方括号 []', '[]'], ['全角 （）', '\uff08\uff09'], ['中文引号 “”', '\u201c\u201d']]) {
+for (const [label, value] of [['半角 ()', '()'], ['方括号 []', '[]'], ['全角 （）', '\uff08\uff09'], ['中文引号 “”', '\u201c\u201d'], ['单书名号 〈〉', '\u3008\u3009'], ['双书名号 《》', '\u300a\u300b']]) {
   ok(`空对·${label} 里按 Backspace 一次删两侧`, () => {
     const ed = mkEd(value, 1)
     keydown(ed, { key: 'Backspace' })
