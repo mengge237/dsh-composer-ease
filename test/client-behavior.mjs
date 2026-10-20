@@ -86,9 +86,9 @@ async function okAsync(label, fn) { await fn(); n++; console.log('  ok   ' + lab
 const mod = sandbox.__captured.factory(() => { throw new Error('本包不该 require 任何东西') })
 mod.apply({})
 const popupEl = () => body.children.find((c) => c.id === 'dsh-cp-popup')
-// 弹层子节点里，带 data-dsh-cp-head 的是顶上那行「依据」，不是候选项
-const rowsOf = (p) => (p ? p.children.filter((c) => !(c.attrs && c.attrs['data-dsh-cp-head'])) : [])
-const headOf = (p) => (p ? p.children.find((c) => c.attrs && c.attrs['data-dsh-cp-head']) : null)
+// 弹层子节点里，带 data-dsh-cp-wm 的是语言水印（底纹），不是候选项
+const rowsOf = (p) => (p ? p.children.filter((c) => !(c.attrs && c.attrs['data-dsh-cp-wm'])) : [])
+const wmOf = (p) => (p ? p.children.find((c) => c.attrs && c.attrs['data-dsh-cp-wm']) : null)
 
 function mkEd(value, caret) {
   const ed = new FakeTextArea()
@@ -134,8 +134,8 @@ ok('选中一段再打 ( → 环绕成 (选区)，选区保持选中', () => {
   ed.selectionEnd = 3
   keydown(ed, { key: '(' })
   assert.equal(ed.value, '(xyz)')
-  assert.equal(ed.selectionStart, 1)
-  assert.equal(ed.selectionEnd, 4)
+  assert.equal(ed.selectionStart, 5, '光标落在闭符之后')
+  assert.equal(ed.selectionEnd, 5)
 })
 
 ok('闭符已在右边时打它 → 跳过去，不重复插', () => {
@@ -342,8 +342,8 @@ ok('框选后打符号：走 beforeinput 把选区框起来（中文输入法/�
   handlers.beforeinput(ev)
   assert.equal(ev.prevented, true, '要拦住宿主自己插那个字符')
   assert.equal(ed.value, '（xyz）', '要框成 开符+选区+闭符：' + ed.value)
-  assert.equal(ed.selectionStart, 1)
-  assert.equal(ed.selectionEnd, 4, '选区要留在内层内容上')
+  assert.equal(ed.selectionStart, ed.value.length, '光标落在闭符之后（维护者 2026-10-20 定的落点）')
+  assert.equal(ed.selectionEnd, ed.value.length, '不再回选到内层内容')
 })
 
 await okAsync('行内灰字提示：首位候选比已打的前缀多出来的那截贴在光标后（VSCode inline suggestion 手感）', async () => {
@@ -404,7 +404,7 @@ ok('apply 返回的 disposer 会摘监听、关弹层', () => {
   d()
 })
 
-await okAsync('弹层顶上写清依据：对话里是 Java 就写「据对话推断 · java」，并把该语言喂给词表路由', async () => {
+await okAsync('语言水印：对话里是 Java 时，右下角压一块写着 java 的淡字，且不再有顶部说明行', async () => {
   conv.text = '这段 Java 服务里 public void run() { System.out.println(1); } 还要加 @Override，public 修饰符别忘。'
   mod.__helpers__.contextReset()
   fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'public', detail: 'java 关键字' }] }
@@ -412,13 +412,51 @@ await okAsync('弹层顶上写清依据：对话里是 Java 就写「据对话�
   input(ed)
   await tick()
   const p = popupEl()
-  const head = headOf(p)
-  assert.ok(head, '要有依据行')
-  assert.match(head.textContent, /据对话推断 · java/, '依据行要写明来源与语言：' + (head && head.textContent))
+  const wm = wmOf(p)
+  assert.ok(wm, '要有水印层')
+  assert.equal(wm.textContent, 'java', '水印只写语言名，不写句子：' + wm.textContent)
+  assert.match(wm.style.cssText, /rotate\(-14deg\)/, '单语言角度 14°：' + wm.style.cssText)
+  assert.match(wm.style.cssText, /right:6px/, '贴右下角：' + wm.style.cssText)
+  assert.match(wm.style.cssText, /pointer-events:none/, '水印不许吃点击')
+  assert.equal(wm.attrs['aria-hidden'], 'true', '装饰元素不进无障碍树')
+  assert.equal(p.children.filter((c) => c.attrs && c.attrs['data-dsh-cp-head']).length, 0, '顶部说明行必须已经删掉')
   assert.match(fetchCalls[fetchCalls.length - 1], /lang=java/, '推断出的语言要带给服务端：' + fetchCalls[fetchCalls.length - 1])
-  assert.equal(rowsOf(p).length >= 1, true, '依据行不能挤掉候选行：' + rowsOf(p).length)
+  assert.equal(rowsOf(p).length >= 1, true, '水印不能挤掉候选行：' + rowsOf(p).length)
   conv.text = ''
   mod.__helpers__.contextReset()
+})
+
+ok('水印角度随语言种数增长并封顶 45°（1→14、2→26、3→38、4 及以上→45）', () => {
+  const W = mod.__helpers__.watermarkFor
+  assert.equal(W([]), null, '没有语言就不出水印')
+  assert.equal(W(['java']).angle, 14)
+  assert.equal(W(['java', 'python']).angle, 26)
+  assert.equal(W(['java', 'python', 'go']).angle, 38)
+  assert.equal(W(['java', 'python', 'go', 'rust']).angle, 45)
+  assert.equal(W(['a', 'b', 'c', 'd', 'e']).angle, 45, '超过 4 个不继续加角度')
+  assert.equal(W(['java', 'python']).text, 'java · python', '多个语言用间隔号连起来')
+})
+
+ok('成对家族一刀切：前一个字符是任意成对符号时，只插一个、不补闭符', () => {
+  const cases = [['(', ')'], ['[', ']'], ['{', '}'], ['（', '）'], ['【', '】'], ['「', '」'], ['“', '”'], ['"', '"'], ["'", "'"], ['`', '`']]
+  for (const [open, close] of cases) {
+    const ed = mkEd(open, 1)                              // 光标就在这个符号之后
+    keydown(ed, { key: open, shift: open === '"' || open === '{' })
+    assert.equal(ed.value, open + open, `前有 ${open} 再打它不许补对：` + ed.value)
+    assert.equal(ed.value.length, 2, `总长必须是 2（只多插这一个字符）：` + ed.value.length)
+    if (open !== close) assert.ok(!ed.value.includes(close), `不许出现闭符 ${close}：` + ed.value)
+  }
+})
+
+ok('多行选区加符号：换行必须原样保留，不许被并成一行', () => {
+  const ed = mkEd('第一行\n第二行\n第三行', 0)
+  ed.selectionStart = 0
+  ed.selectionEnd = ed.value.length
+  keydown(ed, { key: '"', shift: true })
+  assert.equal(ed.value, '"第一行\n第二行\n第三行"', '多行内容要原封不动被框住：' + JSON.stringify(ed.value))
+  assert.equal(ed.value.split('\n').length, 3, '行数不许变：' + ed.value.split('\n').length)
+  assert.equal(ed.selectionStart, ed.value.length, '光标要落在闭符之后：' + ed.selectionStart + '/' + ed.value.length)
+  assert.equal(ed.selectionEnd, ed.value.length, '不是回选到内容上，是塌到末尾')
 })
 
 await okAsync('回车（发送）收干净：弹层与灰字都不留在被清空的输入框上', async () => {

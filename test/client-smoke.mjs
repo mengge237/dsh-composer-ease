@@ -31,8 +31,11 @@ ok('导出 apply/inject；不碰宿主 react', () => {
 const H = mod.__helpers__
 ok('配对判据：光标前是路径/标识符字符就不自动配对（保护输入路径与函数调用场景）', () => {
   assert.equal(H.shouldPair('open E:/S_Software'), false, '结尾是标识符：像路径/词中，别配对')
-  assert.equal(H.shouldPair('写一个'), true, '结尾是 CJK 词后空格?——结尾『个』也算正文：该配对')
-  assert.equal(H.shouldPair('call('), true, '光标已在 ( 后：新括号该配')
+  assert.equal(H.shouldPair('写一个'), true, '结尾是 CJK 字：该配对')
+  // 2026-10-20 改口径：成对家族前面的符号一律不补对（原来这里断言 false→改成 true 的那条已作废）
+  assert.equal(H.shouldPair('call('), false, '光标已在 ( 后：只插一个，不再补成 (()')
+  assert.equal(H.shouldPair('list['), false, '方括号同理：不补')
+  assert.equal(H.shouldPair('“'), false, '中文前引号后：不补')
   assert.equal(H.shouldPair('path/'), false, '结尾 / 视作路径中：不配')
 })
 ok('配对判据看右边：右边紧跟文字时只插一个开符（维护者 2026-10-16 踩到「在文字前打前引号被补成一对」）', () => {
