@@ -4,9 +4,9 @@
 
 ![overview](docs/banner.svg)
 
-![completion and pairing](docs/demo.gif)
+![two-shot demo: fenced language and conversation context](docs/demo.gif)
 
-*Four frames: word-table completion with inline ghost text (`inp` → `input`) · file-path completion · selecting a passage and wrapping it in brackets · context candidates*
+*Two shots, recorded on the real app (clean profile: official plugins plus this one only). ① A new conversation: type a ` ```py ` fence then `def` — the popup header reads "本文围栏 · py" and the candidates are Python keywords. ② A conversation that already contains Java code: type `pub` — the header reads "据对话推断 · java" and the first candidate is `public`. That header is the answer to "why these words".*
 
 Gives the DeepSeek Harness (DSH) web composer the **VS Code** editing feel: brackets and quotes pair up as you
 type, typing an opener over a selection wraps the selection, a closer you type over an existing closer is simply
