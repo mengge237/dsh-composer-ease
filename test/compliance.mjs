@@ -73,7 +73,7 @@ ok('逐字搬来的文件里，上游的版权与许可声明要原样保留（M
   assert.match(fuzzy, /Licensed under the MIT License/, '要保留上游的许可指引（MIT 要求留住 notice）')
   // 出处说明可以加，但不许把上游声明替换掉——这条是 2026-10-16 真踩过的：我自己写了头，
   // 把 Microsoft 那段顶掉了，检疫闸当场报「找不到版权/许可头」。
-  assert.ok(fuzzy.indexOf('Copyright (c) Microsoft Corporation') < fuzzy.indexOf('dsh-composer-pro'), '上游声明要在最前面')
+  assert.ok(fuzzy.indexOf('Copyright (c) Microsoft Corporation') < fuzzy.indexOf('dsh-composer-ease'), '上游声明要在最前面')
 })
 
 ok('中文词典的出处写在它自己的文件头（jieba MIT）', () => {

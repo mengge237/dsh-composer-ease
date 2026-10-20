@@ -29,7 +29,8 @@ class FakeEl {
   }
   closest() { return null }
   focus() {}
-  setAttribute() {}
+  setAttribute(k, v) { (this.attrs || (this.attrs = {}))[k] = String(v) }
+  getAttribute(k) { return this.attrs ? this.attrs[k] : undefined }
   dispatchEvent(ev) { if (ev && ev.type === 'input' && handlers.input) handlers.input({ target: this }); return true }
   getBoundingClientRect() { return { left: 10, top: 500 } }
   addEventListener() {}
@@ -44,8 +45,12 @@ class FakeTextArea extends FakeEl {
 
 const handlers = {}
 const body = new FakeEl('BODY')
+// 对话正文区（宿主真实锚点 [data-conversation-scroll] 的替身）：客户端只许从这里取上下文
+const conv = { text: '' }
+const convBox = { get innerText() { return conv.text } }
 const documentFake = {
   body,
+  querySelector: (sel) => (sel === '[data-conversation-scroll]' && conv.text ? convBox : null),
   createElement: (tag) => new FakeEl(String(tag).toUpperCase()),
   addEventListener: (t, fn) => { handlers[t] = fn },
   removeEventListener: () => {},
@@ -81,6 +86,9 @@ async function okAsync(label, fn) { await fn(); n++; console.log('  ok   ' + lab
 const mod = sandbox.__captured.factory(() => { throw new Error('本包不该 require 任何东西') })
 mod.apply({})
 const popupEl = () => body.children.find((c) => c.id === 'dsh-cp-popup')
+// 弹层子节点里，带 data-dsh-cp-head 的是顶上那行「依据」，不是候选项
+const rowsOf = (p) => (p ? p.children.filter((c) => !(c.attrs && c.attrs['data-dsh-cp-head'])) : [])
+const headOf = (p) => (p ? p.children.find((c) => c.attrs && c.attrs['data-dsh-cp-head']) : null)
 
 function mkEd(value, caret) {
   const ed = new FakeTextArea()
@@ -264,17 +272,25 @@ ok('右边是空白时仍然补闭符（这一条别退化成"永远不补"）',
   assert.equal(ed.selectionStart, 1)
 })
 
-ok('上下文候选：页面上可见的对话文本里出现过的标识符，按前缀补出来（类型词标「上下文」）', () => {
-  body.textContent = '刚才那个 install_quarantine.py 和 verify_bank 都要跑；install_quarantine 只装过一次'
+ok('上下文候选只从对话正文区取：对话里出现过的标识符按前缀补出来（类型词标「上下文」）', () => {
+  conv.text = '刚才那个 install_quarantine.py 和 verify_bank 都要跑；install_quarantine 只装过一次，而且这段说明得够长，长过四十个字符的门槛，才会被真的取用。'
   mod.__helpers__.contextReset()
   const ed = mkEd('inst')
   input(ed)
-  const rows = body.children.filter((c) => c.id === 'dsh-cp-ghost' ? false : true)
-  const pop = body.children.find((c) => c.id === 'dsh-cp-popup')
+  const pop = popupEl()
   assert.ok(pop, '要弹出建议框')
-  const text = pop.children.map((r) => r.innerText).join('|')
-  assert.match(text, /install_quarantine/, '上下文里的词要出现：' + text)
+  const text = rowsOf(pop).map((r) => r.innerText).join('|')
+  assert.match(text, /install_quarantine/, '对话里的词要出现：' + text)
   assert.match(text, /上下文/, '类型词要标「上下文」：' + text)
+  conv.text = ''
+})
+
+ok('左侧栏/整页文本不参与：正文区没有的词，不许因为挂在 body 上就补出来', () => {
+  conv.text = ''
+  body.textContent = 'sidebar_only_token 设置面板里的词不该进补全池子'
+  mod.__helpers__.contextReset()
+  const words = mod.__helpers__.contextWords(mkEd('side'))
+  assert.equal(words.indexOf('sidebar_only_token'), -1, '整页文本不许进上下文池：' + words.slice(0, 5).join(','))
   body.textContent = ''
 })
 
@@ -351,7 +367,7 @@ await okAsync('语言习惯：接受过哪套词表的候选，下次没写围�
   await tick()
   keydown(ed, { key: 'Tab' })               // 接受 → 记一笔 python 习惯
   assert.equal(ed.value, 'def')
-  assert.match(store.get('dsh-composer-pro:lang-habit') || '', /python/, '习惯要落盘：' + store.get('dsh-composer-pro:lang-habit'))
+  assert.match(store.get('dsh-composer-ease:lang-habit') || '', /python/, '习惯要落盘：' + store.get('dsh-composer-ease:lang-habit'))
   const before = fetchCalls.length
   const ed2 = mkEd('pri')
   input(ed2)
@@ -364,6 +380,36 @@ ok('apply 返回的 disposer 会摘监听、关弹层', () => {
   const d = mod.apply({})
   assert.equal(typeof d, 'function')
   d()
+})
+
+await okAsync('弹层顶上写清依据：对话里是 Java 就写「据对话推断 · java」，并把该语言喂给词表路由', async () => {
+  conv.text = '这段 Java 服务里 public void run() { System.out.println(1); } 还要加 @Override，public 修饰符别忘。'
+  mod.__helpers__.contextReset()
+  fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'public', detail: 'java 关键字' }] }
+  const ed = mkEd('pub')
+  input(ed)
+  await tick()
+  const p = popupEl()
+  const head = headOf(p)
+  assert.ok(head, '要有依据行')
+  assert.match(head.textContent, /据对话推断 · java/, '依据行要写明来源与语言：' + (head && head.textContent))
+  assert.match(fetchCalls[fetchCalls.length - 1], /lang=java/, '推断出的语言要带给服务端：' + fetchCalls[fetchCalls.length - 1])
+  assert.equal(rowsOf(p).length >= 1, true, '依据行不能挤掉候选行：' + rowsOf(p).length)
+  conv.text = ''
+  mod.__helpers__.contextReset()
+})
+
+await okAsync('回车（发送）收干净：弹层与灰字都不留在被清空的输入框上', async () => {
+  fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'inputValue', detail: '本文' }] }
+  const ed = mkEd('inputV')
+  input(ed)
+  await tick()
+  assert.equal(popupEl().style.display, 'block', '先让弹层开着')
+  const g = body.children.find((c) => c.id === 'dsh-cp-ghost')
+  assert.equal(g.style.display, 'block', '灰字也先亮着')
+  keydown(ed, { key: 'Enter' })
+  assert.equal(popupEl().style.display, 'none', '发送后弹层要收起')
+  assert.equal(g.style.display, 'none', '发送后灰字要收起')
 })
 
 console.log(`\n${n} 项全过`)

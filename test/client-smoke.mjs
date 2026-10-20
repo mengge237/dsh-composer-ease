@@ -18,7 +18,7 @@ let n = 0
 function ok(label, fn) { fn(); n++; console.log('  ok   ' + label) }
 
 ok('bundle 顶部注册了宿主 loader，id 与包名一致', () => {
-  assert.ok(captured && captured.id === 'dsh-composer-pro')
+  assert.ok(captured && captured.id === 'dsh-composer-ease')
   assert.equal(typeof captured.factory, 'function')
 })
 

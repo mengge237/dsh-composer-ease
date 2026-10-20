@@ -1,4 +1,4 @@
-# dsh-composer-pro (Composer Pro for DeepSeek Harness)
+# dsh-composer-ease (Composer Ease for DeepSeek Harness)
 
 **[English](README.en.md) · [中文](README.md)**
 
@@ -21,11 +21,11 @@ server half exposes exactly two read-only routes.
 
 | Target | Command | Note |
 |---|---|---|
-| **DSH Web (`dsh web`)** | `dsh plugin --profile web add https://github.com/mengge237-labs/dsh-composer-pro` | Recommended. A local checkout works too: `dsh plugin --profile web add "<本地路径>"` |
+| **DSH Web (`dsh web`)** | `dsh plugin --profile web add https://github.com/mengge237-labs/dsh-composer-ease` | Recommended. A local checkout works too: `dsh plugin --profile web add "<本地路径>"` |
 | **Desktop app (Electron)** | Use the **desktop app's own plugin manager** | Do not use `dsh plugin --profile desktop` (that profile is owned by Electron and the CLI refuses); let DSH install it from inside a desktop session |
 | **Development (editing code)** | checkout + a `file:` install | The browser half is **read from disk on every request**, so a page refresh picks up edits; **the server half (`lib/index.js`, `lib/words.js`) needs a `dsh web` restart** |
 
-Uninstall: `dsh plugin --profile web remove dsh-composer-pro` (no data files are left behind).
+Uninstall: `dsh plugin --profile web remove dsh-composer-ease` (no data files are left behind).
 
 ## Features
 
@@ -99,7 +99,7 @@ Uninstall: `dsh plugin --profile web remove dsh-composer-pro` (no data files are
 
 | Path | Purpose |
 |---|---|
-| `lib/index.js` | Server half: the two read-only routes (`/dsh-composer-pro/words`, `/config.json`) and the loopback trust fence |
+| `lib/index.js` | Server half: the two read-only routes (`/dsh-composer-ease/words`, `/config.json`) and the loopback trust fence |
 | `lib/client.js` | Browser half: capture-phase keydown, pairing and surround, the completion popup (plain DOM, no dependencies) |
 | `lib/words.js` | Language word tables (static arrays; sources and commits in the file header) |
 | `lib/fuzzy.js` | VS Code's fuzzy scoring (verbatim, MIT; provenance at the top of the file) |

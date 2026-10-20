@@ -24,25 +24,25 @@ function call(path, { method = 'GET', host = '127.0.0.1:3080', origin } = {}) {
 
 ok('注册了两条路由，路径与 kind 符合预期', () => {
   const paths = routes.map((r) => r.path).sort()
-  assert.deepEqual(paths, ['/dsh-composer-pro/config.json', '/dsh-composer-pro/words'])
+  assert.deepEqual(paths, ['/dsh-composer-ease/config.json', '/dsh-composer-ease/words'])
   assert.ok(routes.every((r) => r.kind === 'exact'))
 })
 
 ok('信任栅栏：loopback 放行，非本机 Host / 跨站 Origin 一律 403', () => {
-  assert.equal(call('/dsh-composer-pro/config.json', { origin: 'http://127.0.0.1:3080' }).code, 200)
-  assert.equal(call('/dsh-composer-pro/config.json', { host: 'localhost:3080' }).code, 200)
-  assert.equal(call('/dsh-composer-pro/config.json', { host: '10.0.0.5:3080' }).code, 403, '非 loopback Host 必须拒')
-  assert.equal(call('/dsh-composer-pro/config.json', { origin: 'http://evil.example' }).code, 403, '跨站 Origin 必须拒')
-  assert.equal(call('/dsh-composer-pro/config.json', { origin: 'not-a-url' }).code, 403, '坏 Origin 也要拒')
+  assert.equal(call('/dsh-composer-ease/config.json', { origin: 'http://127.0.0.1:3080' }).code, 200)
+  assert.equal(call('/dsh-composer-ease/config.json', { host: 'localhost:3080' }).code, 200)
+  assert.equal(call('/dsh-composer-ease/config.json', { host: '10.0.0.5:3080' }).code, 403, '非 loopback Host 必须拒')
+  assert.equal(call('/dsh-composer-ease/config.json', { origin: 'http://evil.example' }).code, 403, '跨站 Origin 必须拒')
+  assert.equal(call('/dsh-composer-ease/config.json', { origin: 'not-a-url' }).code, 403, '坏 Origin 也要拒')
 })
 
 ok('方法闸：POST 回 405，GET 回 200', () => {
-  assert.equal(call('/dsh-composer-pro/config.json', { method: 'POST' }).code, 405)
-  assert.equal(call('/dsh-composer-pro/words?prefix=in', { method: 'POST' }).code, 405)
+  assert.equal(call('/dsh-composer-ease/config.json', { method: 'POST' }).code, 405)
+  assert.equal(call('/dsh-composer-ease/words?prefix=in', { method: 'POST' }).code, 405)
 })
 
 ok('config.json：版本、词表规模与**借用出处**都在，响应不带缓存', () => {
-  const r = call('/dsh-composer-pro/config.json')
+  const r = call('/dsh-composer-ease/config.json')
   assert.equal(r.code, 200)
   assert.equal(r.json.version, '0.2.0')
   assert.ok(r.json.wordStats && typeof r.json.wordStats.html === 'number', '词表规模要在：' + JSON.stringify(r.json.wordStats))
@@ -57,22 +57,22 @@ ok('config.json：版本、词表规模与**借用出处**都在，响应不带�
 })
 
 ok('words 路由：inp → input（公共池），lang 认得出就上该语言词表', () => {
-  const a = call('/dsh-composer-pro/words?prefix=inp')
+  const a = call('/dsh-composer-ease/words?prefix=inp')
   assert.equal(a.code, 200)
   assert.equal(a.json.lang, '', '没给 lang 时如实回空串')
   assert.ok(a.json.candidates.some((c) => c.value === 'input'), '公共池要能补 input：' + JSON.stringify(a.json.candidates.slice(0, 5)))
-  const b = call('/dsh-composer-pro/words?prefix=def&lang=python')
+  const b = call('/dsh-composer-ease/words?prefix=def&lang=python')
   assert.equal(b.json.lang, 'python', '别名要归一')
   assert.ok(b.json.candidates.some((c) => c.value === 'def'), 'python 词表要命中 def')
-  const c = call('/dsh-composer-pro/words?prefix=backgr&lang=css')
+  const c = call('/dsh-composer-ease/words?prefix=backgr&lang=css')
   assert.ok(c.json.candidates.some((v) => v.value.startsWith('backgr')), 'CSS 属性前缀要命中')
-  const d = call('/dsh-composer-pro/words?prefix=inp&lang=nosuchlang')
+  const d = call('/dsh-composer-ease/words?prefix=inp&lang=nosuchlang')
   assert.equal(d.json.lang, '', '认不出的语言按空串回，但仍上公共池')
   assert.ok(d.json.candidates.some((x) => x.value === 'input'))
 })
 
 ok('words 路由：没给 prefix 也给候选（列表封顶 ≤12），坏 URL 不炸', () => {
-  const a = call('/dsh-composer-pro/words')
+  const a = call('/dsh-composer-ease/words')
   assert.equal(a.code, 200)
   assert.ok(a.json.candidates.length <= 12, '候选要封顶：' + a.json.candidates.length)
   assert.ok(a.json.candidates.length > 0, '空前缀也该有候选（公共池 + 文件/模型）')

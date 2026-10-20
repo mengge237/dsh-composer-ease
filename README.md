@@ -1,4 +1,4 @@
-# dsh-composer-pro（DSH 输入框增强 · Composer Pro）
+# 更便捷的输入框（dsh-composer-ease · DSH 输入框增强）
 
 **[中文](README.md) · [English](README.en.md)**
 
@@ -19,11 +19,11 @@
 
 | 你要装在哪 | 装法 | 注意 |
 |---|---|---|
-| **DSH Web（`dsh web`）** | `dsh plugin --profile web add https://github.com/mengge237-labs/dsh-composer-pro` | 推荐。也可以装本机源码目录：`dsh plugin --profile web add "<本地路径>"` |
+| **DSH Web（`dsh web`）** | `dsh plugin --profile web add https://github.com/mengge237-labs/dsh-composer-ease` | 推荐。也可以装本机源码目录：`dsh plugin --profile web add "<本地路径>"` |
 | **官方桌面端（Electron）** | 用**桌面端自己的插件管理器**装 | 别用 `dsh plugin --profile desktop`（那条路被 Electron 独占，CLI 会拒绝）；桌面端会话里让 DSH 自己装 |
 | **开发（改代码）** | 源码目录 + `file:` 装法 | 客户端半边**每次请求现读磁盘**，改完刷新页面即生效；**服务端半边（`lib/index.js`、`lib/words.js`）改完要重启 `dsh web`** |
 
-卸载：`dsh plugin --profile web remove dsh-composer-pro`（不留任何数据文件，没有要清理的东西）。
+卸载：`dsh plugin --profile web remove dsh-composer-ease`（不留任何数据文件，没有要清理的东西）。
 
 ## 特性
 
@@ -104,7 +104,7 @@
 
 | 路径 | 用途 |
 |---|---|
-| `lib/index.js` | 服务端半边：两条只读路由（`/dsh-composer-pro/words`、`/config.json`）与本机信任栅栏 |
+| `lib/index.js` | 服务端半边：两条只读路由（`/dsh-composer-ease/words`、`/config.json`）与本机信任栅栏 |
 | `lib/client.js` | 浏览器半边：keydown 捕获层、配对与环绕、补全弹层（纯 DOM，无第三方依赖） |
 | `lib/words.js` | 各语言词表（静态数组，出处与 commit 写在文件头） |
 | `test/` | 五支测试 + 真机验收报告（`REPORT-2026-10-16.md`） |
@@ -141,6 +141,7 @@ npm test        # 五支，61 项，0 网络：数据层 / 路由与信任栅栏
 
 ## 更新日志
 
+- **0.8.0**（2026-10-19）：改名「**更便捷的输入框**」，包名 `dsh-composer-ease`。上下文候选改为**只读对话正文区**（宿主的 `[data-conversation-scroll]` 与 `[data-slot="conversation.chat.node"]`）：左侧栏、设置面板里的词不再进补全池子，也不再自我喂养已经画出来的候选；弹层顶上新增**依据行**（`据对话推断 · java` / `本文围栏 · python` / `历史习惯 · javascript`），让「凭什么给这张词表」看得见；回车发送时同步收掉弹层与灰字
 - **0.7.1**（2026-10-16）：碎片前缀**整条候选清零**（不只词典源：文件/模型/词表全不给），客户端消费 `wordGate` 后连弹层都不开；碰撞测试改为断言整条为空
 - **0.7.0**（2026-10-16）：中文补全改用**词典判定完整词义**（`lib/cjk-lexicon.js`，jieba MIT 的常用词子集）：前缀必须是词表里的词或更长词的前缀，**碎片（如「档管」）一律不提示**；n-gram 只留给草稿/上下文兜底。新增碰撞测试（文档/档管/单字三种输入）
 - **0.6.3**（2026-10-16）：中文补全**至少要 2 个字**且必须是更长词的前缀才提示，单字不再弹（维护者：要符合完整词义）
