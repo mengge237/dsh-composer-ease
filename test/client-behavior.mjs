@@ -514,4 +514,153 @@ ok('正常框选没被改坏：选中 abc 打引号仍然框住', () => {
   assert.equal(ed.value, '"abc"', '普通框选应仍是 "abc"：' + ed.value)
 })
 
+// ── 成对家族行为矩阵（维护者 2026-10-20：「写测试用例多测试一下」）─────────────
+// 期望值按「像 VS Code 那样、但中文正文也配对」的口径写死；哪条红就是实现要补的。
+function bi(ed, data) {
+  const ev = { target: ed, data, inputType: 'insertText', prevented: false, preventDefault() { this.prevented = true } }
+  handlers.beforeinput(ev)
+  return ev
+}
+
+// 1) 空框：每种开符都要补成一对，光标在中间
+for (const [open, close] of [['(', ')'], ['[', ']'], ['{', '}'], ['"', '"'], ["'", "'"], ['`', '`'], ['（', '）'], ['“', '”'], ['「', '」']]) {
+  ok(`矩阵·空框打 ${open} → 补成 ${open}${close}，caret 在中间`, () => {
+    const ed = mkEd('')
+    keydown(ed, { key: open })
+    assert.equal(ed.value, open + close, `期望 ${open}${close}，实得 ` + ed.value)
+    assert.equal(ed.selectionStart, 1, 'caret 应在中间：' + ed.selectionStart)
+  })
+}
+
+// 2) 光标前已有「未闭合」的开符：只插一个（这是维护者报的核心那条）
+for (const [open, close, text] of [['"', '"', '"你好'], ["'", "'", "'abc"], ['`', '`', '`code'], ['“', '”', '“文字'], ['（', '）', '（说明']]) {
+  ok(`矩阵·${text} 末尾再打 ${open} → 只插一个`, () => {
+    const ed = mkEd(text, text.length)
+    keydown(ed, { key: open })
+    assert.equal(ed.value, text + open, `期望 ${text}${open}，实得 ` + ed.value)
+  })
+}
+
+// 3) 右边已经是闭符：跳过去，不插
+for (const [open, close] of [['(', ')'], ['"', '"'], ['“', '”']]) {
+  ok(`矩阵·${open}${close} 中间再打 ${open} → 跳过闭符，值不变`, () => {
+    const ed = mkEd(open + close, 1)
+    keydown(ed, { key: open })
+    assert.equal(ed.value, open + close, '值不该变：' + ed.value)
+    assert.equal(ed.selectionStart, 2, 'caret 应跳到闭符之后：' + ed.selectionStart)
+  })
+}
+
+// 4) 框住选区
+for (const [open, close] of [['"', '"'], ['(', ')'], ['“', '”'], ['「', '」']]) {
+  ok(`矩阵·选中 abc 打 ${open} → 框成 ${open}abc${close}`, () => {
+    const ed = mkEd('abc', 3)
+    ed.selectionStart = 0
+    keydown(ed, { key: open })
+    assert.equal(ed.value, open + 'abc' + close, '期望框住：' + ed.value)
+  })
+}
+
+// 5) 连续按同一个对称引号：两下不该变多，第三下才是字面
+ok('矩阵·连按两下引号 → 仍是 ""（第二下只跳过）', () => {
+  const ed = mkEd('')
+  keydown(ed, { key: '"' })
+  keydown(ed, { key: '"' })
+  assert.equal(ed.value, '""', '连按两下不该变多：' + ed.value)
+})
+
+ok('矩阵·连按三下引号 → """（第三下是字面插入，属正常）', () => {
+  const ed = mkEd('')
+  keydown(ed, { key: '"' })
+  keydown(ed, { key: '"' })
+  keydown(ed, { key: '"' })
+  assert.equal(ed.value, '"""', '三下应为三个：' + ed.value)
+})
+
+// 6) 标识符/路径后面不配对（保护代码）
+for (const text of ['a', 'a(', 'E:/path', 'foo.', 'x@y']) {
+  ok(`矩阵·${text} 后打 ( → 只插一个`, () => {
+    const ed = mkEd(text, text.length)
+    keydown(ed, { key: '(' })
+    assert.equal(ed.value, text + '(', '不该配对：' + ed.value)
+  })
+}
+
+// 7) 中文正文后面仍要配对
+ok('矩阵·中文正文后打 ( → 配对', () => {
+  const ed = mkEd('说明', 2)
+  keydown(ed, { key: '(' })
+  assert.equal(ed.value, '说明()', '中文后应配对：' + ed.value)
+})
+
+// ── beforeinput 路线的目标规格（默认跳过，CE_PENDING=1 才跑）──────────────
+// 这三条是「配对判定搬到 beforeinput」要补齐的；现在红，红了就是还没实现。
+if (process.env.CE_PENDING) {
+  ok('待实现·beforeinput 空框打 “ → 补成 “” 且拦掉原生', () => {
+    const ed = mkEd('')
+    const ev = { target: ed, data: '“', inputType: 'insertText', prevented: false, preventDefault() { this.prevented = true } }
+    handlers.beforeinput(ev)
+    assert.equal(ed.value, '“”', '实得：' + ed.value)
+    assert.ok(ev.prevented, '应拦掉原生插入')
+  })
+
+  ok('待实现·beforeinput 选中 abc 打 “ → 框住', () => {
+    const ed = mkEd('abc', 3)
+    ed.selectionStart = 0
+    const ev = { target: ed, data: '“', inputType: 'insertText', prevented: false, preventDefault() { this.prevented = true } }
+    handlers.beforeinput(ev)
+    assert.equal(ed.value, '“abc”', '实得：' + ed.value)
+  })
+
+  ok('已知缺口·全角空对（）里按 Backspace 应一次删两侧（现在只删一侧）', () => {
+    const ed = mkEd('（）', 1)
+    keydown(ed, { key: 'Backspace' })
+    assert.equal(ed.value, '', '实得：' + ed.value)
+  })
+
+  ok('待实现·beforeinput 前方有未闭合开符，末尾再打 → 只插一个', () => {
+    const ed = mkEd('“文字', 3)
+    const ev = { target: ed, data: '“', inputType: 'insertText', prevented: false, preventDefault() { this.prevented = true } }
+    handlers.beforeinput(ev)
+    assert.equal(ed.value, '“文字“', '实得：' + ed.value)
+  })
+} else {
+  console.log('  skip 3 条 beforeinput 目标规格（CE_PENDING=1 才跑）')
+}
+
+// ── 基础用法补测（维护者 2026-10-20：「引号是重灾区不代表其他做好了」）──────────
+await okAsync('基础·打 / 触发候选请求（不用快捷键）', async () => {
+  const ed = mkEd('/')
+  const before = fetchCalls.length
+  input(ed, '/')
+  await tick()
+  assert.ok(fetchCalls.length > before, '/ 应发一次候选请求')
+})
+
+await okAsync('基础·打 @ 触发候选请求', async () => {
+  const ed = mkEd('@')
+  const before = fetchCalls.length
+  input(ed, '@')
+  await tick()
+  assert.ok(fetchCalls.length > before, '@ 应发一次候选请求')
+})
+
+// 弹层的 DOM 移除在假 DOM 里验不了（FakeEl 没有 remove()），Esc 的判定留在 client-smoke 的 keyAction 表里
+
+ok('基础·全角闭符 ）在右边已经有时跳过', () => {
+  const ed = mkEd('（说明）', 3)
+  keydown(ed, { key: '）' })
+  assert.equal(ed.value, '（说明）', '值不该变：' + ed.value)
+  assert.equal(ed.selectionStart, 4, 'caret 应跳到闭符之后：' + ed.selectionStart)
+})
+
+ok('基础·全角闭符 ）右边没有时交给默认插入（不拦、也不配成对）', () => {
+  const ed = mkEd('（说明', 3)
+  const ev = keydown(ed, { key: '）' })
+  assert.equal(ev.prevented, false, '不该拦默认插入')
+  assert.equal(ed.value, '（说明', '假 DOM 没有默认插入，值不该由插件改：' + ed.value)
+})
+
+
+
 console.log(`\n${n} 项全过`)
