@@ -134,8 +134,8 @@ ok('选中一段再打 ( → 环绕成 (选区)，选区保持选中', () => {
   ed.selectionEnd = 3
   keydown(ed, { key: '(' })
   assert.equal(ed.value, '(xyz)')
-  assert.equal(ed.selectionStart, 1)
-  assert.equal(ed.selectionEnd, 4)
+  assert.equal(ed.selectionStart, 5, '光标落在闭符之后')
+  assert.equal(ed.selectionEnd, 5)
 })
 
 ok('闭符已在右边时打它 → 跳过去，不重复插', () => {
@@ -342,8 +342,8 @@ ok('框选后打符号：走 beforeinput 把选区框起来（中文输入法/�
   handlers.beforeinput(ev)
   assert.equal(ev.prevented, true, '要拦住宿主自己插那个字符')
   assert.equal(ed.value, '（xyz）', '要框成 开符+选区+闭符：' + ed.value)
-  assert.equal(ed.selectionStart, 1)
-  assert.equal(ed.selectionEnd, 4, '选区要留在内层内容上')
+  assert.equal(ed.selectionStart, ed.value.length, '光标落在闭符之后（维护者 2026-10-20 定的落点）')
+  assert.equal(ed.selectionEnd, ed.value.length, '不再回选到内层内容')
 })
 
 await okAsync('行内灰字提示：首位候选比已打的前缀多出来的那截贴在光标后（VSCode inline suggestion 手感）', async () => {
@@ -455,8 +455,8 @@ ok('多行选区加符号：换行必须原样保留，不许被并成一行', (
   keydown(ed, { key: '"', shift: true })
   assert.equal(ed.value, '"第一行\n第二行\n第三行"', '多行内容要原封不动被框住：' + JSON.stringify(ed.value))
   assert.equal(ed.value.split('\n').length, 3, '行数不许变：' + ed.value.split('\n').length)
-  assert.equal(ed.selectionStart, 1, '选区回到内层起点')
-  assert.equal(ed.selectionEnd, 1 + '第一行\n第二行\n第三行'.length, '选区回到内层终点')
+  assert.equal(ed.selectionStart, ed.value.length, '光标要落在闭符之后：' + ed.selectionStart + '/' + ed.value.length)
+  assert.equal(ed.selectionEnd, ed.value.length, '不是回选到内容上，是塌到末尾')
 })
 
 await okAsync('回车（发送）收干净：弹层与灰字都不留在被清空的输入框上', async () => {
