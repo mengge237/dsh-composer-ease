@@ -376,6 +376,28 @@ await okAsync('语言习惯：接受过哪套词表的候选，下次没写围�
   store.clear()
 })
 
+ok('有前引号时再打引号只插一个（维护者 2026-10-20 报的「出两个引号」）', () => {
+  const ed = mkEd('“', 1)                               // 光标就在前引号之后
+  keydown(ed, { key: '"', shift: true })
+  assert.equal(ed.value, '“"', '不许补成 “""：' + ed.value)
+})
+
+ok('闭引号后面再打引号也只插一个（中文输入法连打引号会变多个）', () => {
+  const ed = mkEd('“”', 2)
+  keydown(ed, { key: '"', shift: true })
+  assert.equal(ed.value, '“”"', '不许变成 “”""：' + ed.value)
+})
+
+ok('反引号连打：前两下配成一对，第三下不再被吞（``` 围栏能直接打出来）', () => {
+  const a = mkEd('', 0)
+  keydown(a, { key: '`' })                              // 第一下：配成 ``，光标在中间
+  assert.equal(a.value, '``', '第一下要配对：' + a.value)
+  keydown(a, { key: '`' })                              // 第二下：跳过已有闭符
+  assert.equal(a.value, '``', '第二下只跳过：' + a.value)
+  keydown(a, { key: '`' })                              // 第三下：前一个字符是反引号 → 只插一个
+  assert.equal(a.value, '```', '第三下要落成三个反引号：' + a.value)
+})
+
 ok('apply 返回的 disposer 会摘监听、关弹层', () => {
   const d = mod.apply({})
   assert.equal(typeof d, 'function')
