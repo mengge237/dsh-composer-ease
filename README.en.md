@@ -21,7 +21,7 @@ server half exposes exactly two read-only routes.
 
 | Target | Command | Note |
 |---|---|---|
-| **DSH Web (`dsh web`)** | `dsh plugin --profile web add https://github.com/mengge237-labs/dsh-composer-ease` | Recommended. A local checkout works too: `dsh plugin --profile web add "<本地路径>"` |
+| **DSH Web (`dsh web`)** | `dsh plugin --profile web add https://github.com/mengge237/dsh-composer-ease` | Recommended. A local checkout works too: `dsh plugin --profile web add "<本地路径>"` |
 | **Desktop app (Electron)** | Use the **desktop app's own plugin manager** | Do not use `dsh plugin --profile desktop` (that profile is owned by Electron and the CLI refuses); let DSH install it from inside a desktop session |
 | **Development (editing code)** | checkout + a `file:` install | The browser half is **read from disk on every request**, so a page refresh picks up edits; **the server half (`lib/index.js`, `lib/words.js`) needs a `dsh web` restart** |
 
