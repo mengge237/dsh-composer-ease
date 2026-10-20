@@ -59,11 +59,12 @@ async function reset() {
   await page.keyboard.press('Delete')
   await page.waitForTimeout(250)
 }
-async function ime(text) {
+async function ime(text, settle) {
+  const w = settle === undefined ? 200 : settle
   await cdp.send('Input.imeSetComposition', { text, selectionStart: text.length, selectionEnd: text.length })
-  await page.waitForTimeout(60)
+  if (w) await page.waitForTimeout(Math.min(60, w))
   await cdp.send('Input.insertText', { text })
-  await page.waitForTimeout(200)
+  if (w) await page.waitForTimeout(w)
 }
 const results = []
 async function scene(name, expect, expectCaret, fn) {
@@ -126,6 +127,29 @@ await scene('已有未闭合开符 + 选中内容再打同一个 → 补闭合�
   await page.evaluate(() => window.__place(0)); await page.waitForTimeout(200)
   await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(250)
   await page.evaluate(() => window.__place(1, 4)); await page.waitForTimeout(200)
+  await page.keyboard.press('Shift+Quote')
+})
+
+/* 手速：真人上屏之后紧接着按键（2026-10-20 维护者复现的那条就是这里漏的）。
+ * 这几条必须有 —— 慢速版全绿而快速版红过整整一轮，因为光标复位当时靠盲定时器，
+ * 要么没抢在输入法前面，要么在用户打完字之后才开火。 */
+const FAST = 10
+await scene('手速·空框 " → 中文 → "（每步 10ms，靠配对后光标在两符之间）', '"你好"', 4, async () => {
+  await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(FAST)
+  await ime('你好', FAST)
+  await page.keyboard.press('Shift+Quote')
+})
+await scene('手速·中文 → Home → " → End → "（每步 10ms）', '"你好"', 4, async () => {
+  await ime('你好', FAST)
+  await page.keyboard.press('Home'); await page.waitForTimeout(FAST)
+  await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(FAST)
+  await page.keyboard.press('End'); await page.waitForTimeout(FAST)
+  await page.keyboard.press('Shift+Quote')
+})
+await scene('手速·空框 " → 立刻上屏中文 → 立刻再打 "（零等待）', '"你好"', 4, async () => {
+  await page.keyboard.press('Shift+Quote')
+  await cdp.send('Input.imeSetComposition', { text: '你好', selectionStart: 2, selectionEnd: 2 })
+  await cdp.send('Input.insertText', { text: '你好' })
   await page.keyboard.press('Shift+Quote')
 })
 
