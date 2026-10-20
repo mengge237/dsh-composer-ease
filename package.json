@@ -1,7 +1,7 @@
 {
   "name": "dsh-composer-ease",
   "version": "0.8.1",
-  "description": "更便捷的输入框（dsh-composer-ease）：把 DSH 输入框做成 VS Code 手感：括号引号自动配对（半角与全角）、选中后打符号框住、跳过闭符、删空对；补全弹层用 VS Code 的 fuzzyScore 打分（lib/fuzzy.js 逐字取自 microsoft/vscode，MIT），候选四类：本文词 / 语言词表（HTML·JS·Python·Java·CSS）/ 工作区文件 / settings 里的模型名，命中字符加粗、首位候选以行内灰字提示；打满两个字母自动弹、Tab 接受、回车保持发送。标准 DSH bundle 插件：一条命令安装，不依赖第三方运行时、不写任何文件、不改宿主源码。",
+  "description": "更便捷的输入框（dsh-composer-ease）：DSH 网页输入框的补全与编辑增强——括号引号自动配对、选中即环绕、跳过闭符、删掉空对；补全弹层给四类候选（草稿里出现过的词 / 各语言关键字与标签 / 工作区文件路径 / settings 里的模型名），打满两个字母自动弹，顶上还有一行依据写清「凭什么给这张词表」。标准 DSH bundle 插件：一条命令安装，不依赖第三方运行时、不写任何文件、不改宿主源码。",
   "type": "module",
   "main": "lib/index.js",
   "files": [

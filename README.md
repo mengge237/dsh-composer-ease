@@ -8,9 +8,9 @@
 
 *动图两镜头（真机录制，纯净 profile：只有官方插件 + 本插件）：① 新会话里写围栏 ` ```py ` 再打 `def` —— 弹层顶上标「本文围栏 · py」，给的是 Python 词表；② 对话里已经有 Java 代码时打 `pub` —— 顶上标「据对话推断 · java」，首条直接是 `public`。依据行就是「凭什么给这张词表」的答案。*
 
-把 DeepSeek Harness（DSH）Web 输入框的手感对齐 **VS Code**：括号引号自动配对、选中一段再打括号就环绕起来、
-光标右边已是闭符时再打它直接跳过、退格删掉一对空括号；再给一个补全弹层——**草稿里出现过的词、各语言关键字与标签、
-工作区文件路径、settings 里配的模型名**，打满两个字母自己弹。
+DSH 网页输入框的补全与编辑增强：括号引号自动配对，选中一段再打符号直接框住，光标右边已是闭符时再打它直接跳过，
+退格删掉一对空括号；再给一个补全弹层——**草稿里出现过的词、各语言关键字与标签、工作区文件路径、settings 里配的模型名**，
+打满两个字母自己弹，弹层顶上还有一行依据，写清「凭什么给这张词表」。
 
 标准 DSH bundle 插件：一条命令安装、**不 require 任何第三方包**、**不写任何文件**、**不改宿主一行源码**，也不需要任何令牌。
 浏览器半边是纯 DOM（不依赖 react、不引编辑器库），服务端半边只有两个只读路由。
@@ -19,7 +19,7 @@
 
 | 你要装在哪 | 装法 | 注意 |
 |---|---|---|
-| **DSH Web（`dsh web`）** | `dsh plugin --profile web add https://github.com/mengge237-labs/dsh-composer-ease` | 推荐。也可以装本机源码目录：`dsh plugin --profile web add "<本地路径>"` |
+| **DSH Web（`dsh web`）** | `dsh plugin --profile web add https://github.com/mengge237/dsh-composer-ease` | 推荐。也可以装本地源码目录：`dsh plugin --profile web add "<本仓路径>/dsh-composer-ease"` |
 | **官方桌面端（Electron）** | 用**桌面端自己的插件管理器**装 | 别用 `dsh plugin --profile desktop`（那条路被 Electron 独占，CLI 会拒绝）；桌面端会话里让 DSH 自己装 |
 | **开发（改代码）** | 源码目录 + `file:` 装法 | 客户端半边**每次请求现读磁盘**，改完刷新页面即生效；**服务端半边（`lib/index.js`、`lib/words.js`）改完要重启 `dsh web`** |
 
