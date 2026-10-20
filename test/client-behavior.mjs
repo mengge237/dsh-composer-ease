@@ -716,4 +716,49 @@ for (const [label, value] of [['半角 ()', '()'], ['方括号 []', '[]'], ['全
   })
 }
 
+// ── 维护者 2026-10-20 的路径：先打「你好」→ 前面打 `"` → 再打 `"` ────────────────
+// 真机复现（demo 3081 + Playwright）分两种落法，都会堆出多余引号，两种都要治：
+//  A）回最前打 `"`（没选中）→ 光标紧贴一个没闭合的开符，后面还有正文：再打同一个是「补闭合」，
+//     闭符要落到这一段末尾 —— 否则得到 `""你好`（两个没闭合的开引号，谁都用不上）；
+//  B）选中文字打 `"` → 框成 `"你好"`（光标落在闭符之后）：再打同一个不该再堆一个 ——
+//     否则得到维护者报的 `"你好""`。
+ok('光标紧贴没闭合的开符、后面还有正文，再打同一个 → 补闭合到段尾（`"|你好` + `"` → `"你好"`）', () => {
+  const ed = mkEd('"你好', 1)
+  keydown(ed, { key: '"' })
+  assert.equal(ed.value, '"你好"', '实得：' + ed.value)
+  assert.equal(ed.selectionStart, 4, '光标落在闭符之后：' + ed.selectionStart)
+})
+
+ok('同样一条对中文引号成立（`“|你好` + `“` → `“你好”`）', () => {
+  const ed = mkEd('\u201c你好', 1)
+  keydown(ed, { key: '\u201c' })
+  assert.equal(ed.value, '\u201c你好\u201d', '实得：' + ed.value)
+})
+
+ok('已经框好（光标在闭符之后）再打同一个闭符 → 不再堆一个（`"你好"` + `"` 仍是 `"你好"`）', () => {
+  const ed = mkEd('"你好"', 4)
+  keydown(ed, { key: '"' })
+  assert.equal(ed.value, '"你好"', '维护者报的 `"你好""` 就是这条：' + ed.value)
+})
+
+ok('中文引号已框好同样不再堆（`“你好”` + `“` 仍是 `“你好”`）', () => {
+  const ed = mkEd('\u201c你好\u201d', 4)
+  keydown(ed, { key: '\u201c' })
+  assert.equal(ed.value, '\u201c你好\u201d', '实得：' + ed.value)
+})
+
+ok('空对不算「已框好」：连打三下引号仍是 `"""`（写 ``` 围栏那种用法不能被挡）', () => {
+  const ed = mkEd('')
+  keydown(ed, { key: '"' })
+  keydown(ed, { key: '"' })
+  keydown(ed, { key: '"' })
+  assert.equal(ed.value, '"""', '实得：' + ed.value)
+})
+
+ok('括号连带：`a(` 之后打 `(` 仍是只插一个（没被「补闭合」那条改坏）', () => {
+  const ed = mkEd('a(', 2)
+  keydown(ed, { key: '(' })
+  assert.equal(ed.value, 'a((', '实得：' + ed.value)
+})
+
 console.log(`\n${n} 项全过`)
