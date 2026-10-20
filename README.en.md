@@ -8,11 +8,10 @@
 
 *Two shots, recorded on the real app (clean profile: official plugins plus this one only). ① A new conversation: type a ` ```py ` fence then `def` — the popup header reads "本文围栏 · py" and the candidates are Python keywords. ② A conversation that already contains Java code: type `pub` — the header reads "据对话推断 · java" and the first candidate is `public`. That header is the answer to "why these words".*
 
-Completion and editing for the DeepSeek Harness (DSH) web composer: brackets and quotes pair up as you type, typing
-an opener over a selection wraps the selection, a closer typed over an existing closer is skipped, and backspace
-removes an empty pair. On top of that a completion popup fed by **words already in your draft, per-language keywords
-and tags, workspace file paths and the model ids from your settings** opens after two letters, with a header line
-saying which table it used.
+Gives the DeepSeek Harness (DSH) web composer the **VS Code** editing feel: brackets and quotes pair up as you
+type, typing an opener over a selection wraps the selection, a closer you type over an existing closer is simply
+skipped, and backspace removes an empty pair. On top of that a completion popup fed by **words already in your draft,
+per-language keywords and tags, workspace file paths and the model ids from your settings** opens after two letters.
 
 A standard DSH bundle plugin: one command to install, **no third-party runtime dependency**, **writes no files**,
 **changes no host source**, and needs no token. The browser half is plain DOM (no react, no editor library); the
@@ -22,7 +21,7 @@ server half exposes exactly two read-only routes.
 
 | Target | Command | Note |
 |---|---|---|
-| **DSH Web (`dsh web`)** | `dsh plugin --profile web add https://github.com/mengge237/dsh-composer-ease` | Recommended. A local checkout works too: `dsh plugin --profile web add "<path-to-checkout>/dsh-composer-ease"` |
+| **DSH Web (`dsh web`)** | `dsh plugin --profile web add https://github.com/mengge237-labs/dsh-composer-ease` | Recommended. A local checkout works too: `dsh plugin --profile web add "<本地路径>"` |
 | **Desktop app (Electron)** | Use the **desktop app's own plugin manager** | Do not use `dsh plugin --profile desktop` (that profile is owned by Electron and the CLI refuses); let DSH install it from inside a desktop session |
 | **Development (editing code)** | checkout + a `file:` install | The browser half is **read from disk on every request**, so a page refresh picks up edits; **the server half (`lib/index.js`, `lib/words.js`) needs a `dsh web` restart** |
 
