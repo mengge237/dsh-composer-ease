@@ -186,6 +186,27 @@ await scene('维护者路径B·框住后快打（10ms）再打 " ', '"你好"', 
   await page.keyboard.press('Shift+Quote')
 })
 
+/* 手快那一拍（维护者 2026-10-20：「时有时没有，三个引号」）。
+ * 断开两键之间的等待，逼出「上一键的光标复位还没落地就来了下一键」这种顺序。 */
+await scene('手速·空框 0ms 连按两下 " → 仍是 ""', '""', 2, async () => {
+  await page.keyboard.press('Shift+Quote')
+  await page.keyboard.press('Shift+Quote')
+})
+await scene('手速·空框 0ms 连按三下 " → """', '"""', 3, async () => {
+  await page.keyboard.press('Shift+Quote')
+  await page.keyboard.press('Shift+Quote')
+  await page.keyboard.press('Shift+Quote')
+})
+await scene('手速·打完 " 立刻上屏中文 → 落在两符之间', '"你好"', 3, async () => {
+  await page.keyboard.press('Shift+Quote')
+  await page.keyboard.insertText('你好')
+})
+await scene('手速·打完 " 立刻再打 " 再上屏中文 → ""你好', '""你好', 4, async () => {
+  await page.keyboard.press('Shift+Quote')
+  await page.keyboard.press('Shift+Quote')
+  await page.keyboard.insertText('你好')
+})
+
 const pass = results.filter(r => r.pass).length
 console.log(`\n真机回归：${pass}/${results.length} 通过`)
 await browser.close()
