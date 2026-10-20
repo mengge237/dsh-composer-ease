@@ -104,6 +104,22 @@ function keydown(ed, k) {
 const input = (ed, data) => handlers.input({ target: ed, data: data })
 const tick = () => new Promise((r) => setTimeout(r, 0))
 
+/* beforeinput 的**浏览器那半步**：真浏览器在 beforeinput 没被拦住时会自己落字，
+ * 然后派发 input。假 DOM 原来只调处理器、不落字，于是「落地之后才收尾」的实现根本验不出来。
+ * noInput=true 复刻真机实测的另一个形状：空框里 Lexical 首次插入**不派发 input**。 */
+function nativeInsert(ed, data, noInput) {
+  const s = ed.selectionStart, e = ed.selectionEnd
+  ed.value = ed.value.slice(0, s) + data + ed.value.slice(e)
+  ed.selectionStart = ed.selectionEnd = s + data.length
+  if (!noInput) handlers.input({ target: ed, data: data, inputType: 'insertText' })
+}
+function beforeinput(ed, data, opts = {}) {
+  const ev = { target: ed, data, inputType: 'insertText', prevented: false, preventDefault() { this.prevented = true } }
+  handlers.beforeinput(ev)
+  if (!ev.prevented) nativeInsert(ed, data, opts.noInput)
+  return ev
+}
+
 ok('空框打 ( → 配对成 ()，caret 落中间', () => {
   const ed = mkEd('')
   const ev = keydown(ed, { key: '(' })
@@ -600,34 +616,60 @@ ok('矩阵·中文正文后打 ( → 配对', () => {
   assert.equal(ed.value, '说明()', '中文后应配对：' + ed.value)
 })
 
-// ── beforeinput 路线的目标规格（默认跳过，CE_PENDING=1 才跑）──────────────
-// 这三条是「配对判定搬到 beforeinput」要补齐的；现在红，红了就是还没实现。
-if (process.env.CE_PENDING) {
-  ok('待实现·beforeinput 空框打 “ → 补成 “” 且拦掉原生', () => {
+// ── beforeinput 路线（配对判定的第二条路：中文输入法/全角没有可用的 keydown）──────────
+// 真机读数（2026-10-20，demo 3081 + Playwright）：真 Lexical **不认 preventDefault** ——
+// 它照自己的模型再插一遍，于是「拦 + 自己插」得到双份。所以这条路只能是
+// 「先让原生插，落地之后再收尾」。假 DOM 在这里补上浏览器那半步，断言的是**终态**。
+// 0.9.6 起这 6 条已转正（原先挂在 CE_PENDING 后面红着等实现）。
+{
+  await okAsync('beforeinput·空框打 “ → 补成 “”，caret 在中间', async () => {
     const ed = mkEd('')
-    const ev = { target: ed, data: '“', inputType: 'insertText', prevented: false, preventDefault() { this.prevented = true } }
-    handlers.beforeinput(ev)
+    const ev = beforeinput(ed, '“')
+    await tick()
+    assert.equal(ev.prevented, false, '不要拦原生：Lexical 不认取消，拦了就双份')
     assert.equal(ed.value, '“”', '实得：' + ed.value)
-    assert.ok(ev.prevented, '应拦掉原生插入')
+    assert.equal(ed.selectionStart, 1, 'caret 要落在成对符号中间：' + ed.selectionStart)
   })
 
-  ok('待实现·beforeinput 选中 abc 打 “ → 框住', () => {
+  await okAsync('beforeinput·空框打 “ 且 input 不来（真机形状）→ 仍补成 “”', async () => {
+    const ed = mkEd('')
+    beforeinput(ed, '“', { noInput: true })
+    await tick()
+    assert.equal(ed.value, '“”', 'input 缺席时也要补出来：' + ed.value)
+    assert.equal(ed.selectionStart, 1, 'caret 在中间：' + ed.selectionStart)
+  })
+
+  await okAsync('beforeinput·选中 abc 打 “ → 框住', async () => {
     const ed = mkEd('abc', 3)
     ed.selectionStart = 0
-    const ev = { target: ed, data: '“', inputType: 'insertText', prevented: false, preventDefault() { this.prevented = true } }
-    handlers.beforeinput(ev)
+    const ev = beforeinput(ed, '“')
+    await tick()
+    assert.ok(ev.prevented, '选区必须拦：不拦的话选中的字会被那一个字符替掉')
     assert.equal(ed.value, '“abc”', '实得：' + ed.value)
   })
 
-
-  ok('待实现·beforeinput 前方有未闭合开符，末尾再打 → 只插一个', () => {
+  await okAsync('beforeinput·前方有未闭合开符，末尾再打 → 只插一个', async () => {
     const ed = mkEd('“文字', 3)
-    const ev = { target: ed, data: '“', inputType: 'insertText', prevented: false, preventDefault() { this.prevented = true } }
-    handlers.beforeinput(ev)
+    const ev = beforeinput(ed, '“')
+    await tick()
+    assert.equal(ev.prevented, false, '这一下原生插一个就是对的，不该拦')
     assert.equal(ed.value, '“文字“', '实得：' + ed.value)
   })
-} else {
-  console.log('  skip 4 条目标规格/已知缺口（CE_PENDING=1 才跑）')
+
+  await okAsync('beforeinput·夹在空对里再打同一个 → 跳过，不留双份', async () => {
+    const ed = mkEd('“”', 1)
+    beforeinput(ed, '“')
+    await tick()
+    assert.equal(ed.value, '“”', '实得：' + ed.value)
+    assert.equal(ed.selectionStart, 2, 'caret 应跳过闭符：' + ed.selectionStart)
+  })
+
+  await okAsync('beforeinput·半角 " 同样只插一个（前方未闭合）', async () => {
+    const ed = mkEd('"你好', 3)
+    beforeinput(ed, '"')
+    await tick()
+    assert.equal(ed.value, '"你好"', '实得：' + ed.value)
+  })
 }
 
 // ── 基础用法补测（维护者 2026-10-20：「引号是重灾区不代表其他做好了」）──────────
