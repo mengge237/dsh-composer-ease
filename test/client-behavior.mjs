@@ -472,4 +472,46 @@ await okAsync('回车（发送）收干净：弹层与灰字都不留在被清�
   assert.equal(g.style.display, 'none', '发送后灰字要收起')
 })
 
+// ── 维护者 2026-10-20 报的「前方有引号、后方再打还是一对」────────────────────
+function pressQuote(value, sel, key, data) {
+  const ed = mkEd(value, sel[1])
+  ed.selectionStart = sel[0]; ed.selectionEnd = sel[1]
+  if (data !== undefined) handlers.beforeinput({ target: ed, data, preventDefault() {} })
+  else keydown(ed, { key })
+  return ed
+}
+
+ok('前方有不闭合的直引号，末尾再打直引号：只插一个，不再出对', () => {
+  const ed = pressQuote('"你好', [3, 3], '"')
+  assert.equal(ed.value, '"你好"', '不许变成 "你好""：' + ed.value)
+  assert.equal(ed.selectionStart, 4, '光标在闭引号之后')
+})
+
+ok('前方有不闭合的中文引号，末尾再打同一个：只插一个', () => {
+  const ed = pressQuote('“文字', [3, 3], '“')
+  assert.equal(ed.value, '“文字“', '不许被 onInput 补成 “文字“”：' + ed.value)
+})
+
+ok('空框打中文引号：仍然要自动补闭符（这条不能被上一条改坏）', () => {
+  // 真浏览器里 input 是在字符已经进框之后才触发，这里照同样时序造
+  const ed = mkEd('“', 1)
+  handlers.input({ target: ed, data: '“' })
+  assert.equal(ed.value, '“”', '空框应补成 “”：' + ed.value)
+})
+
+ok('已有一个没闭合的开符，选中内容再打同一个引号：补闭合而不是再框一层', () => {
+  const ed = pressQuote('"abc', [1, 4], '"')
+  assert.equal(ed.value, '"abc"', '不许变成 ""abc"：' + ed.value)
+})
+
+ok('IME 那条路（beforeinput）同样认未闭合', () => {
+  const ed = pressQuote('"abc', [1, 4], '"', '"')
+  assert.equal(ed.value, '"abc"', 'beforeinput 不许再框一层：' + ed.value)
+})
+
+ok('正常框选没被改坏：选中 abc 打引号仍然框住', () => {
+  const ed = pressQuote('abc', [0, 3], '"')
+  assert.equal(ed.value, '"abc"', '普通框选应仍是 "abc"：' + ed.value)
+})
+
 console.log(`\n${n} 项全过`)
