@@ -566,6 +566,31 @@ ok('正常框选没被改坏：选中 abc 打引号仍然框住', () => {
   assert.equal(ed.value, '"abc"', '普通框选应仍是 "abc"：' + ed.value)
 })
 
+// ── 维护者 2026-10-21：框选只是一个动作，要能反选 ─────────────────────────
+ok('框完再打同一个引号 = 取消这次框选，内层重新选中', () => {
+  const ed = pressQuote('abc', [0, 3], '"')
+  assert.equal(ed.value, '"abc"', '先框住：' + ed.value)
+  keydown(ed, { key: '"' })
+  assert.equal(ed.value, 'abc', '再打同一个引号应取消框选：' + ed.value)
+  assert.equal(ed.selectionStart, 0, '取消后内层要重新选中')
+  assert.equal(ed.selectionEnd, 3, '取消后内层要重新选中')
+})
+
+ok('取消框选只对「没被别人改过」的那次生效', () => {
+  const ed = pressQuote('abc', [0, 3], '"')
+  ed.value = '"abX"'                     // 模拟用户在框里改过
+  keydown(ed, { key: '"' })
+  assert.equal(ed.value, '"abX"', '内层被改过就不该反选，也不该再堆一个：' + ed.value)
+})
+
+ok('框选期间不弹补全（框选只是一个动作，不该顺手提醒）', () => {
+  const ed = pressQuote('inputValue', [0, 10], '"')
+  const p = popupEl()
+  assert.ok(!p || p.style.display === 'none', '框选后不该弹补全')
+  const g = ghostEl()
+  assert.ok(!g || g.style.display === 'none', '框选后不该留灰字')
+})
+
 // ── 成对家族行为矩阵（维护者 2026-10-20：「写测试用例多测试一下」）─────────────
 // 期望值按「像 VS Code 那样、但中文正文也配对」的口径写死；哪条红就是实现要补的。
 function bi(ed, data) {
