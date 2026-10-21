@@ -60,6 +60,11 @@ const documentFake = {
 
 const fetchCalls = []
 let fetchReply = { ok: true, candidates: [] }
+/* 延迟模式：把响应扣在队列里，由用例决定何时放行 —— 用来复现「快速回车后，
+ * 迟到的候选响应把浮层/灰字画回已被清空的输入框」（2026-10-21 维护者报的 bug）。 */
+let fetchDefer = false
+const fetchQueue = []
+const releaseFetch = () => { fetchQueue.splice(0).forEach((fire) => fire()) }
 const store = new Map()
 const sandbox = {
   window: {
@@ -72,7 +77,13 @@ const sandbox = {
     getComputedStyle: () => ({ font: '13px monospace' }),
   },
   document: documentFake,
-  fetch: (url) => { fetchCalls.push(String(url)); return Promise.resolve({ json: () => Promise.resolve(fetchReply) }) },
+  fetch: (url) => {
+    fetchCalls.push(String(url))
+    if (!fetchDefer) return Promise.resolve({ json: () => Promise.resolve(fetchReply) })
+    return new Promise((resolve) => {
+      fetchQueue.push(() => resolve({ json: () => Promise.resolve(fetchReply) }))
+    })
+  },
   console, Symbol, Object, Array, Promise, Error, JSON, String, Number, Math, RegExp, setTimeout, clearTimeout,
   Event: class { constructor(type, init) { this.type = type; Object.assign(this, init || {}) } },
 }
@@ -86,6 +97,7 @@ async function okAsync(label, fn) { await fn(); n++; console.log('  ok   ' + lab
 const mod = sandbox.__captured.factory(() => { throw new Error('本包不该 require 任何东西') })
 mod.apply({})
 const popupEl = () => body.children.find((c) => c.id === 'dsh-cp-popup')
+const ghostEl = () => body.children.find((c) => c.id === 'dsh-cp-ghost')
 // 弹层子节点里，带 data-dsh-cp-wm 的是语言水印（底纹），不是候选项
 const rowsOf = (p) => (p ? p.children.filter((c) => !(c.attrs && c.attrs['data-dsh-cp-wm'])) : [])
 const wmOf = (p) => (p ? p.children.find((c) => c.attrs && c.attrs['data-dsh-cp-wm']) : null)
@@ -195,8 +207,32 @@ await okAsync('打两个字母自动弹（不用快捷键），本文词排在�
   assert.match(popupEl().innerText, /inputValue/, '网络回来后本地词仍在')
 })
 
-await okAsync('数字开头与纯空白不触发补全（中文现在**要**触发，见下一条）', async () => {
-  const before = fetchCalls.length
+/* 回归（2026-10-21 维护者报「快速点回车后，那个修字的提示留在了输入框中」）：
+ * 候选响应比回车晚到，旧实现在 Enter 清场之后又把浮层与灰字画了一遍。 */
+await okAsync('回车后迟到的补全响应不复活浮层与灰字', async () => {
+  fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'input' }] }
+  const ed = mkEd('inp')
+  fetchDefer = true
+  try {
+    const before = fetchCalls.length
+    keydown(ed, { key: ' ', code: 'Space', ctrl: true })
+    assert.equal(fetchCalls.length, before + 1, '要发出候选请求')
+    keydown(ed, { key: 'Enter' })      // 响应还没回来就回车发送
+    ed.value = ''                      // 发送后输入框被清空
+    ed.selectionStart = ed.selectionEnd = 0
+    releaseFetch()                     // 现在放行迟到的响应
+    await tick()
+    await tick()
+    const p = popupEl()
+    const g = ghostEl()
+    assert.ok(!p || p.style.display !== 'block', '回车后浮层不许复活：' + (p ? p.style.display : '无'))
+    assert.ok(!g || g.style.display !== 'block', '回车后灰字不许留在输入框上：' + (g ? g.style.display : '无'))
+  } finally {
+    fetchDefer = false
+  }
+})
+
+await okAsync('数字开头与纯空白不触发补全（中文现在**要**触发，见下一条）', async () => {  const before = fetchCalls.length
   for (const v of ['结尾空格 ']) { const ed = mkEd(v); input(ed) }
   assert.equal(fetchCalls.length, before, '纯空白不该发请求：' + fetchCalls.slice(before).join(','))
 })
