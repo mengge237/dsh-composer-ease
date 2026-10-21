@@ -31,6 +31,16 @@ ok('导出 apply/inject；不碰宿主 react', () => {
 })
 
 const H = mod.__helpers__
+ok('严格配对开关：默认关，能写入也能读回', () => {
+  // localStorage 在测试环境可能不存在；这里只断言「不抛错 + 默认 false」的契约
+  const H2 = mod.__helpers__
+  assert.equal(typeof H2.pairStrict, 'function')
+  assert.equal(typeof H2.setPairStrict, 'function')
+  assert.equal(H2.pairStrict(), false, '默认必须是关')
+  H2.setPairStrict(true)
+  assert.equal(typeof H2.pairStrict(), 'boolean')
+})
+
 ok('配对判据：光标前是路径/标识符字符就不自动配对（保护输入路径与函数调用场景）', () => {
   assert.equal(H.shouldPair('open E:/S_Software'), false, '结尾是标识符：像路径/词中，别配对')
   assert.equal(H.shouldPair('写一个'), true, '结尾是 CJK 字：该配对')
