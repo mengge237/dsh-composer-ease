@@ -1,7 +1,8 @@
 # dsh-composer-ease —— DSH bundle patch
 # 插入 web profile 配置树：服务端注册 /dsh-composer-ease/* 路由，浏览器侧半（exports["./client"]）
 # 进 boot 图提供键位与补全弹层。
-# 安装：dsh plugin --profile web add "<本地路径>"
+# 安装：dsh plugin --profile web add "<本插件目录或 git URL>"
+#   例：dsh plugin --profile web add "https://github.com/mengge237/dsh-composer-ease"
 # 卸载：dsh plugin --profile web remove dsh-composer-ease
 # 客户端半边要重启 dsh web 才进 boot 图（服务端半边新加条目可热挂）。
 
