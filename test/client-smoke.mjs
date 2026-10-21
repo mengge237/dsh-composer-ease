@@ -25,7 +25,9 @@ ok('bundle 顶部注册了宿主 loader，id 与包名一致', () => {
 const mod = captured.factory(() => { throw new Error('本包不该 require 任何东西') })
 ok('导出 apply/inject；不碰宿主 react', () => {
   assert.equal(typeof mod.apply, 'function')
-  assert.deepEqual([...mod.inject], [])
+  // 2026-10-21：宿主输入触发服务必须声明（官方 dsh-client-ui-reference / -skill 同样做法），
+  // 否则 apply 里 scope.inputTriggers 取不到，@ 那组注册不上。
+  assert.deepEqual([...mod.inject], ['inputTriggers'])
 })
 
 const H = mod.__helpers__
