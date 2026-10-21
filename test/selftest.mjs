@@ -81,7 +81,7 @@ ok('collectFiles：深度与总量封顶、node_modules 排除', () => {
   writeFileSync(join(root, 'node_modules', 'pkg', 'evil.js'), '')
   writeFileSync(join(root, 'src', 'a', 'b', 'deep.ts'), '')
   writeFileSync(join(root, 'src', 'a', 'b', 'c', 'toodeep.ts'), '')
-  const files = collectFiles(root, 3, 10)
+  const files = collectFiles(root, 3, 10).map((f) => f.rel)   // 现在返回 { rel, ctx }
   assert.ok(files.includes('src/a/f1.ts'), '两层文件要收进来：' + files.join(','))
   assert.ok(files.includes('src/a/b/deep.ts'), '三层目录里的文件要收进来：' + files.join(','))
   assert.ok(!files.includes('node_modules/pkg/evil.js'), 'node_modules 必须整目录跳过')
