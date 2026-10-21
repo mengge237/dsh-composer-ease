@@ -286,12 +286,23 @@ await okAsync('Esc 关弹层', async () => {
   assert.equal(popupEl().style.display, 'none', 'Esc 之后要隐藏')
 })
 
-await okAsync("'/' 触发引用式补全", async () => {
+await okAsync("行首 '/' 让给原生命令：插件不拉候选、不弹层", async () => {
+  // 2026-10-21：'/' 是 DSH 命系统入口（dsh-commands：command/run），插件不插手，
+  // 免得两份菜单叠在一起、也免得给那条路加延迟。
   const ed = mkEd('/dsh')
   const before = fetchCalls.length
   input(ed)
-  assert.equal(fetchCalls.length, before + 1)
-  assert.match(fetchCalls[fetchCalls.length - 1], /prefix=%2Fdsh/, '要把 /dsh 当 token 带上')
+  assert.equal(fetchCalls.length, before, '行首 / 不该触发插件自己的候选请求')
+  assert.ok(!popupEl() || popupEl().style.display === 'none', '原生命令入口不该被我们的弹层盖住')
+  await tick()
+})
+
+await okAsync("'@' 仍走插件自己的补全（只有 '/' 让位）", async () => {
+  const ed = mkEd('@rea')
+  const before = fetchCalls.length
+  input(ed)
+  assert.equal(fetchCalls.length, before + 1, '@ 仍要拉候选')
+  assert.match(fetchCalls[fetchCalls.length - 1], /prefix=%40rea/, '要把 @rea 当 token 带上')
   await tick()
 })
 
@@ -734,12 +745,12 @@ ok('矩阵·中文正文后打 ( → 配对', () => {
 }
 
 // ── 基础用法补测（维护者 2026-10-20：「引号是重灾区不代表其他做好了」）──────────
-await okAsync('基础·打 / 触发候选请求（不用快捷键）', async () => {
+await okAsync('基础·打 / 不触发插件候选（原生命令接手）', async () => {
   const ed = mkEd('/')
   const before = fetchCalls.length
   input(ed, '/')
   await tick()
-  assert.ok(fetchCalls.length > before, '/ 应发一次候选请求')
+  assert.equal(fetchCalls.length, before, '行首 / 交给 DSH 原生命令，插件不发请求')
 })
 
 await okAsync('基础·打 @ 触发候选请求', async () => {
