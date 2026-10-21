@@ -16,6 +16,8 @@ const readBytes = (p) => readFileSync(join(ROOT, p))
 const pkg = JSON.parse(read('package.json'))
 const third = read('THIRD-PARTY.md')
 const readme = read('README.md')
+// 2026-10-21：版本记录从 README 搬到 CHANGELOG.md，判据跟着改，免得闸盯错文件
+const changelog = read('CHANGELOG.md')
 const license = read('LICENSE')
 
 /** 借用件台账：仓库 / 许可 / commit / 取用文件。改借用范围必须同时改这里与 THIRD-PARTY.md。 */
@@ -115,10 +117,11 @@ ok('仓里没有密钥/令牌（公开仓的硬线）', () => {
   }
 })
 
-ok('版本号与 README 更新日志最新一条一致', () => {
-  const versions = [...readme.matchAll(/^-\s+\*\*(\d+\.\d+\.\d+)\*\*/gm)].map((m) => m[1])
-  assert.ok(versions.length >= 3, '更新日志要有历史条目：' + versions.join(','))
-  assert.equal(versions[0], pkg.version, 'README 最新条目要等于 package.json 版本：' + versions[0] + ' vs ' + pkg.version)
+ok('版本号与 CHANGELOG 最新一条一致（版本记录在 CHANGELOG，不在 README）', () => {
+  const versions = [...changelog.matchAll(/^-\s+\*\*(\d+\.\d+\.\d+)\*\*/gm)].map((m) => m[1])
+  assert.ok(versions.length >= 3, 'CHANGELOG 要有历史条目：' + versions.join(','))
+  assert.equal(versions[0], pkg.version, 'CHANGELOG 最新条目要等于 package.json 版本：' + versions[0] + ' vs ' + pkg.version)
+  assert.ok(!/^-\s+\*\*\d+\.\d+\.\d+\*\*/m.test(readme), 'README 里不该再有版本条目（只留指向 CHANGELOG 的指针）')
 })
 
 ok('登记表那侧的条例也照顾到了：npm 键要么是合法包名要么不写', () => {
