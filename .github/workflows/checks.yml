@@ -1,0 +1,25 @@
+name: checks
+
+# 策略即代码的机械闸：五支离线套件 + 发布一致性（版本/日期/sha/顺序）
+# 之所以放 CI：这些判据靠"记得跑"从来不可靠，2026-10-21 就发生过版本记录 13 条日期写错的事。
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 五支离线套件
+        run: npm test
+      - name: 发布一致性（package.json 版本 vs CHANGELOG 首条）
+        run: node tools/check-release.mjs
+      - name: 发布一致性检查的自测（证明这道闸真的有牙）
+        run: node tools/check-release.mjs --selftest
