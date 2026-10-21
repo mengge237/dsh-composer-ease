@@ -572,6 +572,19 @@ ok('IME 那条路（beforeinput）同样认未闭合', () => {
   assert.equal(ed.value, '"abc"', 'beforeinput 不许再框一层：' + ed.value)
 })
 
+// ── 维护者 2026-10-21：全角/半角混着打，不该冒出多个引号 ─────────────────
+ok('全角开符后面打半角引号：补闭合，不再凑一对', () => {
+  const ed = pressQuote('\u201c\u4f60\u597d', [3, 3], '"')
+  const quotes = (ed.value.match(/["\u201c\u201d]/g) || []).length
+  assert.equal(quotes, 2, '应当是「全角开 + 半角闭」两个引号：' + JSON.stringify(ed.value))
+})
+
+ok('已有一对（宽度混写）时不判"未闭合"：不再补第二对', () => {
+  const ed = pressQuote('"abc\u201d', [5, 5], '"')
+  const quotes = (ed.value.match(/["\u201c\u201d]/g) || []).length
+  assert.equal(quotes, 3, '既有一对（混写）后再打一个，只多这一个：' + JSON.stringify(ed.value))
+})
+
 ok('正常框选没被改坏：选中 abc 打引号仍然框住', () => {
   const ed = pressQuote('abc', [0, 3], '"')
   assert.equal(ed.value, '"abc"', '普通框选应仍是 "abc"：' + ed.value)
