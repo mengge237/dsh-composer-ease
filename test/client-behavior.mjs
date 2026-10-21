@@ -328,10 +328,20 @@ ok('全角/IME 路径同样看右边：右边有字就只插开符', () => {
   assert.equal(ed.value, '“文字', '不许补成 “”文字：' + ed.value)
 })
 
-ok('右边是空白时仍然补闭符（这一条别退化成"永远不补"）', () => {
+ok('「严格配对」开启时引号恢复自动补对（设置项的真实语义）', () => {
+  const H2 = mod.__helpers__
+  H2.setPairStrict(true)
+  assert.equal(H2.shouldPair('', '', '"'), true, '严格模式：应与括号一样补对')
+  H2.setPairStrict(false)
+  assert.equal(H2.shouldPair('', '', '"'), false, '默认模式：引号只插一个')
+})
+
+ok('引号只插一个：空框打引号不再自动补闭符（2026-10-21 契约变更）', () => {
+  // 补对要靠 DOM Range 把光标塞回两符之间，而 Lexical 的模型选区不认 DOM Range，
+  // 快速连打会多出一个引号（真机：`“”你好""` 四个）。所以引号一律只插一个。
   const ed = mkEd('')
   keydown(ed, { key: '"', shift: true })
-  assert.equal(ed.value, '""', '行尾要补一对：' + ed.value)
+  assert.equal(ed.value, '"', '只该插一个：' + ed.value)
   assert.equal(ed.selectionStart, 1)
 })
 
@@ -387,14 +397,15 @@ await okAsync('接受候选后弹层不复开（滚雪球的另一半）', async
   assert.equal(popupEl().style.display, 'none', '自己插进去的文本不能再触发一次弹层')
 })
 
-ok('Shift 组合键打出的开符也要配对（{ " 这些必须按 Shift，原先被挡掉）', () => {
+ok('Shift 组合键打出的开符：括号仍配对，引号只插一个', () => {
   const a = mkEd('')
   keydown(a, { key: '{', shift: true })
   assert.equal(a.value, '{}', 'Shift+[ 的 { 要配对：' + a.value)
   assert.equal(a.selectionStart, 1)
   const b = mkEd('')
   keydown(b, { key: '"', shift: true })
-  assert.equal(b.value, '""', '双引号同理：' + b.value)
+  assert.equal(b.value, '"', '引号只插一个：' + b.value)
+  assert.equal(b.selectionStart, 1)
 })
 
 ok('框选后打符号：走 beforeinput 把选区框起来（中文输入法/全角没有可用的 keydown）', () => {
@@ -555,11 +566,10 @@ ok('前方有不闭合的中文引号，末尾再打同一个：只插一个', (
   assert.equal(ed.value, '“文字“', '不许被 onInput 补成 “文字“”：' + ed.value)
 })
 
-ok('空框打中文引号：仍然要自动补闭符（这条不能被上一条改坏）', () => {
-  // 真浏览器里 input 是在字符已经进框之后才触发，这里照同样时序造
+ok('空框打中文引号：只插一个，不再补闭符（2026-10-21 契约变更）', () => {
   const ed = mkEd('“', 1)
   handlers.input({ target: ed, data: '“' })
-  assert.equal(ed.value, '“”', '空框应补成 “”：' + ed.value)
+  assert.equal(ed.value, '“', '不该再补一个闭符：' + ed.value)
 })
 
 ok('已有一个没闭合的开符，选中内容再打同一个引号：补闭合而不是再框一层', () => {
@@ -623,13 +633,24 @@ function bi(ed, data) {
   return ev
 }
 
-// 1) 空框：每种开符都要补成一对，光标在中间
-for (const [open, close] of [['(', ')'], ['[', ']'], ['{', '}'], ['"', '"'], ["'", "'"], ['`', '`'], ['（', '）'], ['“', '”'], ['「', '」'], ['〈', '〉'], ['《', '》']]) {
+// 1) 空框：**括号家族**补成一对、光标在中间；**引号家族**只插一个（2026-10-21 契约变更：
+//    补对要靠 DOM Range 把光标塞回两符之间，Lexical 的模型选区不认 → 快速连打会多出一个引号）。
+for (const [open, close] of [['(', ')'], ['[', ']'], ['{', '}'], ['`', '`'],
+                             ['（', '）'], ['【', '】'], ['「', '」'], ['『', '』'], ['《', '》'], ['〈', '〉']]) {
   ok(`矩阵·空框打 ${open} → 补成 ${open}${close}，caret 在中间`, () => {
     const ed = mkEd('')
     keydown(ed, { key: open })
     assert.equal(ed.value, open + close, `期望 ${open}${close}，实得 ` + ed.value)
     assert.equal(ed.selectionStart, 1, 'caret 应在中间：' + ed.selectionStart)
+  })
+}
+
+for (const q of ['"', "'", '“', '‘']) {
+  ok(`矩阵·空框打引号 ${q} → 只插一个（不自动补闭符）`, () => {
+    const ed = mkEd('')
+    keydown(ed, { key: q })
+    assert.equal(ed.value, q, `期望只有一个 ${q}，实得 ` + ed.value)
+    assert.equal(ed.selectionStart, 1, 'caret 紧跟其后：' + ed.selectionStart)
   })
 }
 
@@ -707,21 +728,20 @@ ok('矩阵·中文正文后打 ( → 配对', () => {
 // 「先让原生插，落地之后再收尾」。假 DOM 在这里补上浏览器那半步，断言的是**终态**。
 // 0.9.6 起这 6 条已转正（原先挂在 CE_PENDING 后面红着等实现）。
 {
-  await okAsync('beforeinput·空框打 “ → 补成 “”，caret 在中间', async () => {
+  await okAsync('beforeinput·空框打 “ → 只插一个，caret 紧跟其后', async () => {
     const ed = mkEd('')
     const ev = beforeinput(ed, '“')
     await tick()
     assert.equal(ev.prevented, false, '不要拦原生：Lexical 不认取消，拦了就双份')
-    assert.equal(ed.value, '“”', '实得：' + ed.value)
-    assert.equal(ed.selectionStart, 1, 'caret 要落在成对符号中间：' + ed.selectionStart)
+    assert.equal(ed.value, '“', '实得：' + ed.value)
+    assert.equal(ed.selectionStart, 1, 'caret 紧跟开符之后：' + ed.selectionStart)
   })
 
-  await okAsync('beforeinput·空框打 “ 且 input 不来（真机形状）→ 仍补成 “”', async () => {
+  await okAsync('beforeinput·空框打 “ 且 input 不来（真机形状）→ 仍只是一个', async () => {
     const ed = mkEd('')
     beforeinput(ed, '“', { noInput: true })
     await tick()
-    assert.equal(ed.value, '“”', 'input 缺席时也要补出来：' + ed.value)
-    assert.equal(ed.selectionStart, 1, 'caret 在中间：' + ed.selectionStart)
+    assert.equal(ed.value, '“', 'input 缺席时也只有一个开符：' + ed.value)
   })
 
   await okAsync('beforeinput·选中 abc 打 “ → 框住', async () => {
