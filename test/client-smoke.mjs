@@ -31,6 +31,17 @@ ok('导出 apply/inject；不碰宿主 react', () => {
 })
 
 const H = mod.__helpers__
+ok('「/」那组排到最上面：order 0，先于内置「指令」1 与「技能」2', () => {
+  // 维护者 2026-10-22：严格配对放在技能下面找不到。宿主按 order 升序排，
+  // 内置两组分别是 1 与 2，所以我们必须 < 1 才会出现在最上面。
+  const srcs = H.buildTriggerSources()
+  const slash = srcs.find(s => s.trigger === '/')
+  const at = srcs.find(s => s.trigger === '@')
+  assert.ok(slash && at, '两个触发源都要注册')
+  assert.equal(slash.order, 0, '/ 组 order 必须是 0（< 内置的 1）')
+  assert.ok(at.order > 0, '@ 组不该跟 / 抢第一位')
+  assert.equal(typeof slash.candidates, 'function')
+})
 ok('严格配对开关：默认关，能写入也能读回', () => {
   // localStorage 在测试环境可能不存在；这里只断言「不抛错 + 默认 false」的契约
   const H2 = mod.__helpers__
