@@ -104,8 +104,8 @@ await scene('3 选中 abc 打 " → 框住', '"abc"', 5, async () => {
   await page.keyboard.press('Shift+Quote')
 })
 
-// 4 Shift 连按（连打三下同一个引号）
-await scene('4 Shift 连按三下 "', '"""', 3, async () => {
+// 4 Shift 连按（连打三下同一个引号）：2026-10-22 起停在空对里再打同一个一律跳过 → 仍是一对
+await scene('4 Shift 连按三下 "', '""', 2, async () => {
   for (let i = 0; i < 3; i++) { await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(260) }
 })
 
