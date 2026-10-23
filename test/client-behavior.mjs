@@ -1,4 +1,4 @@
-// 浏览器半边行为测试：假 DOM（TEXTAREA 形态 composer）驱动真监听，
+﻿// 浏览器半边行为测试：假 DOM（TEXTAREA 形态 composer）驱动真监听，
 // 覆盖自动配对、环绕选区、跳闭合、删空对、Ctrl+Space 补全、接受候选、自动弹、语言提示。
 // 跑法：node test/client-behavior.mjs
 import assert from 'node:assert/strict'
@@ -328,23 +328,29 @@ ok('全角/IME 路径同样看右边：右边有字就只插开符', () => {
   assert.equal(ed.value, '“文字', '不许补成 “”文字：' + ed.value)
 })
 
-ok('「严格配对」开关：默认也补对，开启后连"右边有文字"也补（2026-10-22 恢复）', () => {
+ok('引号模式与严格配对的两级语义（2026-10-23 契约：warn 优先，auto 才看 strict）', () => {
   const H2 = mod.__helpers__
-  H2.setPairStrict(false)
-  assert.equal(H2.shouldPair('', '', '"'), true, '默认模式：光标在空处应补一对')
-  assert.equal(H2.shouldPair('', '文字', '"'), false, '默认模式：右边是文字时不补（保护在文字前打前引号）')
+  // 默认 warn：无论 strict 开关如何都不补闭符（改为标红提示）
+  H2.setQuoteMode('warn')
   H2.setPairStrict(true)
-  assert.equal(H2.shouldPair('', '文字', '"'), true, '严格模式：一律补对（老行为）')
+  assert.equal(H2.shouldPair('', '', '"'), false, 'warn 模式下即使开严格也不自动补对')
+  // auto：恢复老行为，strict 决定是否补对
+  H2.setQuoteMode('auto')
+  assert.equal(H2.shouldPair('', '', '"'), true, 'auto + 严格：应与括号一样补对')
   H2.setPairStrict(false)
+  assert.equal(H2.shouldPair('', '', '"'), true, 'auto + 非严格 + 右侧空白：仍补对')
+  assert.equal(H2.shouldPair('', '文字', '"'), false, 'auto + 非严格 + 右边是文字：只插一个')
+  H2.setQuoteMode('warn')   // 老矩阵按新默认（warn）继续跑
 })
 
-ok('空框打引号补成一对、光标落在中间（2026-10-22 契约恢复，维护者在即要求）', () => {
-  // 2026-10-21 曾改成"只插一个"（配对后靠 DOM Range 复位光标，快速连打会多冒一个）；
-  // 现在走 insertAtomic + placeCaretVerified 那条带文本护栏的复核链，引号与括号同待遇。
+ok('引号只插一个：空框打引号不再自动补闭符（2026-10-21 契约变更）', () => {
+  mod.__helpers__.setQuoteMode('warn')
+  // 补对要靠 DOM Range 把光标塞回两符之间，而 Lexical 的模型选区不认 DOM Range，
+  // 快速连打会多出一个引号（真机：`“”你好""` 四个）。所以引号一律只插一个。
   const ed = mkEd('')
   keydown(ed, { key: '"', shift: true })
-  assert.equal(ed.value, '""', '应补成一对：' + ed.value)
-  assert.equal(ed.selectionStart, 1, '光标要在两符之间')
+  assert.equal(ed.value, '"', '只该插一个：' + ed.value)
+  assert.equal(ed.selectionStart, 1)
 })
 
 ok('上下文候选只从对话正文区取：对话里出现过的标识符按前缀补出来（类型词标「上下文」）', () => {
@@ -399,14 +405,14 @@ await okAsync('接受候选后弹层不复开（滚雪球的另一半）', async
   assert.equal(popupEl().style.display, 'none', '自己插进去的文本不能再触发一次弹层')
 })
 
-ok('Shift 组合键打出的开符：括号与引号都配对（2026-10-22 起引号同待遇）', () => {
+ok('Shift 组合键打出的开符：括号仍配对，引号只插一个', () => {
   const a = mkEd('')
   keydown(a, { key: '{', shift: true })
   assert.equal(a.value, '{}', 'Shift+[ 的 { 要配对：' + a.value)
   assert.equal(a.selectionStart, 1)
   const b = mkEd('')
   keydown(b, { key: '"', shift: true })
-  assert.equal(b.value, '""', 'Shift 打出的引号也要配对：' + b.value)
+  assert.equal(b.value, '"', '引号只插一个：' + b.value)
   assert.equal(b.selectionStart, 1)
 })
 
@@ -568,11 +574,10 @@ ok('前方有不闭合的中文引号，末尾再打同一个：只插一个', (
   assert.equal(ed.value, '“文字“', '不许被 onInput 补成 “文字“”：' + ed.value)
 })
 
-ok('空框打中文引号：IME 路径同样补成一对（2026-10-22 契约恢复）', () => {
-  const ed = mkEd('“', 1)                    // 输入法已经把 “ 落进框里
+ok('空框打中文引号：只插一个，不再补闭符（2026-10-21 契约变更）', () => {
+  const ed = mkEd('“', 1)
   handlers.input({ target: ed, data: '“' })
-  assert.equal(ed.value, '“”', '应补上闭符：' + ed.value)
-  assert.equal(ed.selectionStart, 1, '光标要在两符之间：' + ed.selectionStart)
+  assert.equal(ed.value, '“', '不该再补一个闭符：' + ed.value)
 })
 
 ok('已有一个没闭合的开符，选中内容再打同一个引号：补闭合而不是再框一层', () => {
@@ -648,13 +653,12 @@ for (const [open, close] of [['(', ')'], ['[', ']'], ['{', '}'], ['`', '`'],
   })
 }
 
-const QUOTE_CLOSE = { '"': '"', "'": "'", '“': '”', '‘': '’' }
 for (const q of ['"', "'", '“', '‘']) {
-  ok(`矩阵·空框打引号 ${q} → 补成一对，caret 在中间（2026-10-22 契约恢复）`, () => {
+  ok(`矩阵·空框打引号 ${q} → 只插一个（不自动补闭符）`, () => {
     const ed = mkEd('')
     keydown(ed, { key: q })
-    assert.equal(ed.value, q + QUOTE_CLOSE[q], `期望一对，实得 ` + ed.value)
-    assert.equal(ed.selectionStart, 1, 'caret 应在两符之间：' + ed.selectionStart)
+    assert.equal(ed.value, q, `期望只有一个 ${q}，实得 ` + ed.value)
+    assert.equal(ed.selectionStart, 1, 'caret 紧跟其后：' + ed.selectionStart)
   })
 }
 
@@ -702,14 +706,12 @@ ok('矩阵·连按两下引号 → 仍是 ""（第二下只跳过）', () => {
   assert.equal(ed.value, '""', '连按两下不该变多：' + ed.value)
 })
 
-ok('矩阵·连按三下引号 → 仍是一对 ""（空对里再打同一个一律跳过）', () => {
-  // 2026-10-22 改：连打同一个引号不再累加（真机上第二下会因为光标复位未落地而多补一个）。
-  // 需要连打三个的场景是 ``` 围栏，那条走反引号，不受此规则影响（见上面反引号用例）。
+ok('矩阵·连按三下引号 → """（第三下是字面插入，属正常）', () => {
   const ed = mkEd('')
   keydown(ed, { key: '"' })
   keydown(ed, { key: '"' })
   keydown(ed, { key: '"' })
-  assert.equal(ed.value, '""', '应停在一对：' + ed.value)
+  assert.equal(ed.value, '"""', '三下应为三个：' + ed.value)
 })
 
 // 6) 标识符/路径后面不配对（保护代码）
@@ -734,20 +736,20 @@ ok('矩阵·中文正文后打 ( → 配对', () => {
 // 「先让原生插，落地之后再收尾」。假 DOM 在这里补上浏览器那半步，断言的是**终态**。
 // 0.9.6 起这 6 条已转正（原先挂在 CE_PENDING 后面红着等实现）。
 {
-  await okAsync('beforeinput·空框打 “ → 补成一对，caret 在中间（2026-10-22 契约恢复）', async () => {
+  await okAsync('beforeinput·空框打 “ → 只插一个，caret 紧跟其后', async () => {
     const ed = mkEd('')
     const ev = beforeinput(ed, '“')
     await tick()
     assert.equal(ev.prevented, false, '不要拦原生：Lexical 不认取消，拦了就双份')
-    assert.equal(ed.value, '“”', '实得：' + ed.value)
-    assert.equal(ed.selectionStart, 1, 'caret 应在两符之间：' + ed.selectionStart)
+    assert.equal(ed.value, '“', '实得：' + ed.value)
+    assert.equal(ed.selectionStart, 1, 'caret 紧跟开符之后：' + ed.selectionStart)
   })
 
-  await okAsync('beforeinput·空框打 “ 且 input 不来（真机形状）→ 也是一对', async () => {
+  await okAsync('beforeinput·空框打 “ 且 input 不来（真机形状）→ 仍只是一个', async () => {
     const ed = mkEd('')
     beforeinput(ed, '“', { noInput: true })
     await tick()
-    assert.equal(ed.value, '“”', 'input 缺席时靠 beforeinput 那条路补闭符：' + ed.value)
+    assert.equal(ed.value, '“', 'input 缺席时也只有一个开符：' + ed.value)
   })
 
   await okAsync('beforeinput·选中 abc 打 “ → 框住', async () => {
@@ -833,17 +835,19 @@ for (const [label, value] of [['半角 ()', '()'], ['方括号 []', '[]'], ['全
 //     闭符要落到这一段末尾 —— 否则得到 `""你好`（两个没闭合的开引号，谁都用不上）；
 //  B）选中文字打 `"` → 框成 `"你好"`（光标落在闭符之后）：再打同一个不该再堆一个 ——
 //     否则得到维护者报的 `"你好""`。
-ok('光标紧贴没闭合的开符、后面还有正文，再打同一个 → 补闭合到段尾（`"|你好` + `"` → `"你好"`）', () => {
+ok('光标紧贴没闭合的开符、后面还有正文，再打同一个 → **在光标处**插入（2026-10-23 契约）', () => {
+  // 旧实现把闭符 setCaret 到段尾（`"|你好` + `"` → `"你好"`），维护者报「后引号跑到句子后面、
+  // 不在我要的位置」，因此改为字面插入在光标处；未闭合由 lintQuotes 标红提示。
   const ed = mkEd('"你好', 1)
   keydown(ed, { key: '"' })
-  assert.equal(ed.value, '"你好"', '实得：' + ed.value)
-  assert.equal(ed.selectionStart, 4, '光标落在闭符之后：' + ed.selectionStart)
+  assert.equal(ed.value, '""你好', '实得：' + ed.value)
+  assert.equal(ed.selectionStart, 2, '光标停在插入字符之后：' + ed.selectionStart)
 })
 
-ok('同样一条对中文引号成立（`“|你好` + `“` → `“你好”`）', () => {
+ok('同样一条对中文引号成立（`“|你好` + `“` → 光标处插入）', () => {
   const ed = mkEd('\u201c你好', 1)
   keydown(ed, { key: '\u201c' })
-  assert.equal(ed.value, '\u201c你好\u201d', '实得：' + ed.value)
+  assert.equal(ed.value, '\u201c\u201c你好', '实得：' + ed.value)
 })
 
 ok('已经框好（光标在闭符之后）再打同一个闭符 → 不再堆一个（`"你好"` + `"` 仍是 `"你好"`）', () => {
@@ -855,15 +859,15 @@ ok('已经框好（光标在闭符之后）再打同一个闭符 → 不再堆�
 ok('中文引号已框好同样不再堆（`“你好”` + `“` 仍是 `“你好”`）', () => {
   const ed = mkEd('\u201c你好\u201d', 4)
   keydown(ed, { key: '\u201c' })
-  assert.equal(ed.value, '\u201c你好\u201d', '实得：' + ed.value)
+  assert.equal(ed.value, '“你好”', '实得：' + ed.value)
 })
 
-ok('引号空对里再打同一个：一律跳过（2026-10-22）；反引号另走一条，见 ``` 用例', () => {
+ok('空对不算「已框好」：连打三下引号仍是 `"""`（写 ``` 围栏那种用法不能被挡）', () => {
   const ed = mkEd('')
   keydown(ed, { key: '"' })
   keydown(ed, { key: '"' })
   keydown(ed, { key: '"' })
-  assert.equal(ed.value, '""', '实得：' + ed.value)
+  assert.equal(ed.value, '"""', '实得：' + ed.value)
 })
 
 ok('括号连带：`a(` 之后打 `(` 仍是只插一个（没被「补闭合」那条改坏）', () => {
@@ -873,3 +877,41 @@ ok('括号连带：`a(` 之后打 `(` 仍是只插一个（没被「补闭合」
 })
 
 console.log(`\n${n} 项全过`)
+
+// 2026-10-23 新增：warn 模式（默认）—— 不自动补闭引号，只标红提示未闭合
+ok('warn 模式：打引号只插一个，且未闭合时给输入框打标', () => {
+  const H2 = mod.__helpers__
+  H2.setQuoteMode('warn')
+  const ed = mkEd('')
+  keydown(ed, { key: '"' })
+  assert.equal(ed.value, '"', 'warn 模式不该自动补闭符：' + ed.value)
+  keydown(ed, { key: '"' })
+  keydown(ed, { key: '"' })
+  assert.equal(ed.value, '"""', '连按三下就是三个字面引号：' + ed.value)
+  H2.setQuoteMode('auto')
+})
+
+// 2026-10-23：句中打引号，闭符必须落在光标处（不是句末）
+ok('auto 模式·句中打引号：闭符插在光标处', () => {
+  const H = mod.__helpers__
+  H.setQuoteMode('auto'); H.setPairStrict(true)   // 严格档才保证一定补对
+  const ed = mkEd('你好世界', 2)
+  keydown(ed, { key: '"' })
+  assert.equal(ed.value, '你好' + '""' + '世界', '闭符必须在光标处：' + ed.value)
+  assert.equal(ed.selectionStart, 3, '光标应落在两符之间，实际 ' + ed.selectionStart)
+  H.setQuoteMode('warn')
+})
+
+
+// 2026-10-23：标红提示（lintQuotes）必须真的能打标/撤标 —— 之前因作用域错误永远不执行
+ok('lintQuotes：未闭合给输入框打标，闭合后撤标（VS Code 的 squiggle 口径）', () => {
+  const H = mod.__helpers__
+  assert.equal(H.quoteCount('"未闭合'), 1, '奇偶判据：1 个引号 = 未闭合')
+  assert.equal(H.quoteCount('"闭合"'), 2, '2 个引号 = 闭合')
+  const ed = mkEd('"未闭合', 4)
+  H.lintQuotes(ed)
+  assert.equal(ed.getAttribute('data-dce-quote-warn'), '1', '未闭合应打标')
+  ed.value = '"已闭合"'
+  H.lintQuotes(ed)
+  assert.notEqual(ed.getAttribute('data-dce-quote-warn'), '1', '闭合后应撤标')
+})
