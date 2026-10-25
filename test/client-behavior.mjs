@@ -870,6 +870,20 @@ ok('空对不算「已框好」：连打三下引号仍是 `"""`（写 ``` 围�
   assert.equal(ed.value, '"""', '实得：' + ed.value)
 })
 
+ok('包裹后清理多余开符：文首那个不属于这一对的开符会被删掉（2026-10-22 真机）', () => {
+  // 真机形状：选中 abcd 的 1-3 打 “ → Lexical 又按自己的模型在**文首**插了一个开符，
+  // 得到 `“a“bc”d`；清理后应是 `a“bc”d`。
+  const ed = mkEd('“a“bc”d', 0)
+  mod.__helpers__.repairWrapDup(ed, '“', 'bc', '”', 6)
+  assert.equal(ed.value, 'a“bc”d', '多余开符要删掉：' + ed.value)
+})
+
+ok('包裹后清理：文本没变长就一个字都不动（长度不变量）', () => {
+  const ed = mkEd('a“bc”d', 0)
+  mod.__helpers__.repairWrapDup(ed, '“', 'bc', '”', 6)
+  assert.equal(ed.value, 'a“bc”d', '本来就没多余开符，不该动：' + ed.value)
+})
+
 ok('括号连带：`a(` 之后打 `(` 仍是只插一个（没被「补闭合」那条改坏）', () => {
   const ed = mkEd('a(', 2)
   keydown(ed, { key: '(' })
