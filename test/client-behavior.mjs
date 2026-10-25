@@ -870,6 +870,14 @@ ok('空对不算「已框好」：连打三下引号仍是 `"""`（写 ``` 围�
   assert.equal(ed.value, '"""', '实得：' + ed.value)
 })
 
+ok('未闭合引号计数：撇号不算（let\'s / don\'t 不该标红）', () => {
+  const H3 = mod.__helpers__
+  assert.equal(H3.unclosedQuoteCount("let's go"), 0, "英文所有格里的 ' 不是引号")
+  assert.equal(H3.unclosedQuoteCount('don\u2019t'), 0, '弯撇号同理')
+  assert.equal(H3.unclosedQuoteCount('"你好'), 1, '真未闭合的引号要算')
+  assert.equal(H3.unclosedQuoteCount('"你好"'), 2, '成对的两个都要算（偶数=闭合）')
+})
+
 ok('包裹后清理多余开符：文首那个不属于这一对的开符会被删掉（2026-10-22 真机）', () => {
   // 真机形状：选中 abcd 的 1-3 打 “ → Lexical 又按自己的模型在**文首**插了一个开符，
   // 得到 `“a“bc”d`；清理后应是 `a“bc”d`。
