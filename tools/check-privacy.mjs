@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 // 发布前隐私闸：公开仓里不许出现「对话原话 / 本机路径 / 内部分工」。
 //
-// 为什么要有它（2026-10-22 本人指出）：这个仓是 public，而我把"私有案卷逐字留证"的纪律
-// 搬了进来 —— 提交信息与注释里写着「本人 2026-10-22 报「…」」，把用户的对话原话、本机绝对路径
+// 为什么要有它（指出）：这个仓是 public，而我把"私有案卷逐字留证"的纪律
+// 搬了进来 —— 提交信息与注释里写着「报「…」」，把用户的对话原话、本机绝对路径
 // 一起推到了公网。纪律本身没错，错在没有一道"发布前"的闸。
 //
 // 判据（逐条可解释）：
-//   ① 不出现 "本人" 这种把对话当证据的引述（git 历史与注释都算）
-//   ② 不出现本机绝对路径（X:\ 或 X:/）
-//   ③ 不出现本机工作区约定（5_临时 / 6_临时）
-//   ④ 不出现 DSH 私有配置路径（~/.dsh、AGENTS.md）与宿主本机构建路径
+// ① 不出现 "" 这种把对话当证据的引述（git 历史与注释都算）
+// ② 不出现本机绝对路径（X:\ 或 X:/）
+// ③ 不出现本机工作区约定（5_临时 / 6_临时）
+// ④ 不出现 DSH 私有配置路径（~/.dsh、AGENTS.md）与宿主本机构建路径
 // 退出码：0 干净 / 1 有命中
 
 import fs from 'node:fs'
@@ -22,7 +22,7 @@ const RULES = [
   { id: 'dialogue-quote', what: '对话原话引述（"本人 …"）', rx: /本人/g },
   { id: 'local-path', what: '本机绝对路径（X:\\ 或 X:/）', rx: /(?<![A-Za-z0-9])[A-Za-z]:[\\/][^\s`"')）]*/g },
   { id: 'temp-dir', what: '本机工作区约定（5_临时 / 6_临时）', rx: /[56]_临时/g },
-  // ~/.dsh 是所有 DSH 用户的标准配置目录（公开常识），不算泄漏；这里只抓**个人**规则文件与用户目录。
+ // ~/.dsh 是所有 DSH 用户的标准配置目录（公开常识），不算泄漏；这里只抓**个人**规则文件与用户目录。
   { id: 'dsh-private', what: '个人规则文件与用户目录', rx: /AGENTS\.md|[A-Za-z]:[\\/]Users[\\/][^\\/\s]+/g },
   { id: 'host-build', what: '宿主本机构建路径（deepseek-harness 目录）', rx: /deepseek-harness[\\/]/g },
 ]
@@ -39,7 +39,7 @@ const rows = []
 for (const f of files) {
   let text = ''
   try { text = fs.readFileSync(path.join(ROOT, f), 'utf8') } catch { continue }
-  // test/ 下的 `E:/path`、`5_临时` 是**夹具**（故意造的假路径），不是泄漏；那里只查对话引述。
+ // test/ 下的 `E:/path`、`5_临时` 是**夹具**（故意造的假路径），不是泄漏；那里只查对话引述。
   const isTest = f.startsWith('test/')
   for (const rule of RULES) {
     if (isTest && rule.id !== 'dialogue-quote') continue

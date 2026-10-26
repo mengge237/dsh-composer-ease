@@ -1,19 +1,19 @@
 #!/usr/bin/env node
-// 录一段真机 demo 生成 GIF —— 取代"手工截几张图再拼"的做法。
+// 录一段实测 demo 生成 GIF —— 取代"手工截几张图再拼"的做法。
 //
 // 管线（两个**专用工具**，不自己造轮子）：
-//   1) Playwright 驱动真机页面，边操作边抓帧（`page.screenshot`），帧上带真实时间戳；
-//   2) gifenc（纯 JS 的 GIF 编码器，专做调色板量化 + 抖动）按时间戳写帧，全局调色板压体积。
+// 1) Playwright 驱动实测页面，边操作边抓帧（`page.screenshot`），帧上带真实时间戳；
+// 2) gifenc（纯 JS 的 GIF 编码器，专做调色板量化 + 抖动）按时间戳写帧，全局调色板压体积。
 //
 // 为什么不用 ffmpeg：本机取 ffmpeg 静态包时被加速代理的 TLS 中间人挡过（UNABLE_TO_VERIFY_LEAF_SIGNATURE），
 // 而 gifenc 只走 npm registry，装得上、结果也够好（flat UI 上 256 色全局调色板几乎看不出损失）。
 //
 // 用法：
-//   node tools/record-demo.mjs <url> [--out docs/demo.gif] [--fps 15] [--width 900]
+// node tools/record-demo.mjs <url> [--out docs/demo.gif] [--fps 15] [--width 900]
 // 依赖（不进本仓；用环境变量指过去）：
-//   DEMO_DEPS=<装了 gifenc/pngjs 的 node_modules 所在目录>   （必填）
-//   里面需要：gifenc、pngjs
-//   Playwright 默认用本机 dev-browser 自带那份，可用 PLAYWRIGHT_ENTRY 覆盖。
+// DEMO_DEPS=<装了 gifenc/pngjs 的 node_modules 所在目录> （必填）
+// 里面需要：gifenc、pngjs
+// Playwright 默认用本机 dev-browser 自带那份，可用 PLAYWRIGHT_ENTRY 覆盖。
 
 import fs from 'node:fs'
 import path from 'node:path'

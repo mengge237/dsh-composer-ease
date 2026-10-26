@@ -6,8 +6,8 @@
 // 物理上只有一份，版本不可能不同步。
 //
 // 用法：
-//   node tools/link-host.mjs            # 报告当前关系（不动任何东西）
-//   node tools/link-host.mjs --apply    # 真正替换（会把原目录改名成 <dir>.hostbak，验证后再删）
+// node tools/link-host.mjs # 报告当前关系（不动任何东西）
+// node tools/link-host.mjs --apply # 真正替换（会把原目录改名成 <dir>.hostbak，验证后再删）
 //
 // 安全：① 只处理"宿主目录不是本仓"的情况；② 原目录保留为 .hostbak，验证通过才提示删除；
 // ③ 任何一步失败都会把原目录改回原名。

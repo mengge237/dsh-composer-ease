@@ -1,4 +1,4 @@
-// 真机回归：引号改动碰到的邻接行为（假 DOM 是 TEXTAREA，覆盖不到 contenteditable 这条路）
+// 实测回归：引号改动碰到的邻接行为（假 DOM 是 TEXTAREA，覆盖不到 contenteditable 这条路）
 // 用法：node test/real/real-regress.mjs "http://127.0.0.1:3081/?token=…"
 let chromium
 for (const spec of ['playwright', 'file:///<本地路径>']) {
@@ -130,7 +130,7 @@ await scene('已有未闭合开符 + 选中内容再打同一个 → 补闭合�
   await page.keyboard.press('Shift+Quote')
 })
 
-/* 手速：真人上屏之后紧接着按键（2026-10-20 使用中复现的那条就是这里漏的）。
+/* 手速：真人上屏之后紧接着按键（复现的那条就是这里漏的）。
  * 这几条必须有 —— 慢速版全绿而快速版红过整整一轮，因为光标复位当时靠盲定时器，
  * 要么没抢在输入法前面，要么在用户打完字之后才开火。 */
 const FAST = 10
@@ -153,11 +153,11 @@ await scene('手速·空框 " → 立刻上屏中文 → 立刻再打 "（零等
   await page.keyboard.press('Shift+Quote')
 })
 
-/* 使用中 2026-10-20 的原路径：先打「你好」→ 前面打 `"` → 再打 `"`。
- * 这是唯一一条能把「`"你好""`」造出来的路（真机复现：选中文字打 `"` 会框成 `"你好"`，
+/* 原路径：先打「你好」→ 前面打 `"` → 再打 `"`。
+ * 这是唯一一条能把「`"你好""`」造出来的路（实测复现：选中文字打 `"` 会框成 `"你好"`，
  * 光标落在闭符之后，再打 `"` 就堆出第三个）。两种落法都要守：
- *   A 回最前打 `"`（没有选中）→ 再打同一个 = 补闭合到段尾；
- *   B 选中文字打 `"`（框住）→ 再打同一个 = 不再堆。 */
+ * A 回最前打 `"`（没有选中）→ 再打同一个 = 补闭合到段尾；
+ * B 选中文字打 `"`（框住）→ 再打同一个 = 不再堆。 */
 await scene('使用中路径A·你好 → Home → " → 立刻再打 " ', '"你好"', 4, async () => {
   await ime('你好')
   await page.keyboard.press('Home'); await page.waitForTimeout(180)
@@ -186,7 +186,7 @@ await scene('使用中路径B·框住后快打（10ms）再打 " ', '"你好"', 
   await page.keyboard.press('Shift+Quote')
 })
 
-/* 手快那一拍（2026-10-20 的一次反馈）。
+/* 手快那一拍（的一次反馈）。
  * 断开两键之间的等待，逼出「上一键的光标复位还没落地就来了下一键」这种顺序。 */
 await scene('手速·空框 0ms 连按两下 " → 仍是 ""', '""', 2, async () => {
   await page.keyboard.press('Shift+Quote')

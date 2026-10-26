@@ -4,12 +4,12 @@
  * 每条 CHANGELOG 都必须带日期 + 提交 sha；确实没有对应提交的，必须写**显式豁免**「无 sha」，
  * 静默省略一律算红。
  *
- * 为什么需要它（2026-10-21 实况）：README 里的版本记录有 13 条日期是手写错的，0.9.11 还被追加到列表末尾。
+ * 为什么需要它（实况）：README 里的版本记录有 13 条日期是手写错的，0.9.11 还被追加到列表末尾。
  * 人写的东西必须有机器闸。
  *
  * 用法：
- *   node tools/check-release.mjs            # 真跑，红则退出码 1
- *   node tools/check-release.mjs --selftest # 自测（五格）
+ * node tools/check-release.mjs # 真跑，红则退出码 1
+ * node tools/check-release.mjs --selftest # 自测（五格）
  */
 import { readFileSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'

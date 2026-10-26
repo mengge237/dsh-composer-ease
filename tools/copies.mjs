@@ -2,15 +2,15 @@
 // 多副本一致性：把这台机器上所有「插件副本」列出来，比对版本与内容。
 //
 // 背景：这个插件在本机可能同时存在于
-//   ① 公开仓工作副本（改代码的地方）
-//   ② 宿主插件目录（两个 profile 用 `link:` 指向它，**真正被加载的是这份**）
-//   ③ 各 profile 的 node_modules 条目（通常是指向 ② 的链接，不是独立副本）
+// ① 公开仓工作副本（改代码的地方）
+// ② 宿主插件目录（两个 profile 用 `link:` 指向它，**真正被加载的是这份**）
+// ③ 各 profile 的 node_modules 条目（通常是指向 ② 的链接，不是独立副本）
 // 只要 ① 与 ② 不同步，就会出现"仓库里已经是新版、本地跑的还是旧版"。
 //
 // 用法：
-//   node tools/copies.mjs            # 报告：每份的路径 / realpath / 版本 / 是否链接
-//   node tools/copies.mjs --check    # 只比对：版本或内容不一致就退出码 1（CI 里没副本会跳过）
-//   node tools/copies.mjs --sync     # 把 ① 的内容推进到所有**真实目录**副本（链接的自动跳过）
+// node tools/copies.mjs # 报告：每份的路径 / realpath / 版本 / 是否链接
+// node tools/copies.mjs --check # 只比对：版本或内容不一致就退出码 1（CI 里没副本会跳过）
+// node tools/copies.mjs --sync # 把 ① 的内容推进到所有**真实目录**副本（链接的自动跳过）
 //
 // 环境变量：DSH_PLUGIN_HOST 覆盖宿主目录；HOME 决定 profile 位置。
 

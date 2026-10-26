@@ -7,11 +7,11 @@
 // 另存成领域词，两者都带出处。
 //
 // 用法：
-//   node tools/gen-lexicon.mjs --words <index.json|words.txt> \
-//        --corpus lib docs --corpus 本地配置/本地配置 --cap 30000 --domain-cap 1500
+// node tools/gen-lexicon.mjs --words <index.json|words.txt> \
+// --corpus lib docs --corpus 本地配置/本地配置 --cap 30000 --domain-cap 1500
 // 产出（直接覆盖，幂等）：
-//   lib/en-lexicon.js     EN_LEXICON（Set）+ enMatches / isCompleteEnWord / isWordPrefix / EN_LEXICON_SOURCE
-//   lib/domain-words.js   DOMAIN_WORDS（数组）+ DOMAIN_WORDS_SOURCE
+// lib/en-lexicon.js EN_LEXICON（Set）+ enMatches / isCompleteEnWord / isWordPrefix / EN_LEXICON_SOURCE
+// lib/domain-words.js DOMAIN_WORDS（数组）+ DOMAIN_WORDS_SOURCE
 
 import fs from 'node:fs'
 import os from 'node:os'
@@ -109,14 +109,14 @@ const KEYWORDS = []
 }
 const merged = new Set([...kept, ...KEYWORDS])
 // 领域词不许是词库里任何词的前缀 —— `docum` 这种碎片整串精确匹配会拿高分，反过来把 `document` 压下去
-// （2026-10-22 实测）。判定用前缀集合，30k 词建一次集合就够快。
+// （实测）。判定用前缀集合，30k 词建一次集合就够快。
 const keptSet = new Set(kept)
 function isFragmentOfWord(w) {
   for (const k of keptSet) if (k.length > w.length && k.startsWith(w)) return true
   return false
 }
 const domain = [...freqDoc.entries()]
-  // 不收带下划线的：文档里这类多半是路径（a_workspace / s_software），不是用户会打的词
+ // 不收带下划线的：文档里这类多半是路径（a_workspace / s_software），不是用户会打的词
   .filter(([w, n]) => n >= 3 && w.length >= 3 && !w.includes('_') && !merged.has(w)
     && /^[a-z][a-z0-9-]{1,31}$/.test(w) && !isFragmentOfWord(w))
   .sort((a, b) => b[1] - a[1])
@@ -155,7 +155,7 @@ export function enMatches(prefix, cap) {
   for (const w of EN_LEXICON) {
     if (w.length > p.length && w.startsWith(p)) out.push(w)
   }
-  // 三级排序：① 手写常用词优先（常用度先验）② 语料名次 ③ 短的、字母序
+ // 三级排序：① 手写常用词优先（常用度先验）② 语料名次 ③ 短的、字母序
   out.sort((a, b) => ((EN_COMMON.has(b) ? 1 : 0) - (EN_COMMON.has(a) ? 1 : 0))
     || ((EN_RANK.get(a) ?? 1e9) - (EN_RANK.get(b) ?? 1e9))
     || (a.length - b.length) || (a < b ? -1 : 1))

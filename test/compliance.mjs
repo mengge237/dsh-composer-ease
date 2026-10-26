@@ -1,6 +1,6 @@
 // 合规自检（0 网络 0 额度）：许可与条例能不能站得住，不靠嘴说，靠这一支跑出来。
 // 覆盖面：自家许可、借用件出处与许可证原文、逐字搬来的代码有没有带出处头、
-//         运行时有没有第三方依赖、仓里有没有密钥、版本号与更新日志是否对得上。
+// 运行时有没有第三方依赖、仓里有没有密钥、版本号与更新日志是否对得上。
 // 这些是「可以公开」的前提条件；动了 lib/ 或 THIRD-PARTY.md 就会在这里现形。
 import assert from 'node:assert/strict'
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
@@ -16,7 +16,7 @@ const readBytes = (p) => readFileSync(join(ROOT, p))
 const pkg = JSON.parse(read('package.json'))
 const third = read('THIRD-PARTY.md')
 const readme = read('README.md')
-// 2026-10-21：版本记录从 README 搬到 CHANGELOG.md，判据跟着改，免得闸盯错文件
+// 版本记录从 README 搬到 CHANGELOG.md，判据跟着改，免得闸盯错文件
 const changelog = read('CHANGELOG.md')
 const license = read('LICENSE')
 
@@ -42,14 +42,14 @@ ok('每个借用件都在 THIRD-PARTY.md 台账里：仓库 + 许可 + 钉住的
     assert.ok(third.includes('`' + b.commit + '`'), b.repo + ' 的 commit 要钉住：' + b.commit)
   }
   assert.ok(third.includes('CC0-1.0'), 'CC0 那一件要标出来')
-  // README 的「来源与许可」也要指向出处，不能只藏在 THIRD-PARTY 里
+ // README 的「来源与许可」也要指向出处，不能只藏在 THIRD-PARTY 里
   assert.ok(readme.includes('THIRD-PARTY.md'), 'README 要指向 THIRD-PARTY.md')
   assert.ok(/##\s*来源与许可/.test(readme), 'README 要有「来源与许可」一节')
 })
 
 ok('许可证原文照录：MIT 文本按版权人各一份，CC0 有声明', () => {
   const mitBlocks = third.split('Permission is hereby granted').length - 1
-  // microsoft/monaco-editor、codemirror（两个包同一份文本，同一版权人）、microsoft/vscode
+ // microsoft/monaco-editor、codemirror（两个包同一份文本，同一版权人）、microsoft/vscode
   assert.ok(mitBlocks >= 3, 'MIT 原文至少三份（monaco / codemirror / vscode），现在 ' + mitBlocks)
   assert.ok(/CC0 1\.0|CC0-1\.0/.test(third), 'CC0 要写明')
   assert.match(third, /public domain|Public Domain|CC0/i, 'CC0 的公有领域声明要在')
@@ -61,7 +61,7 @@ ok('逐字搬来的代码必须带出处头（仓库 + commit + 改了什么）'
   assert.match(fuzzy, /0b4e063/, 'fuzzy.js 要钉 commit')
   assert.match(fuzzy, /只做两处改动|去掉 TypeScript 类型注解/, 'fuzzy.js 要写明改了什么（MIT 要求标注改动）')
   assert.match(fuzzy, /THIRD-PARTY\.md/, 'fuzzy.js 要指回许可证原文')
-  // 只借数据的那份也要写清「一行代码都没搬」与数据源
+ // 只借数据的那份也要写清「一行代码都没搬」与数据源
   const words = read('lib/words.js')
   for (const b of BORROWED.filter((x) => x.repo !== 'microsoft/vscode' && x.repo !== 'fxsjy/jieba')) {
     assert.ok(words.includes(b.repo), 'words.js 头部缺数据源 ' + b.repo)
@@ -73,8 +73,8 @@ ok('逐字搬来的文件里，上游的版权与许可声明要原样保留（M
   const fuzzy = read('lib/fuzzy.js')
   assert.match(fuzzy, /Copyright \(c\) Microsoft Corporation/, '要保留上游逐字的版权声明')
   assert.match(fuzzy, /Licensed under the MIT License/, '要保留上游的许可指引（MIT 要求留住 notice）')
-  // 出处说明可以加，但不许把上游声明替换掉——这条是 2026-10-16 真踩过的：我自己写了头，
-  // 把 Microsoft 那段顶掉了，检疫闸当场报「找不到版权/许可头」。
+ // 出处说明可以加，但不许把上游声明替换掉——这条是 真遇到过的：我自己写了头，
+ // 把 Microsoft 那段顶掉了，检疫闸当场报「找不到版权/许可头」。
   assert.ok(fuzzy.indexOf('Copyright (c) Microsoft Corporation') < fuzzy.indexOf('dsh-composer-ease'), '上游声明要在最前面')
 })
 
@@ -125,7 +125,7 @@ ok('版本号与 CHANGELOG 最新一条一致（版本记录在 CHANGELOG，不�
 })
 
 ok('登记表那侧的条例也照顾到了：npm 键要么是合法包名要么不写', () => {
-  // dsh-community-plugins 的 index 闸：npm 必须是合法包名，null 会被拒（2026-10-16 实测）
+ // dsh-community-plugins 的 index 闸：npm 必须是合法包名，null 会被拒（实测）
   const name = pkg.npm
   if (name !== undefined) {
     assert.equal(typeof name, 'string', 'npm 键不能是 null/数字')
