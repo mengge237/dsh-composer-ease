@@ -135,3 +135,47 @@
 
 **验证判据**：`node test/server-routes.mjs` 的「英文前缀要出英文词候选」那条 —— `docum` 的第 1 条必须是
 `document`（detail `英文词`），且它排在 `documentation.md` 这类文件前面；`zzzqx` 不许硬造词。
+
+### T2 / T3 已落地（2026-10-22，0.9.27）
+
+生成器 `tools/gen-lexicon.mjs` 一次产出两份数据（**都幂等，不要手改生成物**）：
+
+```bash
+node tools/gen-lexicon.mjs \
+  --words <an-array-of-english-words 的 index.json> \
+  --corpus lib --corpus docs --corpus ~/.dsh/本地配置 \
+  --cap 30000 --domain-cap 1000
+```
+
+| 文件 | 内容 | 手改？ |
+|---|---|---|
+| `lib/en-common.js` | **手写**常用词 518 条（常用度先验） | ✅ 可以改，这是唯一该手改的词表 |
+| `lib/en-lexicon.js` | 生成物：30,581 词（30k 词表 ∩ 语料排序）+ `EN_RANK` + `EN_COMMON` | ❌ 生成 |
+| `lib/domain-words.js` | 生成物：66 个本机领域词（`dsh` / `gh-archive` / `deepseek-harness`） | ❌ 生成 |
+
+**T2 的做法**：`an-array-of-english-words@2.0.0`（MIT，274,937 词）→ 只留 3-12 字符纯字母 → **用本机语料频次排序**取前 30k。
+词表本身没有词频，单纯按长度排会让 `deled` 压过 `delete`；所以顺序那一半来自 T3 的语料统计。
+
+**T3 的做法**：同一趟生成，从**文档语料**（`.md`/`.txt`）统计高频词，只收「词库里没有 + 不是任何词的前缀 + 不含下划线」的：
+- 不含下划线 → 排除 `a_workspace` / `s_software` 这类路径；
+- 不是任何词的前缀 → 排除 `docum` 这种碎片（它整串精确匹配会拿高分，反过来把 `document` 压下去，实测踩过）；
+- 只取文档、不取源码 → 否则 `wordpos` / `charcode` / `selectionstart` 这些内部变量名会进候选池。
+
+**排序（`lib/index.js`，0.9.27 起）**：
+
+1. `enMatches` 三级排序：**手写常用词 > 语料名次 > 短者 > 字母序**；
+2. 所有以 prefix 开头的词候选按三档给 `ctx`：**整词（且真是词）=460 / 常用词=440 / 其他=400**。
+   整词加分只给 `isCompleteEnWord()` 为真的串 —— 否则 `docum` 这种非词串也会吃满分；
+3. `rankCandidates` 末尾**词优先分区**：prefix 匹配 `^[A-Za-z][A-Za-z0-9-]{2,}$` 时，词整段排在文件前面
+   （带连字符的 `gh-` / `dsh-` 也算），文件内部相对顺序不变。
+
+**读数（服务端直跑 `internals.buildCandidates`）**：
+
+```
+dsh   -> dsh/本机词 | dsh-kit/本机词 | dsh-shim/本机词      ← 不再是 deepseek-harness 的文件
+gh-   -> gh-archive/本机词 | gh-archive/README.md | …
+docum -> document/英文词 | documents/英文词 | …
+inp   -> input/html 标签 | inpour/英文词 | …
+del   -> del/html 标签 | delete/JS 关键字 | …
+文档  -> 文档管理/词典
+```
