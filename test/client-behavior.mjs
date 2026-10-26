@@ -194,6 +194,25 @@ await okAsync('Ctrl+Space → 打 words 路由；候选回来弹层渲染，Tab 
   assert.equal(ed.value, 'input', 'Tab 接受后要把 inp 换成候选值')
 })
 
+await okAsync('行内灰字跟着选中项走（VS Code suggest.preview 的实时性）', async () => {
+  // 2026-10-22 维护者：「方向键的改变和 VS Code 的提示内容有实时性，我们没这个实时性」。
+  // 早先 showGhost 固定取 items[0]，所以 ArrowDown 换了选中，灰字不动。
+  fetchReply = { ok: true, candidates: [
+    { kind: 'word', value: 'zqalpha', detail: '英文词' },
+    { kind: 'word', value: 'zqbeta', detail: '英文词' }] }
+  const ed = mkEd('zq')
+  keydown(ed, { key: ' ', code: 'Space', ctrl: true })
+  await tick()
+  const g1 = ghostEl()
+  assert.ok(g1, '灰字节点要在')
+  assert.equal(g1.textContent, 'alpha', '初始灰字应是第一条的剩余：' + g1.textContent)
+  keydown(ed, { key: 'ArrowDown' })
+  const g2 = ghostEl()
+  assert.equal(g2.textContent, 'beta', 'ArrowDown 后灰字应换成第二条：' + g2.textContent)
+  keydown(ed, { key: 'ArrowUp' })
+  assert.equal(ghostEl().textContent, 'alpha', 'ArrowUp 回来应恢复第一条：' + ghostEl().textContent)
+})
+
 await okAsync('方向键改选中：ArrowDown 之后 Tab 接受第二条（2026-10-22 报的上下键无效）', async () => {
   fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'deferred', detail: '词典' }, { kind: 'word', value: 'denote', detail: '词典' }] }
   const ed = mkEd('de')
