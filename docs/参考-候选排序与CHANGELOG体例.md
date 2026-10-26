@@ -1,14 +1,15 @@
 # 候选排序 × CHANGELOG 体例 · 参考与改点
 
-写给要手改的我方（2026-10-22）。两半：**一、二、三、四是候选排序**（对应「提示太多 / 没相似度截断 / 优先出 deepseek-harness 底层文件 / 想按 dsh 全名显示」），**五是 CHANGELOG**。
-每条都指到本仓的具体函数与行号，并给可对照的上游实现（路径已核）。
+写给要手改的维护者。两半：**一、二、三、四是候选排序**（要解决的问题是：候选太多没有截断、文件候选挤掉词候选、
+宿主底层文件不该优先、显示名要用短形式），**五是 CHANGELOG 体例**。
+每条都指到本仓的具体函数与行号，并给可对照的上游实现。
 
 ---
 
 ## 一、候选太多、没有相似度截断
 
 **现状（读数）**：打 `de` 弹出 12 条，前四条是
-`DeepSeek` / `deepseek_harness_example/README.md` / `deepseek_harness_example/documentation.md` / `deepseek_harness_example/IMPLEMENTATION_SUMMARY…`，
+`DeepSeek` / `example-proj/README.md` / `example-proj/documentation.md` / `example-proj/IMPLEMENTATION_SUMMARY…`，
 第 5 条起才是 `del` / `delete` / `default` / `details` / `debugger`。也就是说**文件候选挤掉了词候选**，而且没有任何分数截断。
 
 **改点（`lib/index.js`）**：
@@ -38,12 +39,12 @@
 ## 二、不要优先显示 deepseek-harness 的底层文件
 
 **根因**：`workspaceRoots()` 把 harness 安装目录也当成候选根，而 `contextScore` 给顶层 `README*` 1000 分，
-于是 `deepseek_harness_example/README.md` 在 `de` 里仅次于 `DeepSeek`。
+于是 `example-proj/README.md` 在 `de` 里仅次于 `DeepSeek`。
 
 **三种改法（可叠加，按见效速度排）**：
 
 1. **剔根**（最彻底）：`workspaceRoots()` 只保留「当前会话 cwd」+ 配置里显式列出的根，harness 安装目录不进候选池。
-2. **压分**（最小改动）：`contextScore` 里对这些片段给 0 或负分：`deepseek_harness_example`、`deepseek-harness`、`node_modules`、`plugins/`、`.dsh/`。
+2. **压分**（最小改动）：`contextScore` 里对这些片段给 0 或负分：`example-proj`、`deepseek-harness`、`node_modules`、`plugins/`、`.dsh/`。
 3. **展示层折叠**（你要的「挑明 DSH 全名」）：路径命中 `deepseek-harness|deepseek_harness|dsh-` 时，把标签渲染成
    `dsh: README.md`（前缀固定写 `dsh:`，不展开长路径）；右侧类型词照旧写「文件」。
 
@@ -187,7 +188,7 @@ del   -> del/html 标签 | delete/JS 关键字 | …
 | 相对分数截断 `score >= max*0.5` | **撤掉** | 与 `fuzzyScore` 语义冲突：VS Code 把负分的分散匹配（`abc` vs `axbxc`）也列在下面；50% 还会误删 `libsdk/auth.ts` 这类合法路径（单测直接照出来） |
 | 上限 12 → 8 | **采用** | 配合下面的配额才安全 |
 | 词优先"整段分区" | **改成配额**：词 ≤6、非词 ≥2 | 整段分区 + 上限 8 会把文件候选全饿死：`hel` 上只剩 `help/held/hele/…`，想选文件一条看不到 |
-| `contextScore` 给 harness 目录压分 | **采用**，`-2000` | 实测 `de` 的前四条不再被 `deepseek_harness_example/*.md` 占掉 |
+| `contextScore` 给 harness 目录压分 | **采用**，`-2000` | 实测 `de` 的前四条不再被 `example-proj/*.md` 占掉 |
 | 展示层折叠 `dsh: <basename>` | **采用** | 只改显示，插入正文仍是完整路径 |
 
 压噪声的最终三件套：**上限 8 + 类型配额（词≤6/非词≥2）+ harness 目录 -2000**。别再往"阈值"上想办法。
