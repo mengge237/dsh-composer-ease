@@ -55,7 +55,9 @@ for (const f of files) {
     console.error(`RED  留了 TODO/FIXME：${rel}`)
   }
   // 只查行内链接；代码围栏里的示例跳过（否则 doc 里写 `[x](y)` 当例子会假红）
-  const body = text.replace(/```[\s\S]*?```/g, '')
+  // 围栏代码块 + **行内代码**都要剥掉：文档里用反引号展示 `[x](y)` 这种语法是常态，
+  // 不剥就会被当成死链（2026-10-22 写「如何做 README 图」时踩到）。
+  const body = text.replace(/```[\s\S]*?```/g, '').replace(/`[^`\n]*`/g, '')
   const re = /\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g
   let m
   while ((m = re.exec(body))) {
