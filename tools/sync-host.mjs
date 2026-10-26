@@ -22,10 +22,28 @@ if (!HOST) { console.error('缺 DSH_PLUGIN_HOST：指向宿主真正加载的那
 const CHECK = process.argv.includes('--check')
 
 // 宿主运行时要的文件：两头代码 + 数据 + 元数据 + 文档
+// docs/ 下的图与文档也要同步：宿主那份 README 引用的就是这些相对路径，
+// 不同步就会出现"仓库里换了新 banner、本地看到还是旧的"（2026-10-22 实际踩到）。
+const DOCS = (() => {
+  const out = []
+  const walk = (rel) => {
+    let ents = []
+    try { ents = fs.readdirSync(path.join(ROOT, rel), { withFileTypes: true }) } catch { return }
+    for (const e of ents) {
+      const r = rel + '/' + e.name
+      if (e.isDirectory()) walk(r)
+      else if (/\.(svg|png|gif|md)$/i.test(e.name)) out.push(r)
+    }
+  }
+  walk('docs')
+  return out
+})()
+
 const FILES = [
   'lib/client.js', 'lib/index.js', 'lib/fuzzy.js', 'lib/words.js',
   'lib/cjk-lexicon.js', 'lib/en-lexicon.js', 'lib/en-common.js', 'lib/domain-words.js',
   'package.json', 'cordis.patch.yml', 'README.md', 'THIRD-PARTY.md', 'CHANGELOG.md',
+  ...DOCS,
 ]
 
 const norm = (p) => {
