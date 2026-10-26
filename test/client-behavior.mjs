@@ -194,6 +194,30 @@ await okAsync('Ctrl+Space → 打 words 路由；候选回来弹层渲染，Tab 
   assert.equal(ed.value, 'input', 'Tab 接受后要把 inp 换成候选值')
 })
 
+await okAsync('方向键改选中：ArrowDown 之后 Tab 接受第二条（2026-10-22 报的上下键无效）', async () => {
+  fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'deferred', detail: '词典' }, { kind: 'word', value: 'denote', detail: '词典' }] }
+  const ed = mkEd('de')
+  keydown(ed, { key: ' ', code: 'Space', ctrl: true })
+  await tick()
+  const p = popupEl()
+  assert.ok(p && p.style.display === 'block', '弹层要显示')
+  keydown(ed, { key: 'ArrowDown' })
+  keydown(ed, { key: 'Tab' })
+  assert.equal(ed.value, 'denote', 'ArrowDown 后应接受第二条：' + ed.value)
+})
+
+await okAsync('点击候选行：点哪条就插哪条（不再固定插第一条）', async () => {
+  fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'deferred', detail: '词典' }, { kind: 'word', value: 'denote', detail: '词典' }] }
+  const ed = mkEd('de')
+  keydown(ed, { key: ' ', code: 'Space', ctrl: true })
+  await tick()
+  const p = popupEl()
+  const rows = [...p.children]
+  assert.equal(rows.length, 2, '两条候选两行：' + rows.length)
+  rows[1].onmousedown({ preventDefault() {} })
+  assert.equal(ed.value, 'denote', '点第二行应插入第二条：' + ed.value)
+})
+
 await okAsync('打两个字母自动弹（不用快捷键），本文词排在前面不等网络', async () => {
   fetchReply = { ok: true, candidates: [{ kind: 'file', value: 'x/y.ts', detail: 'w' }] }
   const ed = mkEd('inputValue inputHandler inp')
