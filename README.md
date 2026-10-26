@@ -22,9 +22,9 @@
 | ![标红](docs/shots/03-quote-lint.png) | ![配对](docs/shots/04-pairing.png) |
 | 输入框底部红色**波浪线** + 提示条（VS Code 的 squiggle 口径），不阻断输入 | 打 `(` 得到 `()`，光标落在中间；选中一段再打括号则直接框住 |
 
-![动图：围栏语言与对话上下文](docs/demo-small.gif)
+![动图：补全、方向键、接受与标红](docs/demo.gif)
 
-*动图录的是「围栏决定词表 / 对话决定词表」两个镜头（真机录制，纯净 profile）。*
+*动图是**真机录的**（Playwright 抓帧 + gifenc 编码，不是拼图）：打 `def` 弹补全 → ↑↓ 换选中（行内灰字跟着走）→ `Tab` 接受 → 打 `docum` 看英文词与文件混排 → 打半个引号看红色波浪线。管线见 `docs/如何做 README 图.md`。*
 
 ## 快速开始
 
