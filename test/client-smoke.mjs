@@ -25,15 +25,15 @@ ok('bundle 顶部注册了宿主 loader，id 与包名一致', () => {
 const mod = captured.factory(() => { throw new Error('本包不该 require 任何东西') })
 ok('导出 apply/inject；不碰宿主 react', () => {
   assert.equal(typeof mod.apply, 'function')
-  // 2026-10-21：宿主输入触发服务必须声明（官方 dsh-client-ui-reference / -skill 同样做法），
-  // 否则 apply 里 scope.inputTriggers 取不到，@ 那组注册不上。
+ // 宿主输入触发服务必须声明（官方 dsh-client-ui-reference / -skill 同样做法），
+ // 否则 apply 里 scope.inputTriggers 取不到，@ 那组注册不上。
   assert.deepEqual([...mod.inject], ['inputTriggers'])
 })
 
 const H = mod.__helpers__
 ok('「/」那组排到最上面：order 0，先于内置「指令」1 与「技能」2', () => {
-  // 使用中 2026-10-22：严格配对放在技能下面找不到。宿主按 order 升序排，
-  // 内置两组分别是 1 与 2，所以我们必须 < 1 才会出现在最上面。
+ // 严格配对放在技能下面找不到。宿主按 order 升序排，
+ // 内置两组分别是 1 与 2，所以插件必须 < 1 才会出现在最上面。
   const srcs = H.buildTriggerSources()
   const slash = srcs.find(s => s.trigger === '/')
   const at = srcs.find(s => s.trigger === '@')
@@ -43,7 +43,7 @@ ok('「/」那组排到最上面：order 0，先于内置「指令」1 与「技
   assert.equal(typeof slash.candidates, 'function')
 })
 ok('严格配对开关：默认关，能写入也能读回', () => {
-  // localStorage 在测试环境可能不存在；这里只断言「不抛错 + 默认 false」的契约
+ // localStorage 在测试环境可能不存在；这里只断言「不抛错 + 默认 false」的契约
   const H2 = mod.__helpers__
   assert.equal(typeof H2.pairStrict, 'function')
   assert.equal(typeof H2.setPairStrict, 'function')
@@ -55,7 +55,7 @@ ok('严格配对开关：默认关，能写入也能读回', () => {
 ok('配对判据：光标前是路径/标识符字符就不自动配对（保护输入路径与函数调用场景）', () => {
   assert.equal(H.shouldPair('open E:/S_Software'), false, '结尾是标识符：像路径/词中，别配对')
   assert.equal(H.shouldPair('写一个'), true, '结尾是 CJK 字：该配对')
-  // 2026-10-20 改口径：成对家族前面的符号一律不补对（原来这里断言 false→改成 true 的那条已作废）
+ // 改口径：成对家族前面的符号一律不补对（原来这里断言 false→改成 true 的那条已作废）
   assert.equal(H.shouldPair('call('), false, '光标已在 ( 后：只插一个，不再补成 (()')
   assert.equal(H.shouldPair('list['), false, '方括号同理：不补')
   assert.equal(H.shouldPair('“'), false, '中文前引号后：不补')

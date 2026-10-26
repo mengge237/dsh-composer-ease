@@ -61,7 +61,7 @@ const documentFake = {
 const fetchCalls = []
 let fetchReply = { ok: true, candidates: [] }
 /* 延迟模式：把响应扣在队列里，由用例决定何时放行 —— 用来复现「快速回车后，
- * 迟到的候选响应把浮层/灰字画回已被清空的输入框」（2026-10-21 使用中报的 bug）。 */
+ * 迟到的候选响应把浮层/灰字画回已被清空的输入框」（bug）。 */
 let fetchDefer = false
 const fetchQueue = []
 const releaseFetch = () => { fetchQueue.splice(0).forEach((fire) => fire()) }
@@ -118,7 +118,7 @@ const tick = () => new Promise((r) => setTimeout(r, 0))
 
 /* beforeinput 的**浏览器那半步**：真浏览器在 beforeinput 没被拦住时会自己落字，
  * 然后派发 input。假 DOM 原来只调处理器、不落字，于是「落地之后才收尾」的实现根本验不出来。
- * noInput=true 复刻真机实测的另一个形状：空框里 Lexical 首次插入**不派发 input**。 */
+ * noInput=true 复刻实测的另一个形状：空框里 Lexical 首次插入**不派发 input**。 */
 function nativeInsert(ed, data, noInput) {
   const s = ed.selectionStart, e = ed.selectionEnd
   ed.value = ed.value.slice(0, s) + data + ed.value.slice(e)
@@ -232,7 +232,7 @@ await okAsync('候选类型预设：一行循环四态，/ 菜单不再被四个
   assert.equal(H6.isKindOn('snippet'), false, '只有词：片段关')
   H6.cycleKindPreset(); assert.equal(H6.kindPresetLabel(), '全关')
   H6.cycleKindPreset(); assert.equal(H6.kindPresetLabel(), '全部')
-  // / 菜单里的候选行数：引号模式 + 候选类型 + 严格配对 = 3
+ // / 菜单里的候选行数：引号模式 + 候选类型 + 严格配对 = 3
   const slash = H6.buildTriggerSources().find((x) => x.trigger === '/')
   const rows = await slash.candidates({}, {})
   assert.equal(rows.length, 3, '/ 菜单应只有 3 行：' + rows.map((r) => r.name).join(','))
@@ -249,8 +249,8 @@ ok('候选类型开关：关掉文件后，合并结果里没有文件候选', (
 })
 
 await okAsync('行内灰字跟着选中项走（VS Code suggest.preview 的实时性）', async () => {
-  // 2026-10-22 一次反馈。
-  // 早先 showGhost 固定取 items[0]，所以 ArrowDown 换了选中，灰字不动。
+ // 一次反馈。
+ // 早先 showGhost 固定取 items[0]，所以 ArrowDown 换了选中，灰字不动。
   fetchReply = { ok: true, candidates: [
     { kind: 'word', value: 'zqalpha', detail: '英文词' },
     { kind: 'word', value: 'zqbeta', detail: '英文词' }] }
@@ -304,7 +304,7 @@ await okAsync('打两个字母自动弹（不用快捷键），本文词排在�
   assert.match(popupEl().innerText, /inputValue/, '网络回来后本地词仍在')
 })
 
-/* 回归（2026-10-21 一次反馈）：
+/* 回归（一次反馈）：
  * 候选响应比回车晚到，旧实现在 Enter 清场之后又把浮层与灰字画了一遍。 */
 await okAsync('回车后迟到的补全响应不复活浮层与灰字', async () => {
   fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'input' }] }
@@ -384,8 +384,8 @@ await okAsync('Esc 关弹层', async () => {
 })
 
 await okAsync("行首 '/' 让给原生命令：插件不拉候选、不弹层", async () => {
-  // 2026-10-21：'/' 是 DSH 命系统入口（dsh-commands：command/run），插件不插手，
-  // 免得两份菜单叠在一起、也免得给那条路加延迟。
+ // '/' 是 DSH 命系统入口（dsh-commands：command/run），插件不插手，
+ // 免得两份菜单叠在一起、也免得给那条路加延迟。
   const ed = mkEd('/dsh')
   const before = fetchCalls.length
   input(ed)
@@ -427,11 +427,11 @@ ok('全角/IME 路径同样看右边：右边有字就只插开符', () => {
 
 ok('引号模式与严格配对的两级语义（2026-10-23 契约：warn 优先，auto 才看 strict）', () => {
   const H2 = mod.__helpers__
-  // 默认 warn：无论 strict 开关如何都不补闭符（改为标红提示）
+ // 默认 warn：无论 strict 开关如何都不补闭符（改为标红提示）
   H2.setQuoteMode('warn')
   H2.setPairStrict(true)
   assert.equal(H2.shouldPair('', '', '"'), false, 'warn 模式下即使开严格也不自动补对')
-  // auto：恢复老行为，strict 决定是否补对
+ // auto：恢复老行为，strict 决定是否补对
   H2.setQuoteMode('auto')
   assert.equal(H2.shouldPair('', '', '"'), true, 'auto + 严格：应与括号一样补对')
   H2.setPairStrict(false)
@@ -442,8 +442,8 @@ ok('引号模式与严格配对的两级语义（2026-10-23 契约：warn 优先
 
 ok('引号只插一个：空框打引号不再自动补闭符（2026-10-21 契约变更）', () => {
   mod.__helpers__.setQuoteMode('warn')
-  // 补对要靠 DOM Range 把光标塞回两符之间，而 Lexical 的模型选区不认 DOM Range，
-  // 快速连打会多出一个引号（真机：`“”你好""` 四个）。所以引号一律只插一个。
+ // 补对要靠 DOM Range 把光标塞回两符之间，而 Lexical 的模型选区不认 DOM Range，
+ // 快速连打会多出一个引号（实测：`“”你好""` 四个）。所以引号一律只插一个。
   const ed = mkEd('')
   keydown(ed, { key: '"', shift: true })
   assert.equal(ed.value, '"', '只该插一个：' + ed.value)
@@ -651,7 +651,7 @@ await okAsync('回车（发送）收干净：弹层与灰字都不留在被清�
   assert.equal(g.style.display, 'none', '发送后灰字要收起')
 })
 
-// ── 2026-10-20 的一次反馈────────────────────
+// ── 的一次反馈────────────────────
 function pressQuote(value, sel, key, data) {
   const ed = mkEd(value, sel[1])
   ed.selectionStart = sel[0]; ed.selectionEnd = sel[1]
@@ -687,7 +687,7 @@ ok('IME 那条路（beforeinput）同样认未闭合', () => {
   assert.equal(ed.value, '"abc"', 'beforeinput 不许再框一层：' + ed.value)
 })
 
-// ── 使用中 2026-10-21：全角/半角混着打，不该冒出多个引号 ─────────────────
+// ── 全角/半角混着打，不该冒出多个引号 ─────────────────
 ok('全角开符后面打半角引号：补闭合，不再凑一对', () => {
   const ed = pressQuote('\u201c\u4f60\u597d', [3, 3], '"')
   const quotes = (ed.value.match(/["\u201c\u201d]/g) || []).length
@@ -705,7 +705,7 @@ ok('正常框选没被改坏：选中 abc 打引号仍然框住', () => {
   assert.equal(ed.value, '"abc"', '普通框选应仍是 "abc"：' + ed.value)
 })
 
-// ── 使用中 2026-10-21：框选只是一个动作，要能反选 ─────────────────────────
+// ── 框选只是一个动作，要能反选 ─────────────────────────
 ok('框完再打同一个引号 = 取消这次框选，内层重新选中', () => {
   const ed = pressQuote('abc', [0, 3], '"')
   assert.equal(ed.value, '"abc"', '先框住：' + ed.value)
@@ -730,7 +730,7 @@ ok('框选期间不弹补全（框选只是一个动作，不该顺手提醒）'
   assert.ok(!g || g.style.display === 'none', '框选后不该留灰字')
 })
 
-// ── 成对家族行为矩阵（2026-10-20 的一次反馈）─────────────
+// ── 成对家族行为矩阵（的一次反馈）─────────────
 // 期望值按「像 VS Code 那样、但中文正文也配对」的口径写死；哪条红就是实现要补的。
 function bi(ed, data) {
   const ev = { target: ed, data, inputType: 'insertText', prevented: false, preventDefault() { this.prevented = true } }
@@ -738,8 +738,8 @@ function bi(ed, data) {
   return ev
 }
 
-// 1) 空框：**括号家族**补成一对、光标在中间；**引号家族**只插一个（2026-10-21 契约变更：
-//    补对要靠 DOM Range 把光标塞回两符之间，Lexical 的模型选区不认 → 快速连打会多出一个引号）。
+// 1) 空框：**括号家族**补成一对、光标在中间；**引号家族**只插一个（契约变更：
+// 补对要靠 DOM Range 把光标塞回两符之间，Lexical 的模型选区不认 → 快速连打会多出一个引号）。
 for (const [open, close] of [['(', ')'], ['[', ']'], ['{', '}'], ['`', '`'],
                              ['（', '）'], ['【', '】'], ['「', '」'], ['『', '』'], ['《', '》'], ['〈', '〉']]) {
   ok(`矩阵·空框打 ${open} → 补成 ${open}${close}，caret 在中间`, () => {
@@ -759,7 +759,7 @@ for (const q of ['"', "'", '“', '‘']) {
   })
 }
 
-// 2) 光标前已有「未闭合」的开符：只插一个（这是使用中报的核心那条）
+// 2) 光标前已有「未闭合」的开符：只插一个（这是核心那条）
 for (const [open, close, text] of [['"', '"', '"你好'], ["'", "'", "'abc"], ['`', '`', '`code'], ['“', '”', '“文字'], ['（', '）', '（说明']]) {
   ok(`矩阵·${text} 末尾再打 ${open} → 只插一个`, () => {
     const ed = mkEd(text, text.length)
@@ -828,7 +828,7 @@ ok('矩阵·中文正文后打 ( → 配对', () => {
 })
 
 // ── beforeinput 路线（配对判定的第二条路：中文输入法/全角没有可用的 keydown）──────────
-// 真机读数（2026-10-20，demo 3081 + Playwright）：真 Lexical **不认 preventDefault** ——
+// 实测值（demo 3081 + Playwright）：真 Lexical **不认 preventDefault** ——
 // 它照自己的模型再插一遍，于是「拦 + 自己插」得到双份。所以这条路只能是
 // 「先让原生插，落地之后再收尾」。假 DOM 在这里补上浏览器那半步，断言的是**终态**。
 // 0.9.6 起这 6 条已转正（原先挂在 CE_PENDING 后面红着等实现）。
@@ -882,7 +882,7 @@ ok('矩阵·中文正文后打 ( → 配对', () => {
   })
 }
 
-// ── 基础用法补测（2026-10-20 的一次反馈）──────────
+// ── 基础用法补测（的一次反馈）──────────
 await okAsync('基础·打 / 不触发插件候选（原生命令接手）', async () => {
   const ed = mkEd('/')
   const before = fetchCalls.length
@@ -917,7 +917,7 @@ ok('基础·全角闭符 ）右边没有时交给默认插入（不拦、也不�
 
 
 
-// ── 空对里按 Backspace 一次删两侧（2026-10-20 取证后修；半角/全角/中文标点都要过）──
+// ── 空对里按 Backspace 一次删两侧（取证后修；半角/全角/中文标点都要过）──
 for (const [label, value] of [['半角 ()', '()'], ['方括号 []', '[]'], ['全角 （）', '\uff08\uff09'], ['中文引号 “”', '\u201c\u201d'], ['单书名号 〈〉', '\u3008\u3009'], ['双书名号 《》', '\u300a\u300b']]) {
   ok(`空对·${label} 里按 Backspace 一次删两侧`, () => {
     const ed = mkEd(value, 1)
@@ -926,14 +926,14 @@ for (const [label, value] of [['半角 ()', '()'], ['方括号 []', '[]'], ['全
   })
 }
 
-// ── 使用中 2026-10-20 的路径：先打「你好」→ 前面打 `"` → 再打 `"` ────────────────
-// 真机复现（demo 3081 + Playwright）分两种落法，都会堆出多余引号，两种都要治：
-//  A）回最前打 `"`（没选中）→ 光标紧贴一个没闭合的开符，后面还有正文：再打同一个是「补闭合」，
-//     闭符要落到这一段末尾 —— 否则得到 `""你好`（两个没闭合的开引号，谁都用不上）；
-//  B）选中文字打 `"` → 框成 `"你好"`（光标落在闭符之后）：再打同一个不该再堆一个 ——
-//     否则得到使用中报的 `"你好""`。
+// ── 路径：先打「你好」→ 前面打 `"` → 再打 `"` ────────────────
+// 实测复现（demo 3081 + Playwright）分两种落法，都会堆出多余引号，两种都要治：
+// A）回最前打 `"`（没选中）→ 光标紧贴一个没闭合的开符，后面还有正文：再打同一个是「补闭合」，
+// 闭符要落到这一段末尾 —— 否则得到 `""你好`（两个没闭合的开引号，谁都用不上）；
+// B）选中文字打 `"` → 框成 `"你好"`（光标落在闭符之后）：再打同一个不该再堆一个 ——
+// 否则得到`"你好""`。
 ok('光标紧贴没闭合的开符、后面还有正文，再打同一个 → **在光标处**插入（2026-10-23 契约）', () => {
-  // 旧实现把闭符 setCaret 到段尾（`"|你好` + `"` → `"你好"`），一次反馈，因此改为字面插入在光标处；未闭合由 lintQuotes 标红提示。
+ // 旧实现把闭符 setCaret 到段尾（`"|你好` + `"` → `"你好"`），一次反馈，因此改为字面插入在光标处；未闭合由 lintQuotes 标红提示。
   const ed = mkEd('"你好', 1)
   keydown(ed, { key: '"' })
   assert.equal(ed.value, '""你好', '实得：' + ed.value)
@@ -975,8 +975,8 @@ ok('未闭合引号计数：撇号不算（let\'s / don\'t 不该标红）', () 
 })
 
 ok('包裹后清理多余开符：文首那个不属于这一对的开符会被删掉（2026-10-22 真机）', () => {
-  // 真机形状：选中 abcd 的 1-3 打 “ → Lexical 又按自己的模型在**文首**插了一个开符，
-  // 得到 `“a“bc”d`；清理后应是 `a“bc”d`。
+ // 实测形状：选中 abcd 的 1-3 打 “ → Lexical 又按自己的模型在**文首**插了一个开符，
+ // 得到 `“a“bc”d`；清理后应是 `a“bc”d`。
   const ed = mkEd('“a“bc”d', 0)
   mod.__helpers__.repairWrapDup(ed, '“', 'bc', '”', 6)
   assert.equal(ed.value, 'a“bc”d', '多余开符要删掉：' + ed.value)
@@ -996,7 +996,7 @@ ok('括号连带：`a(` 之后打 `(` 仍是只插一个（没被「补闭合」
 
 console.log(`\n${n} 项全过`)
 
-// 2026-10-23 新增：warn 模式（默认）—— 不自动补闭引号，只标红提示未闭合
+// 新增：warn 模式（默认）—— 不自动补闭引号，只标红提示未闭合
 ok('warn 模式：打引号只插一个，且未闭合时给输入框打标', () => {
   const H2 = mod.__helpers__
   H2.setQuoteMode('warn')
@@ -1009,7 +1009,7 @@ ok('warn 模式：打引号只插一个，且未闭合时给输入框打标', ()
   H2.setQuoteMode('auto')
 })
 
-// 2026-10-23：句中打引号，闭符必须落在光标处（不是句末）
+// 句中打引号，闭符必须落在光标处（不是句末）
 ok('auto 模式·句中打引号：闭符插在光标处', () => {
   const H = mod.__helpers__
   H.setQuoteMode('auto'); H.setPairStrict(true)   // 严格档才保证一定补对
@@ -1021,7 +1021,7 @@ ok('auto 模式·句中打引号：闭符插在光标处', () => {
 })
 
 
-// 2026-10-23：标红提示（lintQuotes）必须真的能打标/撤标 —— 之前因作用域错误永远不执行
+// 标红提示（lintQuotes）必须真的能打标/撤标 —— 之前因作用域错误永远不执行
 ok('lintQuotes：未闭合给输入框打标，闭合后撤标（VS Code 的 squiggle 口径）', () => {
   const H = mod.__helpers__
   assert.equal(H.quoteCount('"未闭合'), 1, '奇偶判据：1 个引号 = 未闭合')

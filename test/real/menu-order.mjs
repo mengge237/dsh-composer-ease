@@ -1,4 +1,4 @@
-// 只读探针：「严格配对」在 `/` 菜单里的名次（2026-10-22 建，因一次反馈）。
+// 只读探针：「严格配对」在 `/` 菜单里的名次（建，因一次反馈）。
 // 用法：node probe.mjs "http://127.0.0.1:3081/?token=…"
 // 判据：便捷输入框组的纵坐标必须小于「指令」「技能」组的纵坐标。
 let chromium
@@ -15,7 +15,7 @@ const page = await browser.newPage()
 await page.goto(URL_, { waitUntil: 'domcontentloaded' })
 await page.waitForTimeout(4500)
 
-// 触发源数量（宿主侧读数）
+// 触发源数量（宿主侧实测值）
 const sources = await page.evaluate(() => window.__DSE_TRIGGER_SOURCES__)
 
 const box = await page.locator('[data-composer-input]').first().boundingBox()
@@ -35,7 +35,7 @@ const read = await page.evaluate(() => {
     if (r.width <= 0 || r.height <= 0) continue
     out.push({ text: t, top: Math.round(r.top), left: Math.round(r.left) })
   }
-  // 同名多份时留最靠上的一枚（组标题通常只有一个可见）
+ // 同名多份时留最靠上的一枚（组标题通常只有一个可见）
   const seen = new Map()
   for (const o of out) if (!seen.has(o.text) || seen.get(o.text).top > o.top) seen.set(o.text, o)
   return [...seen.values()].sort((a, b) => a.top - b.top)

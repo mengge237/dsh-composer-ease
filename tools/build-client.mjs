@@ -6,8 +6,8 @@
 // 所以作者侧拆成 8 个片段（每个 ≤400 行，便于局部注意力和审阅），发布侧仍是单文件。
 //
 // 用法：
-//   node tools/build-client.mjs           # 生成 lib/client.js
-//   node tools/build-client.mjs --check   # 只校验：生成物与片段是否一致（闸用，退出码 1 表示不一致）
+// node tools/build-client.mjs # 生成 lib/client.js
+// node tools/build-client.mjs --check # 只校验：生成物与片段是否一致（闸用，退出码 1 表示不一致）
 
 import fs from 'node:fs'
 import path from 'node:path'

@@ -78,7 +78,7 @@ ok('words 路由：英文前缀要出英文词候选，且排在文件前面（e
   assert.ok(word, 'docum 要补出 document：' + JSON.stringify(a.json.candidates.slice(0, 4)))
   assert.equal(a.json.candidates[0].value, 'document', '英文词要排在文件前面：' + a.json.candidates[0].value)
   const b = call('/dsh-composer-ease/words?prefix=dele')
-  // delete 本来就在 words.js 的 JS 关键字表里，出处优先记 words.js —— 只要求补得出，不强求出处
+ // delete 本来就在 words.js 的 JS 关键字表里，出处优先记 words.js —— 只要求补得出，不强求出处
   assert.ok(b.json.candidates.some((c) => c.value === 'delete'), 'dele 要补出 delete：' + JSON.stringify(b.json.candidates.slice(0, 4)))
   const c = call('/dsh-composer-ease/words?prefix=zzzqx')
   assert.equal(c.json.candidates.filter((x) => x.detail === '英文词').length, 0, '不存在的词不该硬造')

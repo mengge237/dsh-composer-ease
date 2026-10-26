@@ -6,9 +6,9 @@
 // 这条闸把"结构"变成可判定的东西：片段超上限、或生成物没跟上片段，都直接红。
 //
 // 判据：
-//   ① lib/client/*.js 每个片段 ≤ MAX_LINES（默认 400）
-//   ② node tools/build-client.mjs --check 必须通过（生成物 = 片段拼出来的）
-//   ③ lib/index.js / lib/words.js 等手写文件 ≤ MAX_FILE_LINES（默认 600，词典与生成物豁免）
+// ① lib/client/*.js 每个片段 ≤ MAX_LINES（默认 400）
+// ② node tools/build-client.mjs --check 必须通过（生成物 = 片段拼出来的）
+// ③ lib/index.js / lib/words.js 等手写文件 ≤ MAX_FILE_LINES（默认 600，词典与生成物豁免）
 // 退出码：0 干净 / 1 有超限 / 2 生成物不一致
 
 import fs from 'node:fs'

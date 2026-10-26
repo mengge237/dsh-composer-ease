@@ -2,16 +2,16 @@
 // 把"宿主真正加载的那份副本"同步到本仓 HEAD 的内容，并打印一致性表。
 //
 // 为什么需要它：profile 用 `link:<宿主插件目录>` 装插件，
-// 宿主加载的是**那份副本**，不是这个公开仓的工作副本。2026-10-22 我因此白测过两轮真机
+// 宿主加载的是**那份副本**，不是这个公开仓的工作副本。我因此白测过两轮实测
 // （改了公开仓、宿主还跑旧码），这一条把它变成一次命令 + 一张表。
 //
 // 用法：
-//   node tools/sync-host.mjs            # 复制并核对
-//   node tools/sync-host.mjs --check    # 只核对，不一致就退出码 1
+// node tools/sync-host.mjs # 复制并核对
+// node tools/sync-host.mjs --check # 只核对，不一致就退出码 1
 // 目标目录可用环境变量覆盖：DSH_PLUGIN_HOST
 //
 // 判据：只比「文本内容」（换行归一），不比字节 —— git 在 Windows 上会把工作副本转成 CRLF，
-// 直接比 sha 会把纯换行差异报成不一致（2026-10-22 实测 cjk-lexicon.js 就是这样）。
+// 直接比 sha 会把纯换行差异报成不一致（实测 cjk-lexicon.js 就是这样）。
 
 import { findHostDir } from './host-dir.mjs'
 import fs from 'node:fs'
@@ -30,7 +30,7 @@ const CHECK = process.argv.includes('--check')
 
 // 宿主运行时要的文件：两头代码 + 数据 + 元数据 + 文档
 // docs/ 下的图与文档也要同步：宿主那份 README 引用的就是这些相对路径，
-// 不同步就会出现"仓库里换了新 banner、本地看到还是旧的"（2026-10-22 实际踩到）。
+// 不同步就会出现"仓库里换了新 banner、本地看到还是旧的"（实际出现）。
 const DOCS = (() => {
   const out = []
   const walk = (rel) => {

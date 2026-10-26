@@ -4,9 +4,9 @@
 // 而 profile 的 package.json 本来就记着"谁被 link 到哪"，那是唯一真源。
 //
 // 解析顺序：
-//   ① 环境变量 DSH_PLUGIN_HOST（显式覆盖，最高优先）
-//   ② ~/.dsh/profiles/*/package.json 里 dsh-composer-ease 的 link: 目标
-//   ③ 找不到 → null（调用方决定报错还是跳过，CI 上就是跳过）
+// ① 环境变量 DSH_PLUGIN_HOST（显式覆盖，最高优先）
+// ② ~/.dsh/profiles/*/package.json 里 dsh-composer-ease 的 link: 目标
+// ③ 找不到 → null（调用方决定报错还是跳过，CI 上就是跳过）
 
 import fs from 'node:fs'
 import os from 'node:os'

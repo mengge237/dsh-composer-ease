@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// 机制闸①：**同一个机制出现第二套就先删一套**（2026-10-22 定的那条，改成可判定）
+// 机制闸①：**同一个机制出现第二套就先删一套**（定的那条，改成可判定）
 //
 // 背景：这个仓 84 次提交里 refactor 是 0 次，实际故障里有两次是"同一件事被实现了两遍"
 // （光标复位一套、另一套又加了一份；词典接在池子前后各写一次）。人工评审看不住，
 // 所以做成机器能查的两条：
-//   ① 同名顶层函数在多个文件里各定义一次 —— 一定是重复机制，直接红；
-//   ② 归一化后连续 12 行完全相同的代码块出现在 ≥2 个文件 —— 复制粘贴出来的第二套，红。
+// ① 同名顶层函数在多个文件里各定义一次 —— 一定是重复机制，直接红；
+// ② 归一化后连续 12 行完全相同的代码块出现在 ≥2 个文件 —— 复制粘贴出来的第二套，红。
 // 读的是 lib/client/*.js（作者侧片段）与 lib/*.js（手写半边），生成物 lib/client.js 不看。
 //
 // 退出码：0 干净 / 1 有重复
@@ -35,15 +35,15 @@ for (const p of files) {
     const m = /^\s*(?:function\s+(\w+)|var\s+(\w+)\s*=\s*function)/.exec(lines[i])
     if (m) {
       const name = m[1] || m[2]
-      // 按**半边**分域：浏览器半边（lib/client/*）与服务端半边（lib/*.js）各有一个宿主入口 apply，
-      // 那是宿主约定，不是重复机制。同名只在同一半边里算重复。
+ // 按**半边**分域：浏览器半边（lib/client/*）与服务端半边（lib/*.js）各有一个宿主入口 apply，
+ // 那是宿主约定，不是重复机制。同名只在同一半边里算重复。
       const half = rel.startsWith('lib/client/') ? 'client' : 'server'
       const key = half + ':' + name
       const where = `${rel}:${i + 1}`
       if (defs.has(key)) defs.get(key).push(where)
       else defs.set(key, [where])
     }
-    // 连续 12 行的归一化指纹（跳过纯注释/纯括号行，避免假阳性）
+ // 连续 12 行的归一化指纹（跳过纯注释/纯括号行，避免假阳性）
     if (i + 11 < lines.length) {
       const win = lines.slice(i, i + 12).map(norm).filter(Boolean)
       if (win.length >= 8 && win.join('\n').replace(/[{}\s]/g, '').length > 120) {

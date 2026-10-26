@@ -45,14 +45,14 @@ ok('rankCandidates：用 VS Code 的 fuzzyScore 打分（前缀、词边界、�
   const cands = ['lib/index.js', 'README.md', 'src/libsdk/auth.ts', 'docs/readme-notes.md'].map((v) => ({ kind: 'file', value: v }))
   const r = rankCandidates(cands, 'lib', 12).map((c) => c.value)
   assert.deepEqual(r, ['lib/index.js', 'src/libsdk/auth.ts'], '只留路径段前缀命中的，且短者靠前：' + r.join(','))
-  // 2026-10-16 真机回归：使用中打 i 时列出一堆不相干文件、还被反复插进正文
+ // 实测回归：打 i 时列出一堆不相干文件、还被反复插进正文
   const junk = ['临时目录/attrib-index.diff', 'src/main.ts'].map((v) => ({ kind: 'file', value: v }))
   assert.equal(rankCandidates(junk, 'i', 12).length, 0, '单字符文件查询要有闸，不能拉出别的文件')
   assert.equal(rankCandidates(junk, 'attrib', 12)[0].value, '临时目录/attrib-index.diff', '段前缀要命中')
-  // 命中位置随分数一起回来，客户端拿它加粗
+ // 命中位置随分数一起回来，客户端拿它加粗
   const one = rankCandidates([{ kind: 'word', value: 'input' }], 'inp', 5)[0]
   assert.deepEqual(one.matches, [0, 1, 2], '命中位置要在：' + JSON.stringify(one.matches))
-  // VS Code 口径：连续命中 > 有间隔 > 分散（同一组词里的相对分数）
+ // VS Code 口径：连续命中 > 有间隔 > 分散（同一组词里的相对分数）
   const vs = rankCandidates([{ value: 'abc' }, { value: 'a-b-c' }, { value: 'axbxc' }].map((x) => ({ kind: 'word', ...x })), 'abc', 5).map((c) => c.value)
   assert.deepEqual(vs, ['abc', 'a-b-c', 'axbxc'], 'VS Code 的连续/间隔/分散排序：' + vs.join(',') + '（axbxc 是负分）')
 })
@@ -88,7 +88,7 @@ ok('collectFiles：深度与总量封顶、node_modules 排除', () => {
   assert.ok(!files.includes('src/a/b/c/toodeep.ts'), '深度 4 的目录不该进：' + files.join(','))
 })
 
-// v2 形状夹具：workspace.json 的 workspaces 是 tables 里的 id→{path} 字典（2026-10-15：
+// v2 形状夹具：workspace.json 的 workspaces 是 tables 里的 id→{path} 字典（
 // 首版按 v1 的数组形状读，路由 200 但候选恒 0——假成功，这里钉死）。
 const wsFixture = mkdtempSync(join(tmpdir(), 'dcp-home-'))
 const proj = mkdtempSync(join(tmpdir(), 'dcp-proj-'))
