@@ -34,7 +34,9 @@
     "check:dup": "node tools/check-dup.mjs",
     "check:refactor": "node tools/check-refactor.mjs",
     "check": "node tools/check-size.mjs && node tools/check-dup.mjs && node tools/check-refactor.mjs && node tools/check-release.mjs",
-    "test": "node tools/check-size.mjs && node tools/check-dup.mjs && node test/selftest.mjs && node test/server-routes.mjs && node test/client-smoke.mjs && node test/client-behavior.mjs && node test/compliance.mjs"
+    "test": "node tools/check-size.mjs && node tools/check-dup.mjs && node test/selftest.mjs && node test/server-routes.mjs && node test/client-smoke.mjs && node test/client-behavior.mjs && node test/compliance.mjs",
+    "sync:host": "node tools/sync-host.mjs",
+    "check:host": "node tools/sync-host.mjs --check"
   },
   "license": "MIT",
   "engines": {
