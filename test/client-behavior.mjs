@@ -194,6 +194,42 @@ await okAsync('Ctrl+Space → 打 words 路由；候选回来弹层渲染，Tab 
   assert.equal(ed.value, 'input', 'Tab 接受后要把 inp 换成候选值')
 })
 
+ok('片段占位符：展开成默认值，落点按编号排（VS Code snippet 口径）', () => {
+  const H4 = mod.__helpers__
+  const r1 = H4.expandSnippet('function ${1:name}(${2:args}) {\n  ${3}\n}')
+  assert.equal(r1.text, 'function name(args) {\n  \n}', '占位符要换成默认值：' + JSON.stringify(r1.text))
+  assert.equal(r1.stops.join(','), '13,18,24', '三个落点按出现顺序：' + JSON.stringify(r1.stops))
+  const r2 = H4.expandSnippet('${2:b}${1:a}')
+  assert.equal(r2.text, 'ba', '按编号排序时正文仍按出现顺序：' + r2.text)
+  assert.equal(r2.stops.join(','), '2,1', '落点按编号排（${1:a} 在末尾=2，${2:b}=1）：' + JSON.stringify(r2.stops))
+})
+
+await okAsync('接受片段后：占位符展开、光标落在第一个落点、Tab 依次往后跳', async () => {
+  const SNIP = 'function ${1:name}(${2:args}) {\n  ${3}\n}'
+  fetchReply = { ok: true, candidates: [{ kind: 'snippet', value: SNIP, detail: '片段 function', label: 'function' }] }
+  const ed = mkEd('func')
+  keydown(ed, { key: ' ', code: 'Space', ctrl: true })
+  await tick()
+  keydown(ed, { key: 'Tab' })                       // 接受唯一候选
+  assert.equal(ed.value, 'function name(args) {\n  \n}', '占位符要展开成默认值：' + JSON.stringify(ed.value))
+  assert.equal(ed.selectionStart, 13, '光标应落在第 1 个占位符后：' + ed.selectionStart)
+  keydown(ed, { key: 'Tab' })
+  assert.equal(ed.selectionStart, 18, '第 2 个落点：' + ed.selectionStart)
+  keydown(ed, { key: 'Tab' })
+  assert.equal(ed.selectionStart, 24, '第 3 个落点：' + ed.selectionStart)
+  keydown(ed, { key: 'Tab' })
+  assert.equal(ed.selectionStart, 24, '跳完后停在原处：' + ed.selectionStart)
+})
+
+ok('候选类型开关：关掉文件后，合并结果里没有文件候选', () => {
+  const H5 = mod.__helpers__
+  assert.equal(H5.isKindOn('file'), true, '默认全开')
+  H5.toggleKind('file')
+  assert.equal(H5.isKindOn('file'), false, 'toggle 之后应为关')
+  H5.toggleKind('file')
+  assert.equal(H5.isKindOn('file'), true, '再 toggle 回来')
+})
+
 await okAsync('行内灰字跟着选中项走（VS Code suggest.preview 的实时性）', async () => {
   // 2026-10-22 维护者：「方向键的改变和 VS Code 的提示内容有实时性，我们没这个实时性」。
   // 早先 showGhost 固定取 items[0]，所以 ArrowDown 换了选中，灰字不动。
