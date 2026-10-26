@@ -22,7 +22,8 @@ const RULES = [
   { id: 'dialogue-quote', what: '对话原话引述（"维护者 …"）', rx: /维护者/g },
   { id: 'local-path', what: '本机绝对路径（X:\\ 或 X:/）', rx: /(?<![A-Za-z0-9])[A-Za-z]:[\\/][^\s`"')）]*/g },
   { id: 'temp-dir', what: '本机工作区约定（临时目录 / 临时目录）', rx: /[56]_临时/g },
-  { id: 'dsh-private', what: 'DSH 私有配置（~/.dsh、本地配置）', rx: /~\/\.dsh|AGENTS\.md/g },
+  // ~/.dsh 是所有 DSH 用户的标准配置目录（公开常识），不算泄漏；这里只抓**个人**规则文件与用户目录。
+  { id: 'dsh-private', what: '个人规则文件与用户目录', rx: /AGENTS\.md|[A-Za-z]:[\\/]Users[\\/][^\\/\s]+/g },
   { id: 'host-build', what: '宿主本机构建路径（deepseek-harness 目录）', rx: /deepseek-harness[\\/]/g },
 ]
 // 豁免：这三类文件里出现上述字样是**说明本身**（工具与文档在讲这条规矩）
