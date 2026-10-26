@@ -175,6 +175,19 @@ dsh plugin --profile web add "<你的插件目录>"   # 例如本机源码目录
 | `THIRD-PARTY.md` | 借用数据的来源与**许可证原文** |
 | `cordis.patch.yml` | DSH bundle 声明（`dsh.bundle.patch`） |
 
+
+## 维护者的两个环境变量
+
+```bash
+# 把宿主真正加载的那份插件目录同步到本仓 HEAD（改完代码必做）
+DSH_PLUGIN_HOST="<宿主插件目录>" npm run sync:host     # 只核对：npm run check:host
+
+# 重录 README 动图（需要先 npm i gifenc pngjs）
+DEMO_DEPS="<装了 gifenc/pngjs 的 node_modules 目录>" npm run record:demo -- "<url>" --out docs/demo.gif
+```
+
+两者都**不给默认路径**（脚本里写死本机路径既不可移植、也会把机器信息推到公开仓），缺了会直接报错并说明要填什么。
+
 ## 开发与测试
 
 ```bash
