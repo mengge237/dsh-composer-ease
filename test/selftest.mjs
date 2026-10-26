@@ -45,7 +45,7 @@ ok('rankCandidates：用 VS Code 的 fuzzyScore 打分（前缀、词边界、�
   const cands = ['lib/index.js', 'README.md', 'src/libsdk/auth.ts', 'docs/readme-notes.md'].map((v) => ({ kind: 'file', value: v }))
   const r = rankCandidates(cands, 'lib', 12).map((c) => c.value)
   assert.deepEqual(r, ['lib/index.js', 'src/libsdk/auth.ts'], '只留路径段前缀命中的，且短者靠前：' + r.join(','))
-  // 2026-10-16 真机回归：维护者打 i 时列出一堆不相干文件、还被反复插进正文
+  // 2026-10-16 真机回归：使用中打 i 时列出一堆不相干文件、还被反复插进正文
   const junk = ['临时目录/attrib-index.diff', 'src/main.ts'].map((v) => ({ kind: 'file', value: v }))
   assert.equal(rankCandidates(junk, 'i', 12).length, 0, '单字符文件查询要有闸，不能拉出别的文件')
   assert.equal(rankCandidates(junk, 'attrib', 12)[0].value, '临时目录/attrib-index.diff', '段前缀要命中')

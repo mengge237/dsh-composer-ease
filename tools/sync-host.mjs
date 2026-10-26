@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // 把"宿主真正加载的那份副本"同步到本仓 HEAD 的内容，并打印一致性表。
 //
-// 为什么需要它：本机两个 profile 都是 `link:<本地路径>`，
+// 为什么需要它：profile 用 `link:<宿主插件目录>` 装插件，
 // 宿主加载的是**那份副本**，不是这个公开仓的工作副本。2026-10-22 我因此白测过两轮真机
 // （改了公开仓、宿主还跑旧码），这一条把它变成一次命令 + 一张表。
 //
@@ -17,7 +17,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..')
-const HOST = process.env.DSH_PLUGIN_HOST || '<本地路径>'
+const HOST = process.env.DSH_PLUGIN_HOST || ''
+if (!HOST) { console.error('缺 DSH_PLUGIN_HOST：指向宿主真正加载的那份插件目录（profile 里 link: 后面那个路径）'); process.exit(2) }
 const CHECK = process.argv.includes('--check')
 
 // 宿主运行时要的文件：两头代码 + 数据 + 元数据 + 文档

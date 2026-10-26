@@ -33,7 +33,7 @@
 dsh plugin --profile web add https://github.com/mengge237/dsh-composer-ease
 
 # 装本机源码目录（改代码时用）
-dsh plugin --profile web add "<本地路径>"
+dsh plugin --profile web add "<你的插件目录>"   # 例如本机源码目录
 ```
 
 卸载：`dsh plugin --profile web remove dsh-composer-ease`（不留数据文件）。
@@ -77,7 +77,7 @@ dsh plugin --profile web add "<本地路径>"
 
 ### 编辑手感（对齐 VS Code）
 
-- **自动配对**：`(` `[` `{` `"` `'` 反引号成对插入，光标落在中间；**全角也一样**（`（` `【` `「` `《` `“` `‘`），中文输入法下走 input 事件补配对（IME 合成的字符不一定带对应 keydown）；光标前是标识符或路径字符时**不**配对（保护 `call(` 与 `E:/path` 这类写法）
+- **自动配对**：`(` `[` `{` `"` `'` 反引号成对插入，光标落在中间；**全角也一样**（`（` `【` `「` `《` `“` `‘`），中文输入法下走 input 事件补配对（IME 合成的字符不一定带对应 keydown）；光标前是标识符或路径字符时**不**配对（保护 `call(` 与 `<本地路径>` 这类写法）
 - **环绕选区**：选中一段再打开括号 → `(选中内容)`，并且**选区还原到内层内容**上，接着打字就是改内容；
   半角走 keydown、**全角/中文输入法走 `beforeinput`**（IME 合成的字符没有可用的 keydown，只有 beforeinput 能在 DOM 变更前拿到要插的字符）；`Shift` 组合键打出的 `{` `"` 同样有效
 - **行内灰字提示**：首位候选比已打的前缀多出来的那截，用灰字贴在光标后面（VSCode inline suggestion 手感），`Tab` 收下、`Esc` 收起

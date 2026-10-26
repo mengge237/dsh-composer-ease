@@ -8,7 +8,7 @@
 //
 // 用法：
 //   node tools/gen-lexicon.mjs --words <index.json|words.txt> \
-//        --corpus lib docs --corpus ~/.dsh/本地配置 --cap 30000 --domain-cap 1500
+//        --corpus lib docs --corpus 本地配置/本地配置 --cap 30000 --domain-cap 1500
 // 产出（直接覆盖，幂等）：
 //   lib/en-lexicon.js     EN_LEXICON（Set）+ enMatches / isCompleteEnWord / isWordPrefix / EN_LEXICON_SOURCE
 //   lib/domain-words.js   DOMAIN_WORDS（数组）+ DOMAIN_WORDS_SOURCE
