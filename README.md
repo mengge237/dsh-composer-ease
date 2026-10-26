@@ -208,6 +208,15 @@ npm test        # 五支，61 项，0 网络：数据层 / 路由与信任栅栏
 
 [English README](README.en.md)
 
+## 规范与闸（借 VS Code / DSH 的做法）
+
+- 输入框行为参照 VS Code 的 `editor.suggest.*`（44 个选项里跟进了 8 个，其余是 LSP 专属）；
+  对照表与"还缺什么"在 `docs/借鉴-VSCode与DSH.md`。
+- 管理侧照 DSH：**每条约定一个 `tools/check-*.mjs`**，`npm run check` 一次跑齐
+  （结构 / 重复机制 / 重构到期 / 文档 / 发布），CI 只负责把它们拉起来
+  （`.github/workflows/checks.yml`，ubuntu + windows 矩阵）。
+- 改代码三步：改 `lib/client/*.js` 片段 → `npm run build` → `npm run sync:host`。
+
 ## 代码结构（2026-10-22 拆分）
 
 浏览器半边有 1600 多行，拆成 8 个片段放在 `lib/client/`，**发布侧仍是宿主加载的那一个文件**：

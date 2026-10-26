@@ -1,8 +1,7 @@
 name: checks
 
-# 策略即代码的机械闸：五支离线套件 + 发布一致性（版本/日期/sha/顺序）
-# 之所以放 CI：这些判据靠"记得跑"从来不可靠，2026-10-21 就发生过版本记录 13 条日期写错的事。
-
+# 照 deepseek-harness 的分工：每条约定都有一个可跑的 tools/check-*.mjs，
+# CI 只负责把这些闸拉起来，不在这里写判据。
 on:
   push:
     branches: [master]
@@ -11,15 +10,25 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: 结构闸 / 重复机制闸 / 重构到期闸
+        run: npm run check
+      - name: 生成物与片段一致
+        run: node tools/build-client.mjs --check
+      - name: 文档闸（本地链接 + 预算）
+        run: node tools/check-docs.mjs
       - name: 五支离线套件
         run: npm test
       - name: 发布一致性（package.json 版本 vs CHANGELOG 首条）
         run: node tools/check-release.mjs
-      - name: 发布一致性检查的自测（证明这道闸真的有牙）
+      - name: 发布闸的自测（证明这道闸真的有牙）
         run: node tools/check-release.mjs --selftest
