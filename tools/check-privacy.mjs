@@ -23,11 +23,15 @@ const RULES = [
   { id: 'local-path', what: '本机绝对路径（X:\\ 或 X:/）', rx: /(?<![A-Za-z0-9])[A-Za-z]:[\\/][^\s`"')）]*/g },
   { id: 'temp-dir', what: '本机工作区约定（5_临时 / 6_临时）', rx: /[56]_临时/g },
  // ~/.dsh 是所有 DSH 用户的标准配置目录（公开常识），不算泄漏；这里只抓**个人**规则文件与用户目录。
-  { id: 'dsh-private', what: '个人规则文件与用户目录', rx: /AGENTS\.md|[A-Za-z]:[\\/]Users[\\/][^\\/\s]+/g },
+  // 仓内根目录的 AGENTS.md / CONTRIBUTING.md 是宿主约定，合法；要抓的是个人目录下的规则文件。
+  { id: 'dsh-private', what: '个人规则文件与用户目录', rx: /[A-Za-z]:[\\/]Users[\\/][^\\/\s]+|~\/\.dsh[\\/]AGENTS\.md/g },
   { id: 'host-build', what: '宿主本机构建路径（deepseek-harness 目录）', rx: /deepseek-harness[\\/]/g },
 ]
 // 豁免：这三类文件里出现上述字样是**说明本身**（工具与文档在讲这条规矩）
-const EXEMPT = new Set(['tools/check-privacy.mjs', 'tools/scrub-public.mjs', 'docs/如何做 README 图.md', 'THIRD-PARTY.md'])
+const EXEMPT = new Set([
+  'tools/check-privacy.mjs', 'tools/scrub-public.mjs', 'tools/verify-comment-prose.mjs',
+  'docs/如何做 README 图.md', 'THIRD-PARTY.md',
+])
 
 const files = execFileSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8' })
   .split('\n').map((s) => s.trim()).filter(Boolean)
