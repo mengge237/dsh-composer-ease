@@ -207,3 +207,27 @@ npm test        # 五支，61 项，0 网络：数据层 / 路由与信任栅栏
 ---
 
 [English README](README.en.md)
+
+## 代码结构（2026-10-22 拆分）
+
+浏览器半边有 1600 多行，拆成 8 个片段放在 `lib/client/`，**发布侧仍是宿主加载的那一个文件**：
+
+```text
+lib/client/_head.js        抬头注释 + __ModuleLoader__ 包裹（17 行）
+lib/client/10-foundation.js  成对符号表 / shouldPair / 取文与摆光标原语
+lib/client/20-pairing.js     框选（wrapSelection / tryUnwrap / repairWrapDup）
+lib/client/30-popup.js       补全弹层：DOM、行样式、渲染、本文词收集
+lib/client/40-language.js    语言投票 / 语言水印 / 拉候选
+lib/client/50-caret.js       插入后光标复位（placeCaretVerified 等）/ acceptCurrent
+lib/client/60-keys.js        键位层 onKeyDown / 两个删除动作
+lib/client/70-input.js       beforeinput·input 两条路 / 引号未闭合标红 / 触发源
+lib/client/80-apply.js       apply：单例守卫、七个监听与卸载
+lib/client/_tail.js          return module.exports + 包裹收尾
+```
+
+- 改代码**只改片段**，然后 `npm run build`（`node tools/build-client.mjs`）拼回 `lib/client.js`；生成物开头有 ⚠ 提示，别直接改它。
+- 为什么不能直接多文件：宿主只认 `exports["./client"]` 指着的那一个文件（`__ModuleLoader__.load` 的 CJS bundle 形态），不做多文件解析。
+- `npm run check:size`（已进 `npm test` 第一步）是**结构闸**：片段 ≤400 行、`lib/index.js` 这类手写文件 ≤600 行、生成物必须与片段一致（`--check`）。超了直接红并提示拆法。
+
+这条闸的由来：本仓 84 次提交里 `refactor` 是 0 次，`client.js` 长到 1629 行 / 80 个函数 / 最长 178 行，
+而原先的闸只查"测试绿 + 版本一致"，看不见结构。

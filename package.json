@@ -1,6 +1,6 @@
 {
   "name": "dsh-composer-ease",
-  "version": "0.9.27",
+  "version": "0.9.28",
   "type": "module",
   "main": "lib/index.js",
   "files": [
@@ -29,7 +29,9 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "test": "node test/selftest.mjs && node test/server-routes.mjs && node test/client-smoke.mjs && node test/client-behavior.mjs && node test/compliance.mjs"
+    "build": "node tools/build-client.mjs",
+    "check:size": "node tools/check-size.mjs",
+    "test": "node tools/check-size.mjs && node test/selftest.mjs && node test/server-routes.mjs && node test/client-smoke.mjs && node test/client-behavior.mjs && node test/compliance.mjs"
   },
   "license": "MIT",
   "engines": {
