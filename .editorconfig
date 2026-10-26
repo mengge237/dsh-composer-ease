@@ -1,0 +1,16 @@
+# 仓库的文本约定（照 deepseek-harness 的做法：.gitattributes 管 git 产出，本文件管编辑器落盘）。
+# 这两件事必须分开写：git 的 checkout 过滤能保证仓库里是 LF，但编辑器落盘它管不到，
+# 所以 Windows 上工作副本变成 CRLF 时，只有 .editorconfig 能拦住。
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{js,mjs,json,yml,yaml}]
+indent_style = space
+indent_size = 2
