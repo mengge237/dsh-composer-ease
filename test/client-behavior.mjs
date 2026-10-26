@@ -61,7 +61,7 @@ const documentFake = {
 const fetchCalls = []
 let fetchReply = { ok: true, candidates: [] }
 /* 延迟模式：把响应扣在队列里，由用例决定何时放行 —— 用来复现「快速回车后，
- * 迟到的候选响应把浮层/灰字画回已被清空的输入框」（2026-10-21 维护者报的 bug）。 */
+ * 迟到的候选响应把浮层/灰字画回已被清空的输入框」（2026-10-21 使用中报的 bug）。 */
 let fetchDefer = false
 const fetchQueue = []
 const releaseFetch = () => { fetchQueue.splice(0).forEach((fire) => fire()) }
@@ -249,7 +249,7 @@ ok('候选类型开关：关掉文件后，合并结果里没有文件候选', (
 })
 
 await okAsync('行内灰字跟着选中项走（VS Code suggest.preview 的实时性）', async () => {
-  // 2026-10-22 维护者：「方向键的改变和 VS Code 的提示内容有实时性，我们没这个实时性」。
+  // 2026-10-22 一次反馈。
   // 早先 showGhost 固定取 items[0]，所以 ArrowDown 换了选中，灰字不动。
   fetchReply = { ok: true, candidates: [
     { kind: 'word', value: 'zqalpha', detail: '英文词' },
@@ -304,7 +304,7 @@ await okAsync('打两个字母自动弹（不用快捷键），本文词排在�
   assert.match(popupEl().innerText, /inputValue/, '网络回来后本地词仍在')
 })
 
-/* 回归（2026-10-21 维护者报「快速点回车后，那个修字的提示留在了输入框中」）：
+/* 回归（2026-10-21 一次反馈）：
  * 候选响应比回车晚到，旧实现在 Enter 清场之后又把浮层与灰字画了一遍。 */
 await okAsync('回车后迟到的补全响应不复活浮层与灰字', async () => {
   fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'input' }] }
@@ -343,7 +343,7 @@ await okAsync('碎片前缀：服务端 wordGate=false 时客户端整条收起�
   assert.ok(!pop || !pop.children.length || pop.style.display === 'none', '碎片不许弹层：' + (pop ? pop.innerText : '无'))
 })
 
-await okAsync('IME 合成期间不补全（打拼音 ye 不会被补成 yield，维护者 2026-10-16 报的灰字 eld）', async () => {
+await okAsync('IME 合成期间不补全（打拼音 ye 不会被补成 yield，使用中 2026-10-16 报的灰字 eld）', async () => {
   fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'yield', detail: 'JS 关键字', matches: [0, 1] }] }
   const ed = mkEd('ye')
   handlers.compositionstart({ target: ed })
@@ -355,7 +355,7 @@ await okAsync('IME 合成期间不补全（打拼音 ye 不会被补成 yield，
   handlers.compositionend({ target: ed })
 })
 
-await okAsync('中文也触发补全，并且草稿里出现过的中文词能被提示（维护者 2026-10-16：文档/变量那个要求）', async () => {
+await okAsync('中文也触发补全，并且草稿里出现过的中文词能被提示（使用中 2026-10-16：文档/变量那个要求）', async () => {
   fetchReply = { ok: true, candidates: [], wordGate: true }
   const ed = mkEd('先写一段关于文档管理系统的说明，后面再提到文档')
   input(ed)
@@ -521,7 +521,7 @@ ok('框选后打符号：走 beforeinput 把选区框起来（中文输入法/�
   handlers.beforeinput(ev)
   assert.equal(ev.prevented, true, '要拦住宿主自己插那个字符')
   assert.equal(ed.value, '（xyz）', '要框成 开符+选区+闭符：' + ed.value)
-  assert.equal(ed.selectionStart, ed.value.length, '光标落在闭符之后（维护者 2026-10-20 定的落点）')
+  assert.equal(ed.selectionStart, ed.value.length, '光标落在闭符之后（使用中 2026-10-20 定的落点）')
   assert.equal(ed.selectionEnd, ed.value.length, '不再回选到内层内容')
 })
 
@@ -555,7 +555,7 @@ await okAsync('语言习惯：接受过哪套词表的候选，下次没写围�
   store.clear()
 })
 
-ok('有前引号时再打引号只插一个（维护者 2026-10-20 报的「出两个引号」）', () => {
+ok('有前引号时再打引号只插一个（2026-10-20 的一次反馈）', () => {
   const ed = mkEd('“', 1)                               // 光标就在前引号之后
   keydown(ed, { key: '"', shift: true })
   assert.equal(ed.value, '“"', '不许补成 “""：' + ed.value)
@@ -651,7 +651,7 @@ await okAsync('回车（发送）收干净：弹层与灰字都不留在被清�
   assert.equal(g.style.display, 'none', '发送后灰字要收起')
 })
 
-// ── 维护者 2026-10-20 报的「前方有引号、后方再打还是一对」────────────────────
+// ── 2026-10-20 的一次反馈────────────────────
 function pressQuote(value, sel, key, data) {
   const ed = mkEd(value, sel[1])
   ed.selectionStart = sel[0]; ed.selectionEnd = sel[1]
@@ -687,7 +687,7 @@ ok('IME 那条路（beforeinput）同样认未闭合', () => {
   assert.equal(ed.value, '"abc"', 'beforeinput 不许再框一层：' + ed.value)
 })
 
-// ── 维护者 2026-10-21：全角/半角混着打，不该冒出多个引号 ─────────────────
+// ── 使用中 2026-10-21：全角/半角混着打，不该冒出多个引号 ─────────────────
 ok('全角开符后面打半角引号：补闭合，不再凑一对', () => {
   const ed = pressQuote('\u201c\u4f60\u597d', [3, 3], '"')
   const quotes = (ed.value.match(/["\u201c\u201d]/g) || []).length
@@ -705,7 +705,7 @@ ok('正常框选没被改坏：选中 abc 打引号仍然框住', () => {
   assert.equal(ed.value, '"abc"', '普通框选应仍是 "abc"：' + ed.value)
 })
 
-// ── 维护者 2026-10-21：框选只是一个动作，要能反选 ─────────────────────────
+// ── 使用中 2026-10-21：框选只是一个动作，要能反选 ─────────────────────────
 ok('框完再打同一个引号 = 取消这次框选，内层重新选中', () => {
   const ed = pressQuote('abc', [0, 3], '"')
   assert.equal(ed.value, '"abc"', '先框住：' + ed.value)
@@ -730,7 +730,7 @@ ok('框选期间不弹补全（框选只是一个动作，不该顺手提醒）'
   assert.ok(!g || g.style.display === 'none', '框选后不该留灰字')
 })
 
-// ── 成对家族行为矩阵（维护者 2026-10-20：「写测试用例多测试一下」）─────────────
+// ── 成对家族行为矩阵（2026-10-20 的一次反馈）─────────────
 // 期望值按「像 VS Code 那样、但中文正文也配对」的口径写死；哪条红就是实现要补的。
 function bi(ed, data) {
   const ev = { target: ed, data, inputType: 'insertText', prevented: false, preventDefault() { this.prevented = true } }
@@ -759,7 +759,7 @@ for (const q of ['"', "'", '“', '‘']) {
   })
 }
 
-// 2) 光标前已有「未闭合」的开符：只插一个（这是维护者报的核心那条）
+// 2) 光标前已有「未闭合」的开符：只插一个（这是使用中报的核心那条）
 for (const [open, close, text] of [['"', '"', '"你好'], ["'", "'", "'abc"], ['`', '`', '`code'], ['“', '”', '“文字'], ['（', '）', '（说明']]) {
   ok(`矩阵·${text} 末尾再打 ${open} → 只插一个`, () => {
     const ed = mkEd(text, text.length)
@@ -882,7 +882,7 @@ ok('矩阵·中文正文后打 ( → 配对', () => {
   })
 }
 
-// ── 基础用法补测（维护者 2026-10-20：「引号是重灾区不代表其他做好了」）──────────
+// ── 基础用法补测（2026-10-20 的一次反馈）──────────
 await okAsync('基础·打 / 不触发插件候选（原生命令接手）', async () => {
   const ed = mkEd('/')
   const before = fetchCalls.length
@@ -926,15 +926,14 @@ for (const [label, value] of [['半角 ()', '()'], ['方括号 []', '[]'], ['全
   })
 }
 
-// ── 维护者 2026-10-20 的路径：先打「你好」→ 前面打 `"` → 再打 `"` ────────────────
+// ── 使用中 2026-10-20 的路径：先打「你好」→ 前面打 `"` → 再打 `"` ────────────────
 // 真机复现（demo 3081 + Playwright）分两种落法，都会堆出多余引号，两种都要治：
 //  A）回最前打 `"`（没选中）→ 光标紧贴一个没闭合的开符，后面还有正文：再打同一个是「补闭合」，
 //     闭符要落到这一段末尾 —— 否则得到 `""你好`（两个没闭合的开引号，谁都用不上）；
 //  B）选中文字打 `"` → 框成 `"你好"`（光标落在闭符之后）：再打同一个不该再堆一个 ——
-//     否则得到维护者报的 `"你好""`。
+//     否则得到使用中报的 `"你好""`。
 ok('光标紧贴没闭合的开符、后面还有正文，再打同一个 → **在光标处**插入（2026-10-23 契约）', () => {
-  // 旧实现把闭符 setCaret 到段尾（`"|你好` + `"` → `"你好"`），维护者报「后引号跑到句子后面、
-  // 不在我要的位置」，因此改为字面插入在光标处；未闭合由 lintQuotes 标红提示。
+  // 旧实现把闭符 setCaret 到段尾（`"|你好` + `"` → `"你好"`），一次反馈，因此改为字面插入在光标处；未闭合由 lintQuotes 标红提示。
   const ed = mkEd('"你好', 1)
   keydown(ed, { key: '"' })
   assert.equal(ed.value, '""你好', '实得：' + ed.value)
@@ -950,7 +949,7 @@ ok('同样一条对中文引号成立（`“|你好` + `“` → 光标处插入
 ok('已经框好（光标在闭符之后）再打同一个闭符 → 不再堆一个（`"你好"` + `"` 仍是 `"你好"`）', () => {
   const ed = mkEd('"你好"', 4)
   keydown(ed, { key: '"' })
-  assert.equal(ed.value, '"你好"', '维护者报的 `"你好""` 就是这条：' + ed.value)
+  assert.equal(ed.value, '"你好"', '使用中报的 `"你好""` 就是这条：' + ed.value)
 })
 
 ok('中文引号已框好同样不再堆（`“你好”` + `“` 仍是 `“你好”`）', () => {

@@ -31,7 +31,7 @@ Uninstall: `dsh plugin --profile web remove dsh-composer-ease` (no data files ar
 
 ### Editing feel (aligned with VS Code)
 
-- **Auto pairing**: `(` `[` `{` `"` `'` and backtick insert as a pair with the caret in the middle; **full-width forms too** (`（` `【` `「` `《` `“` `‘`), completed through the `input` event because IME compositions do not always produce a keydown; no pairing when the character before the caret is an identifier or path character (keeps `call(` and `E:/path` intact)
+- **Auto pairing**: `(` `[` `{` `"` `'` and backtick insert as a pair with the caret in the middle; **full-width forms too** (`（` `【` `「` `《` `“` `‘`), completed through the `input` event because IME compositions do not always produce a keydown; no pairing when the character before the caret is an identifier or path character (keeps `call(` and `<本地路径>` intact)
 - **Surround selection**: select a passage and type an opener → `(selection)`, with the **selection restored to the inner text** so you keep editing it. ASCII goes through keydown, **full-width and IME through `beforeinput`** (only `beforeinput` sees the character before the DOM changes); `Shift` combinations such as `{` and `"` work the same way
 - **Inline ghost text**: the part of the top candidate that extends what you typed is shown in grey right after the caret (VS Code's inline suggestion feel); `Tab` takes it, `Esc` hides it
 - **Type-over closers**: when the character to the right already is the matching closer, typing it just moves the caret

@@ -32,7 +32,7 @@ ok('导出 apply/inject；不碰宿主 react', () => {
 
 const H = mod.__helpers__
 ok('「/」那组排到最上面：order 0，先于内置「指令」1 与「技能」2', () => {
-  // 维护者 2026-10-22：严格配对放在技能下面找不到。宿主按 order 升序排，
+  // 使用中 2026-10-22：严格配对放在技能下面找不到。宿主按 order 升序排，
   // 内置两组分别是 1 与 2，所以我们必须 < 1 才会出现在最上面。
   const srcs = H.buildTriggerSources()
   const slash = srcs.find(s => s.trigger === '/')
@@ -61,7 +61,7 @@ ok('配对判据：光标前是路径/标识符字符就不自动配对（保护
   assert.equal(H.shouldPair('“'), false, '中文前引号后：不补')
   assert.equal(H.shouldPair('path/'), false, '结尾 / 视作路径中：不配')
 })
-ok('配对判据看右边：右边紧跟文字时只插一个开符（维护者 2026-10-16 踩到「在文字前打前引号被补成一对」）', () => {
+ok('配对判据看右边：右边紧跟文字时只插一个开符（使用中 2026-10-16 踩到「在文字前打前引号被补成一对」）', () => {
   assert.equal(H.shouldPair('', 'abc'), false, '右边是字母：只插前引号')
   assert.equal(H.shouldPair('', '文'), false, '右边是汉字：只插前引号')
   assert.equal(H.shouldPair('写一段', '文字'), false, '中文正文 + 右边有字：只插前引号')
@@ -103,7 +103,7 @@ ok('langHint：取草稿里最后一个围栏标记当语言提示', () => {
   assert.equal(H.langHint('```python\nx\n```\n再来 ```html'), 'html')
   assert.equal(H.langHint('没有围栏'), '')
 })
-ok('inferLang：没写围栏时按上下文推语言（维护者 2026-10-16 提「提示跟上下文不强关联」）', () => {
+ok('inferLang：没写围栏时按上下文推语言（使用中 2026-10-16 提「提示跟上下文不强关联」）', () => {
   assert.equal(H.inferLang('写个脚本，def main(): import os'), 'python', 'def/import 多 → python')
   assert.equal(H.inferLang('把 build.py 跑一遍，pip install 一下'), 'python', '.py + pip → python')
   assert.equal(H.inferLang('<div class="x">foo</div>'), 'html', '标签 → html')

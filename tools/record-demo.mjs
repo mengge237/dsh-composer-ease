@@ -11,7 +11,7 @@
 // 用法：
 //   node tools/record-demo.mjs <url> [--out docs/demo.gif] [--fps 15] [--width 900]
 // 依赖（不进本仓；用环境变量指过去）：
-//   DEMO_DEPS=<dir with node_modules>    默认找 <本地路径>
+//   DEMO_DEPS=<装了 gifenc/pngjs 的 node_modules 所在目录>   （必填）
 //   里面需要：gifenc、pngjs
 //   Playwright 默认用本机 dev-browser 自带那份，可用 PLAYWRIGHT_ENTRY 覆盖。
 
@@ -37,7 +37,8 @@ const COLORS = Number(argOf('colors', 256))
 const FORMAT = argOf('format', 'rgb565')     // rgb565 更准、rgb444 更小
 const STRIDE = Math.max(1, Number(argOf('stride', 1)))   // 抽帧步长：2 = 每两帧留一帧，延迟相加
 
-const DEPS = process.env.DEMO_DEPS || '<本地路径>'
+const DEPS = process.env.DEMO_DEPS || ''
+if (!DEPS) { console.error('缺 DEMO_DEPS：先在任意目录 npm i gifenc pngjs，再把该目录的 node_modules 指过来'); process.exit(2) }
 const req = createRequire(path.join(DEPS, 'placeholder.js'))
 let GIFEncoder, quantize, applyPalette, PNG
 try {
@@ -48,7 +49,7 @@ try {
   process.exit(2)
 }
 
-const PW_ENTRY = process.env.PLAYWRIGHT_ENTRY || 'file:///<本地路径>'
+const PW_ENTRY = process.env.PLAYWRIGHT_ENTRY || 'playwright'
 let chromium
 try { ({ chromium } = await import(PW_ENTRY)) } catch (e) {
   console.error('取不到 playwright：', e.message); process.exit(2)
