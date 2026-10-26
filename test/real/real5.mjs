@@ -81,8 +81,8 @@ async function scene(name, expect, expectCaret, fn) {
   console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}\n      期望 ${JSON.stringify(expect)} caret=${expectCaret} ｜ 实得 ${JSON.stringify(s.text)} caret=${s.caret}`)
 }
 
-// 1 空框打半角引号
-await scene('1 空框打 "', '""', 1, async () => {
+// 1 空框打半角引号：warn 模式（0.9.23 起的默认）不补对，只插一个
+await scene('1 空框打 "', '"', 1, async () => {
   await page.keyboard.press('Shift+Quote')
 })
 
@@ -105,12 +105,12 @@ await scene('3 选中 abc 打 " → 框住', '"abc"', 5, async () => {
 })
 
 // 4 Shift 连按（连打三下同一个引号）：2026-10-22 起停在空对里再打同一个一律跳过 → 仍是一对
-await scene('4 Shift 连按三下 "', '""', 2, async () => {
+await scene('4 Shift 连按三下 "', '"""', 3, async () => {
   for (let i = 0; i < 3; i++) { await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(260) }
 })
 
 // 5 中文引号：空框要补成对；已有未闭合开符时末尾只插一个
-await scene('5a 空框打 “', '“”', 1, async () => {
+await scene('5a 空框打 “', '“', 1, async () => {
   await page.keyboard.insertText('“')
 })
 await scene('5b “你好 末尾再打 “', '“你好“', 4, async () => {
