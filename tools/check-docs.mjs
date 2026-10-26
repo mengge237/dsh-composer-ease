@@ -49,7 +49,8 @@ for (const f of files) {
     bad++
     console.error(`RED  行数超预算：${rel} ${lines} > ${limit}`)
   }
-  if (/\b(TODO|FIXME)\b/.test(text)) {
+  // CHANGELOG 是历史记录，正文里引用这两个词（比如"禁 TODO"）是正常的，不算留坑。
+  if (rel !== 'CHANGELOG.md' && /\b(TODO|FIXME)\b/.test(text)) {
     bad++
     console.error(`RED  留了 TODO/FIXME：${rel}`)
   }
