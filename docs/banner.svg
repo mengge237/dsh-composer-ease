@@ -1,36 +1,65 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="880" height="220" viewBox="0 0 880 220" role="img" aria-label="dsh-composer-pro：把 DSH 输入框做成 VS Code 手感">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="dsh-composer-ease：把 DSH 输入框做成 VS Code 的手感">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#12161d"/>
-      <stop offset="1" stop-color="#1b2029"/>
+      <stop offset="0" stop-color="#0f1319"/>
+      <stop offset="1" stop-color="#171e29"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4c8dff"/>
+      <stop offset="1" stop-color="#7aa8ff"/>
     </linearGradient>
   </defs>
-  <rect width="880" height="220" rx="14" fill="url(#bg)"/>
-  <rect x="0.5" y="0.5" width="879" height="219" rx="13.5" fill="none" stroke="#2b3240"/>
 
-  <text x="40" y="64" font-family="Segoe UI, Microsoft YaHei UI, sans-serif" font-size="27" font-weight="600" fill="#e8edf5">dsh-composer-pro</text>
-  <text x="40" y="94" font-family="Segoe UI, Microsoft YaHei UI, sans-serif" font-size="14.5" fill="#93a1b5">把 DSH 输入框做成 VS Code 手感：配对、环绕、跳闭合，外加四类候选的补全弹层</text>
+  <rect width="1200" height="300" rx="16" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="1199" height="299" rx="15.5" fill="none" stroke="#273140"/>
 
-  <g font-family="ui-monospace, Consolas, monospace" font-size="13">
-    <rect x="40" y="150" width="360" height="34" rx="8" fill="#0e1218" stroke="#2b3240"/>
-    <text x="54" y="172" fill="#e8edf5">临时目录/attrib-<tspan fill="#6ea8fe">index</tspan></text>
-
-    <rect x="40" y="112" width="470" height="30" rx="6" fill="#161b23" stroke="#2f3846"/>
-    <text x="52" y="132" fill="#dfe7f2">临时目录/attrib-index.diff<tspan fill="#7d8798" font-size="11">  Replying</tspan></text>
-
-    <rect x="352" y="188" width="26" height="22" rx="5" fill="#1d2430" stroke="#2b3240"/>
-    <text x="361" y="204" fill="#9fb0c6">(</text>
-    <rect x="384" y="188" width="26" height="22" rx="5" fill="#1d2430" stroke="#2b3240"/>
-    <text x="393" y="204" fill="#9fb0c6">[</text>
-    <rect x="416" y="188" width="26" height="22" rx="5" fill="#1d2430" stroke="#2b3240"/>
-    <text x="424" y="204" fill="#9fb0c6">{</text>
-    <text x="458" y="204" fill="#7d8798" font-size="12">自动配对 / 选中环绕 / 跳闭合 / 删空对</text>
+  <!-- 右上角身份标签 -->
+  <g font-family="Segoe UI, Microsoft YaHei UI, system-ui, sans-serif" font-size="11.5" font-weight="500">
+    <rect x="1032" y="28" width="112" height="26" rx="13" fill="#141b24" stroke="#33405a"/>
+    <text x="1088" y="45" text-anchor="middle" fill="#8fa1bd">DSH 插件 · MIT</text>
   </g>
 
-  <text x="560" y="132" font-family="Segoe UI, Microsoft YaHei UI, sans-serif" font-size="13" fill="#93a1b5">补全候选四类</text>
-  <g font-family="Segoe UI, Microsoft YaHei UI, sans-serif" font-size="12.5" fill="#c7d3e3">
-    <text x="560" y="156">本文词（草稿里出现过的标识符）</text>
-    <text x="560" y="176">语言词表（HTML / JS / Python / Java / CSS）</text>
-    <text x="560" y="196">工作区文件路径（按路径段前缀匹配）</text>
+  <!-- 左：名字 + 一句话 + 四个能力标签 -->
+  <text x="56" y="86" font-family="Segoe UI, Microsoft YaHei UI, system-ui, sans-serif" font-size="30" font-weight="700" fill="#f1f5fb">dsh-composer-ease</text>
+  <text x="56" y="118" font-family="Segoe UI, Microsoft YaHei UI, system-ui, sans-serif" font-size="15" fill="#9aa7ba">把 DSH Web 输入框做成 VS Code 的手感</text>
+
+  <g font-family="Segoe UI, Microsoft YaHei UI, system-ui, sans-serif" font-size="13" font-weight="500">
+    <rect x="56" y="142" width="96" height="30" rx="15" fill="#141b24" stroke="#33405a"/>
+    <text x="104" y="162" text-anchor="middle" fill="#bcd0f2">自动配对</text>
+    <rect x="164" y="142" width="96" height="30" rx="15" fill="#141b24" stroke="#33405a"/>
+    <text x="212" y="162" text-anchor="middle" fill="#bcd0f2">环绕选中</text>
+    <rect x="272" y="142" width="96" height="30" rx="15" fill="#141b24" stroke="#33405a"/>
+    <text x="320" y="162" text-anchor="middle" fill="#bcd0f2">四类补全</text>
+    <rect x="380" y="142" width="96" height="30" rx="15" fill="#1c1620" stroke="#5a3540"/>
+    <text x="428" y="162" text-anchor="middle" fill="#f0938b">标红提示</text>
+  </g>
+
+  <text x="56" y="206" font-family="Segoe UI, Microsoft YaHei UI, system-ui, sans-serif" font-size="12.5" fill="#77839a">零运行时依赖 · 不改宿主源码 · 一条命令安装</text>
+
+  <!-- 右：输入框 + 补全弹层（示意） -->
+  <g font-family="ui-monospace, Consolas, monospace">
+    <rect x="520" y="58" width="624" height="48" rx="10" fill="#0c1117" stroke="#2a3441"/>
+    <text x="542" y="88" font-size="16" fill="#e8edf5">docum<tspan fill="#7d8899">ent</tspan></text>
+    <rect x="606" y="72" width="1.6" height="19" fill="#4c8dff"/>
+
+    <rect x="520" y="118" width="624" height="140" rx="10" fill="#0d1219" stroke="#2a3441"/>
+
+    <rect x="526" y="126" width="612" height="40" rx="6" fill="#16233a"/>
+    <rect x="526" y="126" width="3" height="40" rx="1.5" fill="url(#accent)"/>
+    <text x="542" y="152" font-size="14" fill="#eaf1fb">document</text>
+    <text x="1112" y="152" font-size="11.5" fill="#6f7b8d" text-anchor="end" font-family="Segoe UI, Microsoft YaHei UI, sans-serif">英文词</text>
+
+    <text x="542" y="192" font-size="14" fill="#c6d2e2">documents</text>
+    <text x="1112" y="192" font-size="11.5" fill="#6f7b8d" text-anchor="end" font-family="Segoe UI, Microsoft YaHei UI, sans-serif">英文词</text>
+
+    <text x="542" y="230" font-size="14" fill="#8f9db1">model-priority-feature/documentation.md</text>
+    <text x="1112" y="230" font-size="11.5" fill="#6f7b8d" text-anchor="end" font-family="Segoe UI, Microsoft YaHei UI, sans-serif">文件</text>
+  </g>
+
+  <!-- 左下角：引号未闭合的红色波浪示意 -->
+  <g font-family="Segoe UI, Microsoft YaHei UI, sans-serif" font-size="12" fill="#e5534b">
+    <text x="56" y="252">他说“这句话没闭合</text>
+    <path d="M56 262 q4 -4 8 0 t8 0 t8 0 t8 0 t8 0 t8 0 t8 0 t8 0 t8 0 t8 0 t8 0 t8 0" fill="none" stroke="#e5534b" stroke-width="1.4" stroke-linecap="round"/>
+    <text x="186" y="252" font-size="11.5" fill="#8d99ad">引号未闭合时在输入框底部画红色波浪线</text>
   </g>
 </svg>

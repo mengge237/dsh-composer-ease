@@ -90,3 +90,29 @@ DEMO_DEPS=<本地路径> \
 
 **剧本要避开插件自己的机制**：我第一版剧本用三反引号开围栏，结果反引号被插件自动配对成 `` `` ``，整个剧本跑偏
 （录出来输入框只剩一个 `d`）。现在四幕都用普通打字：`def` → ↑↓ → `Tab` → `docum` → 半句引号。
+
+## 改 SVG 一定要渲染出来看（2026-10-22 踩到）
+
+`docs/banner.svg` 之前是**错的**：标题写着 `dsh-composer-pro`（插件叫 `dsh-composer-ease`）、只讲三类候选、
+右下角文字溢出卡片、示例还是内部的 `临时目录/attrib-index.diff`。这些在源码里看不出来，**渲出来一眼就看见**。
+
+渲染方式：**用 Chromium，不要用 ImageMagick**——IM 对 `ui-monospace` 与中文回退字体支持差，
+直接 `magick banner.svg out.png` 会失败（本机实测 0 字节输出 + font fallback 警告）。
+
+```js
+// 简化版：SVG 内联进 HTML 再截（直接截 SVG 文档会卡在"等字体"超时）
+const svg = fs.readFileSync(svgPath, 'utf8')
+await page.setContent('<!doctype html><meta charset="utf-8"><body style="margin:0;background:#fff">' + svg + '</body>')
+await page.waitForTimeout(600)
+await page.screenshot({ path: outPath })      // deviceScaleFactor: 2 更清楚
+```
+
+判据（改 banner 的最小流程）：
+
+1. 改完先渲染成 PNG，**用视觉看一眼**——名字对不对、有没有溢出、强调色还是不是红色；
+2. 再看它在 GitHub 上的呈现：README 里是 `<img src="docs/banner.svg">`，GitHub 会按文件尺寸原样显示，
+   所以 **尺寸就用 1200×300**，别指望它自适应；
+3. 内容要与当前功能一致（候选几类、菜单几行），**功能变了就回来改 banner**——它就是"首屏广告"。
+
+现在的 banner 结构（可直接沿用）：身份标签（右上）→ 名字 → 一句话 → 四个能力胶囊 → 一行事实（零依赖/不改源码/一条命令）
+→ 右侧输入框示意（`docum` + 灰字 `ent`）+ 补全弹层（三行，首行高亮带左侧强调条）+ 左下红色波浪线示例。
