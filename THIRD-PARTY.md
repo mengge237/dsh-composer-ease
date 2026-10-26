@@ -11,6 +11,7 @@
 | CSS 伪类、at 规则 | [codemirror/lang-css](https://github.com/codemirror/lang-css) | MIT | `7b7835b` | `src/complete.ts` 的 `pseudoClasses` / `atRules` |
 | CSS 属性名 | [mdn/browser-compat-data](https://github.com/mdn/browser-compat-data) | CC0-1.0 | `0416078` | `css/properties/*.json` 的文件名（去掉 `-moz-`/`-webkit-` 前缀项） |
 | 中文常用词表 | [fxsjy/jieba](https://github.com/fxsjy/jieba) | MIT | `extra_dict/dict.txt.big` | 抽「纯汉字、2~4 字、按频次靠前」的常用词（`lib/cjk-lexicon.js`），用于区分完整词与碎片 |
+| 英文词表（T2，30k 子集） | [words/an-array-of-english-words](https://github.com/words/an-array-of-english-words) | MIT | v2.0.0 `index.json`（274,937 词） | 只留 3-12 字符纯字母，再用**本机语料频次**排序取前 30000，落在 `lib/en-lexicon.js`；生成脚本 `tools/gen-lexicon.mjs`，可复跑 |
 | 模糊打分引擎与字符判据 | [microsoft/vscode](https://github.com/microsoft/vscode) | MIT | `0b4e063` | `src/vs/base/common/filters.ts`（`fuzzyScore`/`_doScore`/`fuzzyScoreGraceful*` 等）＋同目录 `charCode.ts`（只取用到的条目）与 `strings.ts`（只取 `isEmojiImprecise`） |
 
 抽取是静态的（正则取数组与对象键），没有执行任何第三方代码；复跑脚本与中间产物不随包分发。
@@ -249,3 +250,10 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
+
+## 6. words/an-array-of-english-words（MIT）
+
+- 用途：英文补全的词表来源（`lib/en-lexicon.js` 的 T2 部分）。
+- 取用：v2.0.0 的 `index.json`（274,937 词）→ 过滤 3-12 字符纯字母 → 按**本机语料频次**排序（T3）→ 取前 30000。
+- 该词表**不含词频**，所以顺序那一半来自本机语料统计（`lib/domain-words.js` 同源生成）；换机器重跑会得到不同顺序，这是设计如此。
+- 重新生成：`node tools/gen-lexicon.mjs --words <index.json> --corpus lib --corpus docs --corpus ~/.dsh/本地配置 --cap 30000 --domain-cap 1000`
