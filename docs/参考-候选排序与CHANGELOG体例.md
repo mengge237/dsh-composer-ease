@@ -94,3 +94,44 @@
 - **只有新条目按新体例写**；旧 44 条只做两件机械修正：半角括号 → 全角、补短 sha。不重排内容（重排没有信息增益，还会让 `git log -S` 对不上）。
 - `tools/check-release.mjs` 现在只认「`（日期，`sha`）`」这一种形状，改体例时**要么继续满足它，要么同步改它**，别只改一边。
 - 「为什么这么改」这类决策不进 CHANGELOG（那是给用户看的变化清单），写 `docs/DECISIONS.md`（ADR 一句话一条：背景 / 决定 / 影响）。
+
+---
+
+## 六、英文侧怎么扩（`lib/en-lexicon.js`，2026-10-22 新增）
+
+**问题**：`cjk-lexicon.js` 有「完整词义」闸（`isCompleteWord`：≥2 字且词典收录），英文侧没有对应物——
+只有 `words.js` 的关键字表（约 1031 条），没有英文词，也没有「这个词是不是词」的判据。
+
+**先分清一件事：英文不该照搬中文的「碎片清零」。**
+中文单字/碎片不给候选是对的（中文靠输入法选词）；英文前缀**正是**补全的用法（`docum` → `document`），
+清零等于把补全本身关掉。所以英文只做两件：① 补出以它为前缀的词；② 它本身已是完整词时给更高上下文分。
+
+**接口（照 CJK 1:1 复制，便于以后互换数据源）**：
+
+| 文件 | 导出 | 说明 |
+|---|---|---|
+| `lib/cjk-lexicon.js` | `CJK_LEXICON` / `lexiconMatches(p,cap)` / `isCompleteWord(p)` | 2-4 字，jieba 前 30000（MIT） |
+| `lib/en-lexicon.js` | `EN_LEXICON` / `enMatches(p,cap)` / `isCompleteEnWord(p)` / `isWordPrefix(p)` | 关键字表 + 手写开发语境词，README 见 `EN_LEXICON_SOURCE` |
+
+接入点：`lib/index.js` 的 `wordCandidates()` **末尾**（池子之后）。
+放末尾是为了让 `words.js` 先登记出处——`delete` 这类词两处都有时，`src` 记 `words.js` 而不是词典（`selftest` 有一条就查这个）。
+
+**三档扩法（按体积/精度选一档就够）**：
+
+1. **T1 现状（已做）**：关键字表 + 手写常用词，**1237 词**，零新增依赖零新增许可证。
+   读数：`docum` → `document`（第 1 条）、`dele` → `delete`、`inp` → `input`（出处仍是 `words.js`）。
+2. **T2 接真词表**：`SCOWL`（公有领域）/ `wordfreq` / `an-array-of-english-words`。
+   照 CJK 的生成脚本做法：只留 **3-12 字符纯小写**、按词频取前 2-3 万，生成 `lib/en-lexicon.js`，
+   并把 `repo / license / file / kept` 写进 `EN_LEXICON_SOURCE` 与 `THIRD-PARTY.md`。
+   体积按 30k 词 × 平均 7 字节 ≈ 250 KB（CJK 现在 384 KB，同一量级，可接受）。
+3. **T3 领域词**：从本机代码与会话正文统计词频（TF），好处是 `dsh`、`lexical`、`keymap` 这类词自带；
+   代价是要定时重建、且会随本机内容变化（同一份代码在不同机器上给出不同候选）。
+
+**闸（gate）建议**（别一股脑进池）：
+
+- 只在 prefix 匹配 `^[A-Za-z][A-Za-z-]{1,23}$` 时查（含 `/`、`_`、`.` 的 token 是路径/标识符，交给文件候选）；
+- `enMatches` 长度 2 字符起（与客户端 `tok.length < 2` 一致）；
+- 同一个词两处都有 → 保留先登记者，`seen` 已经做了这件事。
+
+**验证判据**：`node test/server-routes.mjs` 的「英文前缀要出英文词候选」那条 —— `docum` 的第 1 条必须是
+`document`（detail `英文词`），且它排在 `documentation.md` 这类文件前面；`zzzqx` 不许硬造词。
