@@ -13,12 +13,19 @@
 // 判据：只比「文本内容」（换行归一），不比字节 —— git 在 Windows 上会把工作副本转成 CRLF，
 // 直接比 sha 会把纯换行差异报成不一致（2026-10-22 实测 cjk-lexicon.js 就是这样）。
 
+import { findHostDir } from './host-dir.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..')
-const HOST = process.env.DSH_PLUGIN_HOST || ''
-if (!HOST) { console.error('缺 DSH_PLUGIN_HOST：指向宿主真正加载的那份插件目录（profile 里 link: 后面那个路径）'); process.exit(2) }
+// 宿主目录从 profile 的 link: 里发现（见 tools/host-dir.mjs），环境变量只是覆盖手段
+const FOUND = findHostDir()
+const HOST = FOUND.dir
+if (!HOST) {
+  console.error('找不到宿主插件目录：' + FOUND.from)
+  console.error('  → 用 DSH_PLUGIN_HOST=<插件目录> 显式指定，或先 dsh plugin --profile web add <本仓路径>')
+  process.exit(2)
+}
 const CHECK = process.argv.includes('--check')
 
 // 宿主运行时要的文件：两头代码 + 数据 + 元数据 + 文档
