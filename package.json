@@ -1,6 +1,6 @@
 {
   "name": "dsh-composer-ease",
-  "version": "0.9.38",
+  "version": "0.9.39",
   "type": "module",
   "main": "lib/index.js",
   "files": [
@@ -41,7 +41,8 @@
     "check:all": "npm run check && npm run check:docs && npm run check:copies && npm run build -- --check",
     "record:demo": "node tools/record-demo.mjs",
     "check:copies": "node tools/copies.mjs --check",
-    "sync:copies": "node tools/copies.mjs --sync"
+    "sync:copies": "node tools/copies.mjs --sync",
+    "link:host": "node tools/link-host.mjs"
   },
   "license": "MIT",
   "engines": {
