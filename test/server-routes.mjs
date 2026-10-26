@@ -71,6 +71,14 @@ ok('words 路由：inp → input（公共池），lang 认得出就上该语言�
   assert.ok(d.json.candidates.some((x) => x.value === 'input'))
 })
 
+ok('words 路由：中文前缀要出词典候选（cjk-lexicon.js 此前没接进候选池）', () => {
+  const r = call('/dsh-composer-ease/words?prefix=' + encodeURIComponent('文档'))
+  assert.equal(r.code, 200)
+  const zidian = r.json.candidates.filter((c) => c.detail === '词典' || c.src === 'cjk-lexicon.js')
+  assert.ok(zidian.length >= 1, '中文前缀要能命中词典：' + JSON.stringify(r.json.candidates.slice(0, 5)))
+  assert.ok(zidian.every((c) => String(c.value).startsWith('文档')), '词典候选要以前缀开头')
+})
+
 ok('words 路由：没给 prefix 也给候选（列表封顶 ≤12），坏 URL 不炸', () => {
   const a = call('/dsh-composer-ease/words')
   assert.equal(a.code, 200)
