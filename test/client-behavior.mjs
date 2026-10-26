@@ -221,6 +221,24 @@ await okAsync('接受片段后：占位符展开、光标落在第一个落点�
   assert.equal(ed.selectionStart, 24, '跳完后停在原处：' + ed.selectionStart)
 })
 
+await okAsync('候选类型预设：一行循环四态，/ 菜单不再被四个开关占四行', async () => {
+  const H6 = mod.__helpers__
+  store.delete('dsh-composer-ease:kinds-off')
+  assert.equal(H6.kindPresetLabel(), '全部', '默认为全部')
+  H6.cycleKindPreset(); assert.equal(H6.kindPresetLabel(), '无文件')
+  assert.equal(H6.isKindOn('file'), false, '无文件：文件类型关')
+  assert.equal(H6.isKindOn('word'), true, '无文件：词仍开')
+  H6.cycleKindPreset(); assert.equal(H6.kindPresetLabel(), '只有词')
+  assert.equal(H6.isKindOn('snippet'), false, '只有词：片段关')
+  H6.cycleKindPreset(); assert.equal(H6.kindPresetLabel(), '全关')
+  H6.cycleKindPreset(); assert.equal(H6.kindPresetLabel(), '全部')
+  // / 菜单里的候选行数：引号模式 + 候选类型 + 严格配对 = 3
+  const slash = H6.buildTriggerSources().find((x) => x.trigger === '/')
+  const rows = await slash.candidates({}, {})
+  assert.equal(rows.length, 3, '/ 菜单应只有 3 行：' + rows.map((r) => r.name).join(','))
+  assert.ok(rows.some((r) => r.name === '候选类型'), '要有候选类型这一行')
+})
+
 ok('候选类型开关：关掉文件后，合并结果里没有文件候选', () => {
   const H5 = mod.__helpers__
   assert.equal(H5.isKindOn('file'), true, '默认全开')
