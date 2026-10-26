@@ -176,11 +176,30 @@ dsh plugin --profile web add "<你的插件目录>"   # 例如本机源码目录
 | `cordis.patch.yml` | DSH bundle 声明（`dsh.bundle.patch`） |
 
 
+
+## 本机只有一份：宿主目录是本仓的 junction
+
+插件在 profile 里被 `link:` 引用。以前 `link:` 指向**另一个目录**，于是"改完忘了同步"就会出现
+仓库是新版、跑的是旧版。现在宿主目录直接是**指向本仓的 junction**，物理上只有一份：
+
+```bash
+node tools/link-host.mjs          # 报告当前关系（不动任何东西）
+node tools/link-host.mjs --apply  # 需要时重新合并成一份（原目录留作 .hostbak 供回滚）
+```
+
+于是本机只剩三样东西：**本仓（= 现役，被宿主直接加载）**、**GitHub（云端）**、
+以及一份**回退包**（`test/rollback-dsh-composer-ease/dsh-composer-ease-v<版本>.zip`）。
+不再有第二份工作副本，也就不存在版本不同步。
+
+改完代码照旧 `npm run build`；客户端半边刷新页面即生效，服务端半边（`lib/index.js`）仍需重启 `dsh web`。
+
 ## 维护者的两个环境变量
 
 ```bash
-# 把宿主真正加载的那份插件目录同步到本仓 HEAD（改完代码必做）
-DSH_PLUGIN_HOST="<宿主插件目录>" npm run sync:host     # 只核对：npm run check:host
+# 一般不再需要：宿主目录已经是本仓的 junction（见上一节）
+# 只有换机器/宿主重装后丢了 junction 时，用来核对或重建
+npm run check:host      # 只核对
+npm run link:host -- --apply
 
 # 重录 README 动图（需要先 npm i gifenc pngjs）
 DEMO_DEPS="<装了 gifenc/pngjs 的 node_modules 目录>" npm run record:demo -- "<url>" --out docs/demo.gif
