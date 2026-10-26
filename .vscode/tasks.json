@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "同步到宿主插件目录",
+      "type": "shell",
+      "command": "npm run sync:host",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "检查副本是否漂移",
+      "type": "shell",
+      "command": "npm run check:copies",
+      "problemMatcher": [],
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "跑全部闸",
+      "type": "shell",
+      "command": "npm run check:all && npm test",
+      "problemMatcher": []
+    },
+    {
+      "label": "重建客户端 bundle",
+      "type": "shell",
+      "command": "npm run build",
+      "problemMatcher": []
+    }
+  ]
+}
