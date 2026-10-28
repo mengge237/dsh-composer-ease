@@ -1,4 +1,4 @@
-﻿// 浏览器半边行为测试：假 DOM（TEXTAREA 形态 composer）驱动真监听，
+// 浏览器半边行为测试：假 DOM（TEXTAREA 形态 composer）驱动真监听，
 // 覆盖自动配对、环绕选区、跳闭合、删空对、Ctrl+Space 补全、接受候选、自动弹、语言提示。
 // 跑法：node test/client-behavior.mjs
 import assert from 'node:assert/strict'
@@ -237,6 +237,49 @@ await okAsync('候选类型预设：一行循环四态，/ 菜单不再被四个
   const rows = await slash.candidates({}, {})
   assert.equal(rows.length, 3, '/ 菜单应只有 3 行：' + rows.map((r) => r.name).join(','))
   assert.ok(rows.some((r) => r.name === '候选类型'), '要有候选类型这一行')
+})
+
+await okAsync('/ 菜单：错拼兜底 —— /compot 补出 compact，正常拼写与宿主已给出的行都不重复', async () => {
+  const H = mod.__helpers__
+  assert.ok(H.typoScore('compot', 'compact') > 0, '/compot 应判成 compact 的错拼');
+  assert.equal(H.typoScore('comp', 'compact'), -1, '正常子序列命中不算错拼');
+  const one = H.rescueRows('compot', { matched: [{ name: 'zzz' }], all: [{ name: 'compact', label: '压缩' }, { name: 'goal', label: '目标' }] });
+  assert.equal(one.length, 1, '只补一条：' + JSON.stringify(one.map((r) => r.name)));
+  assert.equal(one[0].rescue, 'compact', '补出来的就是 compact');
+  const dup = H.rescueRows('compot', { matched: [{ name: 'compact' }], all: [{ name: 'compact', label: '压缩' }] });
+  assert.equal(dup.length, 0, '宿主已经排出来的行不再重复出');
+  const fallback = H.rescueRows('compot', null);
+  assert.ok(fallback.some((r) => r.rescue === 'compact'), '取不到宿主命令表时用内置清单兜底');
+})
+
+await okAsync('/ 菜单：三条设置行按 query 过滤（宿主那组消失时别只剩我们）', async () => {
+  const H = mod.__helpers__
+  const slash = H.buildTriggerSources().find((x) => x.trigger === '/');
+  assert.equal((await slash.candidates({}, {})).length, 3, '空 query 三行都在');
+  const comp = await slash.candidates({}, { query: 'comp' });
+  assert.equal(comp.filter((r) => r.name === '引号模式').length, 0, '打 /comp 时设置行让位：' + JSON.stringify(comp.map((r) => r.name)));
+  const zh = await slash.candidates({}, { query: '引号' });
+  assert.equal(zh.length, 1, '打 /引号 只留一条：' + JSON.stringify(zh.map((r) => r.name)));
+  assert.equal(zh[0].name, '引号模式');
+})
+
+ok('注释行不提示：行首 // # <!-- --（可缩进）；行内 // 与引号里不算', () => {
+  const H = mod.__helpers__
+  for (const s of ['// fun', '  // fun', '# fun', '<!-- fun', '-- fun']) assert.equal(H.inCommentLine(s), true, s + ' 应判为注释行');
+  assert.equal(H.inCommentLine('第一行\n// fun'), true, '只看光标所在那一行');
+  assert.equal(H.inCommentLine('a // fun'), false, '行内 // 不算（URL 与除号不受影响）');
+  assert.equal(H.inCommentLine('http://fun'), false);
+  assert.equal(H.inCommentLine('"fun'), false, '引号里照旧提示');
+})
+
+await okAsync('注释行里打字不触发候选请求、不弹层', async () => {
+  const ed = mkEd('// fun');
+  const before = fetchCalls.length;
+  input(ed);
+  await tick();
+  assert.equal(fetchCalls.length, before, '注释行不该发请求');
+  const p = popupEl();
+  assert.ok(!p || p.style.display === 'none', '注释行里不该弹层');
 })
 
 ok('候选类型开关：关掉文件后，合并结果里没有文件候选', () => {
