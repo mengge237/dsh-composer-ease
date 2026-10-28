@@ -1,8 +1,8 @@
-// 真机用例矩阵：一条命令把 24 个用例在同一台真宿主上跑 N 轮，输出每轮的通过/失败与读数。
+// 用例矩阵：一条命令把 24 个用例在同一台运行中的宿主上跑 N 轮，输出每轮的通过/失败与实际值。
 // 前置：先起一个干净的 demo 宿主 —— dsh --profile demo --port 3081 --no-open
 // 用法：node test/real/matrix.mjs "http://127.0.0.1:3081/?token=…" 3
 // 为什么放在 test/real/：它要活宿主与浏览器，不进 npm test（那五支是离线假 DOM / 纯逻辑）。
-// 判据：每轮 24 条全绿才算过；失败项会打印实际读数（弹层状态、文本、caret），不用再补日志。
+// 判据：每轮 24 条全绿才算过；失败项会打印实际值（弹层状态、文本、caret），不用再补日志。
 let chromium
 for (const spec of ['playwright', process.env.PLAYWRIGHT_ENTRY].filter(Boolean)) {
   try { ({ chromium } = await import(spec)); break } catch (e) {}
