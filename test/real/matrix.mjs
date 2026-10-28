@@ -1,8 +1,8 @@
-// 用例矩阵：一条命令把 32 个用例在同一台运行中的宿主上跑 N 轮，输出每轮的通过/失败与实际值。
+// 用例矩阵：一条命令把 33 个用例在同一台运行中的宿主上跑 N 轮，输出每轮的通过/失败与实际值。
 // 前置：先起一个干净的 demo 宿主 —— dsh --profile demo --port 3081 --no-open
 // 用法：node test/real/matrix.mjs "http://127.0.0.1:3081/?token=…" 3
 // 为什么放在 test/real/：它要活宿主与浏览器，不进 npm test（那五支是离线假 DOM / 纯逻辑）。
-// 判据：每轮 32 条全绿才算过；失败项会打印实际值（弹层状态、文本、caret），不用再补日志。
+// 判据：每轮 33 条全绿才算过；失败项会打印实际值（弹层状态、文本、caret），不用再补日志。
 let chromium
 for (const spec of ['playwright', process.env.PLAYWRIGHT_ENTRY].filter(Boolean)) {
   try { ({ chromium } = await import(spec)); break } catch (e) {}
@@ -135,6 +135,13 @@ for (let round = 1; round <= ROUNDS; round++) {
   const picked = await text();
   check(round, 'E8 @ 菜单 Tab 插入路径', picked.length > 4 && picked.indexOf('@') < 0, JSON.stringify(picked));
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+  await reset('');
+  await page.keyboard.type('第一段', { delay: 20 }); await page.keyboard.press('Shift+Enter');
+  await page.keyboard.type('第二段', { delay: 20 }); await page.waitForTimeout(200);
+  await page.keyboard.press('Control+a'); await page.waitForTimeout(120);
+  await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(1200);
+  const twoText = await text();
+  check(round, 'E9 两段选区也包得住', twoText.charAt(0) === '"' && twoText.charAt(twoText.length - 1) === '"', JSON.stringify(twoText));
   // F 稳定性
   pp = await popup(); check(round, 'F1 只有一个弹层节点', pp.copies <= 1, 'copies=' + pp.copies);
   check(round, 'F2 无控制台错误', errors.length === 0, errors.slice(0, 2).join(' | '));
