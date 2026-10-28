@@ -714,10 +714,27 @@ ok('前方有不闭合的中文引号，末尾再打同一个：只插一个', (
   assert.equal(ed.value, '“文字“', '不许被 onInput 补成 “文字“”：' + ed.value)
 })
 
-ok('空框打中文引号：只插一个，不再补闭符（2026-10-21 契约变更）', () => {
+ok('默认 auto：空框打半角引号 → 补成一对，光标落在中间', () => {
+  mod.__helpers__.setQuoteMode('auto')
+  const ed = mkEd('', 0)
+  keydown(ed, { key: '"' })
+  assert.equal(ed.value, '""', '默认要补一对：' + ed.value)
+  assert.equal(ed.selectionStart, 1, '光标落在两符之间：' + ed.selectionStart)
+})
+
+ok('默认 auto：空框打中文引号 → 同样补成一对（2026-10-28 契约）', () => {
+  mod.__helpers__.setQuoteMode('auto')
   const ed = mkEd('“', 1)
   handlers.input({ target: ed, data: '“' })
-  assert.equal(ed.value, '“', '不该再补一个闭符：' + ed.value)
+  assert.equal(ed.value, '“”', '全角也要补：' + ed.value)
+})
+
+ok('切到 warn：空框打中文引号只插一个（标红模式下不补）', () => {
+  mod.__helpers__.setQuoteMode('warn')
+  const ed = mkEd('“', 1)
+  handlers.input({ target: ed, data: '“' })
+  assert.equal(ed.value, '“', 'warn 模式不补闭符：' + ed.value)
+  mod.__helpers__.setQuoteMode('auto')
 })
 
 ok('已有一个没闭合的开符，选中内容再打同一个引号：补闭合而不是再框一层', () => {
@@ -793,14 +810,17 @@ for (const [open, close] of [['(', ')'], ['[', ']'], ['{', '}'], ['`', '`'],
   })
 }
 
+// 标红模式（显式开关）下空框打引号只插一个；默认 auto 的配对契约由上一条用例守。
+mod.__helpers__.setQuoteMode('warn')
 for (const q of ['"', "'", '“', '‘']) {
-  ok(`矩阵·空框打引号 ${q} → 只插一个（不自动补闭符）`, () => {
+  ok(`矩阵·warn 模式空框打引号 ${q} → 只插一个`, () => {
     const ed = mkEd('')
     keydown(ed, { key: q })
     assert.equal(ed.value, q, `期望只有一个 ${q}，实得 ` + ed.value)
     assert.equal(ed.selectionStart, 1, 'caret 紧跟其后：' + ed.selectionStart)
   })
 }
+mod.__helpers__.setQuoteMode('auto')
 
 // 2) 光标前已有「未闭合」的开符：只插一个（这是核心那条）
 for (const [open, close, text] of [['"', '"', '"你好'], ["'", "'", "'abc"], ['`', '`', '`code'], ['“', '”', '“文字'], ['（', '）', '（说明']]) {
@@ -846,12 +866,14 @@ ok('矩阵·连按两下引号 → 仍是 ""（第二下只跳过）', () => {
   assert.equal(ed.value, '""', '连按两下不该变多：' + ed.value)
 })
 
-ok('矩阵·连按三下引号 → """（第三下是字面插入，属正常）', () => {
+// 默认 auto：第一下补成一对，第二下（空对里）跳过，第三下仍在空对里 → 仍是一对。
+// 这条规则是为了防快速连打时冒出四个引号；写 ``` 围栏走反引号，不在引号家族里，不受影响。
+ok('矩阵·auto 模式连按三下引号 → 仍是一对', () => {
   const ed = mkEd('')
   keydown(ed, { key: '"' })
   keydown(ed, { key: '"' })
   keydown(ed, { key: '"' })
-  assert.equal(ed.value, '"""', '三下应为三个：' + ed.value)
+  assert.equal(ed.value, '""', '三下仍是一对：' + ed.value)
 })
 
 // 6) 标识符/路径后面不配对（保护代码）
@@ -875,6 +897,8 @@ ok('矩阵·中文正文后打 ( → 配对', () => {
 // 它照自己的模型再插一遍，于是「拦 + 自己插」得到双份。所以这条路只能是
 // 「先让原生插，落地之后再收尾」。假 DOM 在这里补上浏览器那半步，断言的是**终态**。
 // 0.9.6 起这 6 条已转正（原先挂在 CE_PENDING 后面红着等实现）。
+// 这一段测的是 beforeinput 的落地机制，按「标红模式」跑（默认已是 auto，配对契约另有用例守）。
+mod.__helpers__.setQuoteMode('warn')
 {
   await okAsync('beforeinput·空框打 “ → 只插一个，caret 紧跟其后', async () => {
     const ed = mkEd('')
