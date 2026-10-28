@@ -1,8 +1,8 @@
-// 用例矩阵：一条命令把 24 个用例在同一台运行中的宿主上跑 N 轮，输出每轮的通过/失败与实际值。
+// 用例矩阵：一条命令把 32 个用例在同一台运行中的宿主上跑 N 轮，输出每轮的通过/失败与实际值。
 // 前置：先起一个干净的 demo 宿主 —— dsh --profile demo --port 3081 --no-open
 // 用法：node test/real/matrix.mjs "http://127.0.0.1:3081/?token=…" 3
 // 为什么放在 test/real/：它要活宿主与浏览器，不进 npm test（那五支是离线假 DOM / 纯逻辑）。
-// 判据：每轮 24 条全绿才算过；失败项会打印实际值（弹层状态、文本、caret），不用再补日志。
+// 判据：每轮 32 条全绿才算过；失败项会打印实际值（弹层状态、文本、caret），不用再补日志。
 let chromium
 for (const spec of ['playwright', process.env.PLAYWRIGHT_ENTRY].filter(Boolean)) {
   try { ({ chromium } = await import(spec)); break } catch (e) {}
@@ -106,6 +106,35 @@ for (let round = 1; round <= ROUNDS; round++) {
   check(round, 'D3 /compot 错拼兜底', rows.some((r) => r.indexOf('/compact') >= 0), rows.join(' | ').slice(0, 90));
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
 
+  // E 边界与回归
+  await reset(''); await seedType('# fun');
+  pp = await popup(); check(round, 'E1 井号注释行不弹', pp.display !== 'block', pp.display);
+  await reset(''); await seedType('a // fun');
+  pp = await popup(); check(round, 'E2 行内 // 照常弹', pp.display === 'block', pp.display);
+  await reset(''); await page.keyboard.type('abc', { delay: 25 }); await page.keyboard.press('Home'); await page.waitForTimeout(150);
+  await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(350);
+  check(round, 'E3 文字前打引号只落一个', (await text()) === '"abc', await text());
+  await reset('');
+  for (let k = 0; k < 3; k++) { await page.keyboard.press('Backquote'); await page.waitForTimeout(120) }
+  await page.waitForTimeout(250);
+  check(round, 'E4 反引号三连成围栏', (await text()) === '```', await text());
+  await reset('');
+  for (let k = 0; k < 3; k++) { await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(120) }
+  await page.waitForTimeout(250);
+  check(round, 'E5 引号三连仍是一对', (await text()) === '""', await text());
+  await reset('abc'); await page.keyboard.press('Control+a'); await page.waitForTimeout(120);
+  await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(500);
+  await page.keyboard.press('Control+z'); await page.waitForTimeout(400);
+  check(round, 'E6 单行包裹撤销一拍', (await text()) === 'abc', await text());
+  await reset(''); await seedType('fun');
+  await page.keyboard.press('Tab'); await page.waitForTimeout(500);
+  const afterAccept = await popup();
+  check(round, 'E7 接受后弹层不复开', afterAccept.display !== 'block', afterAccept.display + ' / ' + JSON.stringify(await text()));
+  await reset(''); await page.keyboard.type('@pack', { delay: 35 }); await page.waitForTimeout(900);
+  await page.keyboard.press('Tab'); await page.waitForTimeout(600);
+  const picked = await text();
+  check(round, 'E8 @ 菜单 Tab 插入路径', picked.length > 4 && picked.indexOf('@') < 0, JSON.stringify(picked));
+  await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   // F 稳定性
   pp = await popup(); check(round, 'F1 只有一个弹层节点', pp.copies <= 1, 'copies=' + pp.copies);
   check(round, 'F2 无控制台错误', errors.length === 0, errors.slice(0, 2).join(' | '));

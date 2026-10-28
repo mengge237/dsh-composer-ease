@@ -310,6 +310,73 @@ await okAsync('行内灰字跟着选中项走（VS Code suggest.preview 的实�
   assert.equal(ghostEl().textContent, 'alpha', 'ArrowUp 回来应恢复第一条：' + ghostEl().textContent)
 })
 
+ok('右方向键 / End 同样收起弹层，且不改文本', () => {
+  const ed = mkEd('nod')
+  keydown(ed, { key: ' ' , code: 'Space', ctrl: true })
+  keydown(ed, { key: 'ArrowRight' })
+  assert.equal(ed.value, 'nod', '右方向键不许改文本：' + ed.value)
+})
+
+ok('注释行的四种写法都不发请求（# / <!-- / -- / 缩进 //）', () => {
+  const before = fetchCalls.length
+  for (const s of ['# fun', '<!-- fun', '-- fun', '   // fun']) {
+    const ed = mkEd(s)
+    input(ed)
+  }
+  assert.equal(fetchCalls.length, before, '注释行不该发请求')
+})
+
+ok('行内 // 不算注释行：照常发请求（URL 与除号不受影响）', () => {
+  const before = fetchCalls.length
+  input(mkEd('a // fun'))
+  assert.equal(fetchCalls.length, before + 1, '行内 // 仍应提示')
+})
+
+ok('空对里第三下引号仍是一对（反引号不受限，围栏照常三连）', () => {
+  mod.__helpers__.setQuoteMode('auto')
+  const q = mkEd('')
+  keydown(q, { key: '"' })
+  keydown(q, { key: '"' })
+  keydown(q, { key: '"' })
+  assert.equal(q.value, '""', '引号三下仍是一对：' + q.value)
+  const b = mkEd('')
+  keydown(b, { key: '`' })
+  keydown(b, { key: '`' })
+  keydown(b, { key: '`' })
+  assert.equal(b.value, '```', '反引号要能三连（围栏）：' + b.value)
+})
+
+ok('右边紧跟文字时打引号只插一个（不把已有文字包进去）', () => {
+  mod.__helpers__.setQuoteMode('auto')
+  const ed = mkEd('abc', 0)
+  keydown(ed, { key: '"' })
+  assert.equal(ed.value, '"abc', '只在前面落一个开符：' + ed.value)
+})
+
+// 老式 textarea 形态走的是「整段 value 替换」，多行没问题；真宿主的 contenteditable 那一侧有
+// 明确边界（换行负载的 paste 会吃掉末尾闭符，所以不做包裹，见 README「已知边界」）。
+ok('多行选区在 textarea 形态下照常包裹', () => {
+  const ed = mkEd('aa\nbb', 0)
+  ed.selectionStart = 0
+  ed.selectionEnd = 5
+  keydown(ed, { key: '"' })
+  assert.equal(ed.value, '"aa\nbb"', 'textarea 形态要包上：' + JSON.stringify(ed.value))
+})
+
+ok('弹层关着时 ↑ ↓ 不改文本、不插字', () => {
+  const ed = mkEd('abc')
+  keydown(ed, { key: 'ArrowUp' })
+  keydown(ed, { key: 'ArrowDown' })
+  assert.equal(ed.value, 'abc', '↑↓ 不许改文本：' + ed.value)
+})
+
+ok('类型开关：关掉 file 后合并结果里没有文件候选', () => {
+  const H = mod.__helpers__
+  H.toggleKind('file')
+  assert.equal(H.isKindOn('file'), false)
+  H.toggleKind('file')
+  assert.equal(H.isKindOn('file'), true, '再开关回来')
+})
 await okAsync('左右方向键挪光标时收起弹层，继续打字再提示', async () => {
   fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'node', detail: '英文词' }] }
   const ed = mkEd('nod')

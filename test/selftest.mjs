@@ -121,4 +121,23 @@ ok('中文「完整词义」闸：文档/变量/管理是词，档管/单字不�
   assert.ok(wordCandidates('文档', '').length > 0 || true, '文档是完整词')
 })
 
+ok('contextScore：README 最高，docs 次之，普通文件最低', () => {
+  const { contextScore } = internals
+  const readme = contextScore('README.md', 0)
+  const docs = contextScore('docs/guide.md', 0)
+  const plain = contextScore('src/main.js', 0)
+  assert.ok(readme > docs, 'README 要高于 docs：' + readme + ' vs ' + docs)
+  assert.ok(docs > plain, 'docs 要高于普通文件：' + docs + ' vs ' + plain)
+})
+
+ok('候选管线：docum → document 排在首位（走 buildCandidates，不用原始词池）', () => {
+  const list = buildCandidates('docum').map((x) => x.value)
+  assert.equal(list[0], 'document', '首位应为 document：' + JSON.stringify(list.slice(0, 3)))
+})
+
+ok('候选封顶：很短的前缀也只回 ≤12 条', () => {
+  const c = buildCandidates('a')
+  assert.ok(c.length <= 12, '候选要封顶：' + c.length)
+})
+
 console.log(`\n${n} 项全过`)

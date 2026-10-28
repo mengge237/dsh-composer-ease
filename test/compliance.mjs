@@ -44,7 +44,8 @@ ok('每个借用件都在 THIRD-PARTY.md 台账里：仓库 + 许可 + 钉住的
   assert.ok(third.includes('CC0-1.0'), 'CC0 那一件要标出来')
  // README 的「来源与许可」也要指向出处，不能只藏在 THIRD-PARTY 里
   assert.ok(readme.includes('THIRD-PARTY.md'), 'README 要指向 THIRD-PARTY.md')
-  assert.ok(/##\s*来源与许可/.test(readme), 'README 要有「来源与许可」一节')
+ // README 以英文为主展示（中文在 README.zh.md），两边的标题任选其一都算数
+  assert.ok(/##\s*(来源与许可|Sources and licenses)/.test(readme), 'README 要有「来源与许可 / Sources and licenses」一节')
 })
 
 ok('许可证原文照录：MIT 文本按版权人各一份，CC0 有声明', () => {
