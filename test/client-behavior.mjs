@@ -310,6 +310,21 @@ await okAsync('行内灰字跟着选中项走（VS Code suggest.preview 的实�
   assert.equal(ghostEl().textContent, 'alpha', 'ArrowUp 回来应恢复第一条：' + ghostEl().textContent)
 })
 
+await okAsync('左右方向键挪光标时收起弹层，继续打字再提示', async () => {
+  fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'node', detail: '英文词' }] }
+  const ed = mkEd('nod')
+  keydown(ed, { key: ' ', code: 'Space', ctrl: true })
+  await tick()
+  assert.equal(popupEl().style.display, 'block', '先要弹出')
+  keydown(ed, { key: 'ArrowLeft' })
+  assert.equal(popupEl().style.display, 'none', '左右键一按就收起来：' + popupEl().style.display)
+  assert.equal(ed.value, 'nod', '左右键不许改文本')
+  const before = fetchCalls.length
+  input(ed)
+  await tick()
+  assert.ok(fetchCalls.length > before, '继续打字要重新拉候选')
+  assert.equal(popupEl().style.display, 'block', '打字之后要再提示')
+})
 await okAsync('方向键改选中：ArrowDown 之后 Tab 接受第二条（2026-10-22 报的上下键无效）', async () => {
   fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'deferred', detail: '词典' }, { kind: 'word', value: 'denote', detail: '词典' }] }
   const ed = mkEd('de')
