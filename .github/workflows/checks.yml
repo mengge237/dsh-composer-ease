@@ -8,6 +8,12 @@ on:
   pull_request:
   workflow_dispatch:
 
+# 同分支只留最新一次：新 push 会取消还在跑的旧运行，运行列表不再一串历史。
+# 取消的那次在列表里显示为 cancelled，但不会占第二次 runner 时间。
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     strategy:
