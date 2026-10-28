@@ -1,4 +1,4 @@
-- **0.9.50**（2026-10-28，`SHA`）：**英文 README 成主展示；用例补到 181 + 32 条**（要求：多测、README 默认英文）。
+- **0.9.50**（2026-10-28，`eb6d555`）：**英文 README 成主展示；用例补到 181 + 32 条**（要求：多测、README 默认英文）。
   ① 双语 README 对调：`README.md` 现在是英文（GitHub 首屏、npm 页、登记表都读这一份），中文搬到 `README.zh.md`，两份首行互相链接。英文那份按当前行为重写（旧版还写着「弹层顶上那行出处」和 61 项测试）。
   ② 文档闸加两件事：`README.zh.md` 也进行数预算与死链检查；新增「双语 README 必须互相链到」判据。反向对照过：把 `README.zh.md` 改名藏起来，闸立刻红（rc=1）。
   ③ 离线套件 164 → **181 项**：`selftest` +3（`contextScore` 权重次序 README > docs > 普通文件、`buildCandidates('docum')` 首位是 `document`、空前缀候选封顶 ≤12）、`server-routes` +5（HEAD 与 GET 同权 / POST·PUT 405、非本机 Host 与跨站 Origin 各自单独拦截、未知子路径不命中、中文碎片过词义闸 `wordGate=false`、`lang=js` 归一到 javascript）、`client-behavior` +8（右方向键与 End 收弹层、四种注释行都不发请求、行内 `//` 照发、引号三连仍一对而反引号可三连成围栏、文字前打引号只落一个、textarea 形态多行包裹、弹层关着时 ↑↓ 不改文本、类型开关读写）。
