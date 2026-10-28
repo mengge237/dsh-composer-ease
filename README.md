@@ -145,7 +145,7 @@ Implemented in `contextScore()` and `collectFiles()` in `lib/index.js`; the skip
 - **The host composer's data model is not touched**: `Alt+↑/↓`, `Ctrl+D`, `Ctrl+/` are not implemented
 - **Candidates containing spaces cannot be inserted** by the host editor: `execCommand('insertText')` silently drops text with spaces, and the `paste` channel lands asynchronously. The accept path therefore verifies the whole draft and rolls back that one edit, so the original text is never eaten and the popup stays open; single-word candidates are fine
 - The squiggle is drawn at the **text line's** bottom (measured from text nodes per line), not at the composer's bottom border
-- **Multi-line selections are not wrapped**: the host's paste channel drops the trailing closer and only repaints on the next editor update. Single-line selections wrap normally and undo in one step
+- **Multi-line selections** (two paragraphs, a whole code fence) are wrapped in two steps: the open quote plus content is pasted at ~80ms, then the closing quote is inserted at ~400ms once the editor has settled. The closer arrives a beat later than on single-line selections, and undo takes two presses (single-line selections undo in one)
 - Completion only inserts text; it does not analyse which symbols are in scope
 
 ## Repository layout
