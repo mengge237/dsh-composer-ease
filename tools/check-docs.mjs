@@ -23,7 +23,7 @@ const BUDGET = {
 
 const files = []
 const push = (p) => { if (fs.existsSync(p) && fs.statSync(p).isFile()) files.push(p) }
-for (const f of ['README.md', 'THIRD-PARTY.md', 'CHANGELOG.md']) push(path.join(ROOT, f))
+for (const f of ['README.md', 'README.zh.md', 'THIRD-PARTY.md', 'CHANGELOG.md']) push(path.join(ROOT, f))
 for (const dir of ['docs', '.github']) {
   const d = path.join(ROOT, dir)
   if (!fs.existsSync(d)) continue
@@ -35,6 +35,18 @@ for (const dir of ['docs', '.github']) {
     }
   }
   walk(d)
+}
+
+// 双语 README 契约：英文那份是主展示（README.md），中文那份是副展示（README.zh.md），
+// 两份都要存在、都要链到对方 —— 只留一份或链错，这条闸直接红。
+for (const [self, other] of [['README.md', 'README.zh.md'], ['README.zh.md', 'README.md']]) {
+  const f = path.join(ROOT, self)
+  if (!fs.existsSync(f)) { console.error(`RED  缺 ${self}（双语 README 缺一份）`); bad++; continue }
+  const text = fs.readFileSync(f, 'utf8')
+  if (text.indexOf('](' + other + ')') < 0) {
+    console.error(`RED  ${self} 没有链到 ${other}（双语 README 要互相指得到）`)
+    bad++
+  }
 }
 
 let bad = 0

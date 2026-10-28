@@ -99,4 +99,31 @@ ok('words 路由：没给 prefix 也给候选（列表封顶 ≤12），坏 URL 
   assert.ok(a.json.candidates.length > 0, '空前缀也该有候选（公共池 + 文件/模型）')
 })
 
+ok('方法闸：放行 GET/HEAD，其它一律 405', () => {
+  assert.equal(call('/dsh-composer-ease/words', { method: 'HEAD' }).code, 200, 'HEAD 与 GET 同权（探测用）')
+  assert.equal(call('/dsh-composer-ease/words', { method: 'POST' }).code, 405, 'POST 应 405')
+  assert.equal(call('/dsh-composer-ease/config.json', { method: 'PUT' }).code, 405, 'PUT 应 405')
+})
+
+ok('信任栅栏：非本机 Host 与跨站 Origin 各自单独就能拦住', () => {
+  assert.equal(call('/dsh-composer-ease/words', { host: 'evil.example.com' }).code, 403, '外部 Host 应 403')
+  assert.equal(call('/dsh-composer-ease/words', { origin: 'https://evil.example.com' }).code, 403, '跨站 Origin 应 403')
+  assert.equal(call('/dsh-composer-ease/words', { origin: 'http://127.0.0.1:3080' }).code, 200, '同源要放行')
+})
+
+ok('未知子路径不命中路由（不会把任意 URL 当候选查询）', () => {
+  assert.equal(routes.find((r) => r.path === '/dsh-composer-ease/nope'), undefined)
+})
+
+ok('碎片前缀：中文半个词被词义闸挡下（wordGate=false）', () => {
+  const a = call('/dsh-composer-ease/words?prefix=' + encodeURIComponent('档管'))
+  assert.equal(a.code, 200)
+  assert.ok(a.json.wordGate === false || (a.json.candidates || []).length === 0, '碎片不该给候选：' + JSON.stringify(a.json).slice(0, 120))
+})
+
+ok('lang 别名归一：js → javascript 词表（const/let 命中）', () => {
+  const a = call('/dsh-composer-ease/words?prefix=con&lang=js')
+  assert.ok(a.json.candidates.some((c) => c.value === 'const'), 'js 别名要吃成 javascript：' + JSON.stringify(a.json.candidates.slice(0, 5)))
+})
+
 console.log(`\n${n} 项全过`)

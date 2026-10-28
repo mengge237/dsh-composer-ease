@@ -1,297 +1,220 @@
-# 更便捷的输入框 · dsh-composer-ease
+# dsh-composer-ease — a VS Code-feel composer for DeepSeek Harness
 
-**[中文](README.md) · [English](README.en.md)**
+**[English](README.md) · [中文](README.zh.md)**
 
-把 DeepSeek Harness（DSH）Web 输入框的手感对齐 **VS Code**：括号引号自动配对、选中一段再打括号就环绕、
-闭符跳过与空对删除、候选补全（词 / 文件 / 模型 / 片段）、引号未闭合红色波浪提示。
+Gives the DeepSeek Harness (DSH) web composer the **VS Code** editing feel: brackets and quotes pair up as you type,
+typing an opener over a selection wraps the selection, a closer over an existing closer is skipped, backspace removes an
+empty pair — plus a completion popup fed by words in your draft, per-language keywords and tags, workspace files,
+model ids from your settings and code snippets.
 
-标准 DSH bundle 插件：一条命令安装，**零运行时依赖**、**不写任何文件**、**不改宿主一行源码**、**不需要令牌**。
-浏览器半边是纯 DOM（不依赖 react、不引编辑器库），服务端半边只有只读路由。
+A standard DSH bundle plugin: one command to install, **zero runtime dependencies**, **writes no files**,
+**changes no host source**, **needs no token**. The browser half is plain DOM (no React, no editor library);
+the server half exposes read-only routes only.
 
-![概览](docs/banner.svg)
+![overview](docs/banner.svg)
 
-## 四个镜头（真机截图，不是示意图）
+## Four shots (taken on the real app, not mockups)
 
-| 补全 + 行内灰字 | `/` 菜单 |
+| Completion + inline ghost text | `/` menu |
 |---|---|
-| ![补全](docs/shots/01-completion.png) | ![菜单](docs/shots/02-slash-menu.png) |
-| 打 `docum` 弹候选，标「文件 / 关键字 / 英文词」等类型；灰色 `ent` 是**行内预览**，跟着 ↑↓ 实时变 | `/` 只放**三行**开关：引号模式 / 候选类型（四档预设循环）/ 严格配对 —— 开关不占候选列表 |
+| ![completion](docs/shots/01-completion.png) | ![menu](docs/shots/02-slash-menu.png) |
+| Type `docum`: candidates are labelled file / keyword / English word; the grey `ent` is the **inline preview** and follows `↑` `↓` | `/` holds **three** toggles: quote mode / candidate kinds (four presets) / strict pairing — settings never take candidate slots |
 
-| 引号未闭合标红 | 括号自动配对 |
+| Unclosed quote squiggle | Bracket pairing |
 |---|---|
-| ![标红](docs/shots/03-quote-lint.png) | ![配对](docs/shots/04-pairing.png) |
-| **文字底下**的红色**波浪线** + 提示条（VS Code 的 squiggle 口径），不阻断输入 | 打 `(` 得到 `()`，光标落在中间；选中一段再打括号则直接框住 |
+| ![lint](docs/shots/03-quote-lint.png) | ![pairing](docs/shots/04-pairing.png) |
+| A red **wave under the text** (VS Code squiggle) plus a hint line; typing is never blocked | `(` becomes `()` with the caret in the middle; select a passage and type an opener to wrap it |
 
-![动图：补全、方向键、接受与标红](docs/demo.gif)
+![demo: completion, arrow keys, accept, squiggle](docs/demo.gif)
 
-*动图是**真机录的**（Playwright 抓帧 + gifenc 编码，不是拼图）：打 `def` 弹补全 → ↑↓ 换选中（行内灰字跟着走）→ `Tab` 接受 → 打 `docum` 看英文词与文件混排 → 打半个引号看红色波浪线。管线见 `docs/如何做 README 图.md`。*
+*Recorded on the real app (Playwright frames + gifenc); the pipeline lives in `docs/如何做 README 图.md`.*
 
-## 快速开始
+## Quick start
 
 ```bash
-# DSH Web（推荐）
+# DSH Web (recommended)
 dsh plugin --profile web add https://github.com/mengge237/dsh-composer-ease
 
-# 装本机源码目录（改代码时用）
-dsh plugin --profile web add "<你的插件目录>"   # 例如本机源码目录
+# or a local checkout (when editing code)
+dsh plugin --profile web add "<your plugin directory>"
 ```
 
-卸载：`dsh plugin --profile web remove dsh-composer-ease`（不留数据文件）。
-桌面端（Electron）请用桌面端自己的插件管理器装，**不要**用 `dsh plugin --profile desktop`。
+Uninstall: `dsh plugin --profile web remove dsh-composer-ease` (no data files are left behind).
+On the desktop app use its own plugin manager — `dsh plugin --profile desktop` is rejected by the CLI.
 
-## 它能做什么
+## What it does
 
-| 你会用到的 | 它替你做什么 |
+| You do | It does |
 |---|---|
-| 配对与环绕 | `(` `[` `{` `"` `` ` `` 与全角家族自动成对；**选中一段再打括号直接框住**，光标落回内容里 |
-| 跳闭合 / 删空对 | 光标右边就是闭符时再打它 → 跳过；退格里是空对 → 一次删两侧 |
-| 补全弹层 | 打满两个字符自动弹：草稿里的词、语言关键字与标签、**工作区文件**、settings 里的模型名、代码片段 |
-| 行内预览 | 首位候选以灰字接在 token 后面，**跟着 ↑↓ 走**；`Tab` 接受，回车保持发送 |
-| `/` 菜单 | 三行开关：引号模式（标红 / 自动补对）、候选类型（四档预设）、严格配对；这三行跟着查询走（打 `/comp` 时让位）。**命令名打错也补得出来**：`/compot` → `/compact`（兜底行标「错拼兜底」） |
-| 引号未闭合 | **文字底下**（逐行贴在文字框底边）红色波浪线 + 提示条，不阻断输入 |
+| Pairing and wrapping | `(` `[` `{` `"` `` ` `` and the full-width family pair up; **select a passage and type an opener to wrap it**, caret back inside |
+| Type-over / delete empty pair | A closer already to the right is skipped; backspace between `()` removes both sides |
+| Completion popup | Opens after two characters: draft words, language keywords and tags, **workspace files**, model ids from settings, snippets |
+| Inline preview | The top candidate's remainder sits after the caret in grey, **following `↑` `↓`**; `Tab` accepts, Enter still sends |
+| `/` menu | Three toggles: quote mode, candidate kinds (four presets), strict pairing. The rows follow the query (`/comp` pushes them aside) and a **mistyped command still completes**: `/compot` → `/compact` |
+| Unclosed quote | A red wave **under the text** (per line, at the text box bottom) plus a hint line; typing is not blocked |
 
-## 文件上下文候选怎么排（改了这一条请同时改这里）
+## How file candidates are ranked (change this and the table together)
 
-| 权重 | 什么文件 |
+| Weight | Which files |
 |---|---|
-| 1000 | 顶层 `README` / `CHANGELOG` / `AGENTS` / `CLAUDE` / `CONTRIBUTING` / `package`（`.md`） |
-| 700 | 同样的名字，但不在顶层 |
-| 500 | 顶层其它 `.md` |
+| 1000 | top-level `README` / `CHANGELOG` / `AGENTS` / `CLAUDE` / `CONTRIBUTING` / `package` (`.md`) |
+| 700 | the same names, not at top level |
+| 500 | other top-level `.md` |
 | 400 | `docs/**/*.md` |
-| 300 | 其它 `.md` |
-| 0 | 其余文件（按修改时间新→旧） |
+| 300 | other `.md` |
+| 0 | everything else (newest first) |
 
-实现位于 `lib/index.js` 的 `contextScore()` 与 `collectFiles()`；目录跳过表是同文件的 `SKIP_DIRS`。
+Implemented in `contextScore()` and `collectFiles()` in `lib/index.js`; the skip list is `SKIP_DIRS` in the same file.
 
-## 装在哪、怎么装
+## Where to install
 
-| 你要装在哪 | 装法 | 注意 |
+| Target | How | Note |
 |---|---|---|
-| **DSH Web（`dsh web`）** | `dsh plugin --profile web add https://github.com/mengge237/dsh-composer-ease` | 推荐。也可以装本机源码目录：`dsh plugin --profile web add "<本地路径>"` |
-| **官方桌面端（Electron）** | 用**桌面端自己的插件管理器**装 | 别用 `dsh plugin --profile desktop`（那条路被 Electron 独占，CLI 会拒绝）；桌面端会话里让 DSH 自己装 |
-| **开发（改代码）** | 源码目录 + `file:` 装法 | 客户端半边**每次请求现读磁盘**，改完刷新页面即生效；**服务端半边（`lib/index.js`、`lib/words.js`）改完要重启 `dsh web`** |
+| **DSH Web (`dsh web`)** | `dsh plugin --profile web add https://github.com/mengge237/dsh-composer-ease` | Recommended; a local directory works too |
+| **Desktop app (Electron)** | The desktop app's own plugin manager | Do not use `dsh plugin --profile desktop` (owned by Electron, the CLI refuses) |
+| **Development** | checkout + a `file:` install | The browser half is **read from disk on every request** (refresh to apply); the server half (`lib/index.js`, `lib/words.js`) needs a `dsh web` restart |
 
-卸载：`dsh plugin --profile web remove dsh-composer-ease`（不留任何数据文件，没有要清理的东西）。
+## Features
 
-## 特性
+### Editing feel (aligned with VS Code)
 
-### 编辑手感（对齐 VS Code）
+- **Auto pairing**: `(` `[` `{` `"` `'` and backtick insert as a pair with the caret in the middle; **full-width forms too** (`（` `【` `「` `《` `“` `‘`), completed through the `input` event because IME compositions do not always produce a keydown; no pairing when the character before the caret is an identifier or path character (keeps `call(` and paths intact)
+- **Surround selection**: select a passage and type an opener → `(selection)` with the **selection restored to the inner text**; ASCII goes through keydown, **full-width and IME through `beforeinput`**; `Shift` combinations work the same
+- **Inline ghost text**: the remainder of the top candidate after the caret, in grey (VS Code's inline suggestion feel); `Tab` takes it, `Esc` hides it
+- **Type-over closers**, **delete empty pair**, **language hint** from a fence (```` ```js ```` / ```` ```python ````)
 
-- **自动配对**：`(` `[` `{` `"` `'` 反引号成对插入，光标落在中间；**全角也一样**（`（` `【` `「` `《` `“` `‘`），中文输入法下走 input 事件补配对（IME 合成的字符不一定带对应 keydown）；光标前是标识符或路径字符时**不**配对（保护 `call(` 与 `<本地路径>` 这类写法）
-- **环绕选区**：选中一段再打开括号 → `(选中内容)`，并且**选区还原到内层内容**上，接着打字就是改内容；
-  半角走 keydown、**全角/中文输入法走 `beforeinput`**（IME 合成的字符没有可用的 keydown，只有 beforeinput 能在 DOM 变更前拿到要插的字符）；`Shift` 组合键打出的 `{` `"` 同样有效
-- **行内灰字提示**：首位候选比已打的前缀多出来的那截，用灰字贴在光标后面（VSCode inline suggestion 手感），`Tab` 收下、`Esc` 收起
-- **跳过闭符**：光标右边已经是该配对的闭符时，再打它只移动光标，不重复插
-- **删空对**：光标夹在 `()` 中间按退格，一次删掉两侧
-- **语言提示**：草稿里写了代码围栏（```` ```js ```` / ```` ```python ````）就按该语言上词表
+### Popup placement and behaviour
 
-### 补全弹层的位置与手感（对齐 VSCode）
+- **Anchored to the caret**, never to the composer's left edge; prefers the space below, flips 6px above when there is none
+- **Fixed width, capped height with scrolling**; **no repaint when the list is unchanged** (no flicker, never two popups)
+- **Row layout follows VS Code**: type icon on the left, label in the middle with matched characters in bold, a muted type word on the right
 
-- **锚在光标上**，不是输入框左边缘：一行长文时不会把弹层甩到半屏外
-- **优先落在光标下方**；下方放不下（输入框在窗口底部，通常如此）才翻到**光标上方 6px**，永远不盖住你正在写的那一行
-- **宽度固定一档、高度封顶可滚**：宽度不随候选长短抖动，打字快时不会一跳一跳
-- **行内排版照 VS Code**：左边类型图标、中间标签（命中字符加粗）、**右边**一个淡类型词——类型信息一律在右侧，
-  不会跑到候选名前面去
-- **候选列表没变就不重画**：连续按键时不会闪，也不会出现两个弹层
+### Candidates (four kinds)
 
-### 补全候选（四类）
+- **Draft words**: identifiers already in the draft, by frequency, **computed locally** (word based suggestions)
+- **Ranking = VS Code's fuzzy score**: `lib/fuzzy.js` is copied verbatim from microsoft/vscode (MIT, see THIRD-PARTY.md); the match positions it returns bold the characters in the list
+- **Language tables**: 112 HTML tags, 47 JS keywords, 129 Python, 56 Java, 600 CSS properties, 27 HTML global attributes
+- **Chinese words too**: runs of CJK characters are split into 2/3-grams, so typing 「文」 can offer 「文档」
+- **Context candidates**: identifiers (4+ chars) from the visible conversation text, labelled “context” — a name you just discussed does not need retyping (read-only, 2s cache, host DOM untouched)
+- **Language inference** from context, then **habit** (a fence or an accepted table candidate counts as a vote, stored in local `localStorage`)
+- **Workspace files** (depth ≤3, `node_modules` skipped, matched on path-segment prefixes) and **model ids + snippets**
 
-- **本文词**：草稿里已经出现过的标识符，按出现次数排序，**本地即时算、不等网络**（VSCode 的 word based suggestions 口径）
-- **排序口径 = VS Code 的模糊打分**：`lib/fuzzy.js` **逐字取自 microsoft/vscode**（MIT，见 THIRD-PARTY.md）——
-  前缀、词边界、驼峰、连续命中都加分，间隔与分散扣分；命中位置由它给出，列表里**命中的字符加粗**（就是 VS Code 那个样子）
-- **语言词表**：HTML 标签 112、JS 关键字 47、Python 129、Java 56、CSS 属性 600、HTML 全局属性 27（数据来源见「来源与许可」）
-- **中文词也算候选**：草稿与上下文里的**汉字词**（按二元/三元组拆，中文没空格分词）同样按前缀提示——
-  写过「关于文档的说明」，后面打「文」就提示「文档」，跟写代码时提示变量一个手感
-- **上下文候选**：页面上可见的对话文本里出现过的标识符（≥4 字符）也按前缀补出来，右侧类型标「上下文」——
-  刚讨论过的函数名、文件名不用再手打一遍（只读页面文本，2 秒缓存，不动宿主 DOM）
-- **语言推断**：没写围栏时先按上下文猜（`def`/`import`/`.py` → python，`<div>` → html，`const`/`await` → javascript），
-  猜不出再退到习惯
-- **语言习惯**：没写围栏时按**你实际在用的语言**上词表——草稿里写过 ```` ```js ```` 或接受过某套词表的候选都会记一笔（存本机 `localStorage`，不上传任何东西）
-- **工作区文件**：深度 ≤3、跳过 `node_modules`，按**路径段前缀**匹配（见「候选匹配规则」）
-- **模型名与片段**：从 settings 真源读出的模型 id，加上几个常用代码片段
+### Trigger and accept
 
-### 触发与接受
+- Opens after **two identifier characters**; `Ctrl+Space` opens it manually; `/` and `@` at line start or after whitespace open the host menus
+- **Comment lines do not complete**: when the caret's line starts with `//`, `#`, `<!--` or `--` (indentation allowed) nothing pops up; text inside quotes still completes
+- **`Tab` accepts** (or click a row); `↑` `↓` select; `Esc` closes; **`←` `→` / `Home` / `End` dismiss the popup** and only move the caret — keep typing and it comes back
+- **Enter is never swallowed**: Enter sends in a chat box (it used to accept, which inserted candidates over and over)
 
-- 打满 **2 个标识符字符自动弹**；`Ctrl+Space` 手动弹；行首或空白后打 `/`、`@` 也弹
-- **注释行不弹**：光标所在行以 `//`、`#`、`<!--`、`--` 开头（可缩进）时整行不提示；引号里的内容照旧提示（那一侧是代码/字符串，正是要补的地方）
-- **`Tab` 接受**（或鼠标点某一行）；`↑↓` 选择；`Esc` 关闭
-- **回车不吃弹层**：聊天框里回车就是发送。这条是 2026-10-16 真机事故换来的——原来回车也算接受，弹层开着时连按回车会把候选一遍遍插进正文
+### Performance
 
-### 性能
+- The workspace file index and model ids carry **20-second TTL caches**: one full pass ≈23ms, cache hits 0–1ms
+- One loopback request per keystroke; stale responses are dropped by sequence number
 
-- 工作区文件索引与模型 id 各带 **20 秒 TTL 缓存**：首次全盘走一遍约 23ms，之后命中 0~1ms
-- 每个按键只发一次本地请求（loopback），后发先至的旧响应按序号丢弃
+## Keymap (vs VS Code)
 
-## 键位（对照 VS Code）
-
-| 操作 | 键 / 触发 | 行为 |
+| Action | Key / trigger | Behaviour |
 |---|---|---|
-| 自动配对 | `(` `[` `{` `"` `'` 反引号；全角 `（` `【` `「` `《` `“` `‘` | 光标前是路径/标识符字符时**不**配对；光标**右边紧跟文字**时只插这一个开符（在一段文字前打前引号就只出一个引号）；右边已是同一个闭符时跳过 |
-| 环绕选区 | 选中后打任意开括号 | `选区` → `(选区)`，选区保持在内层 |
-| 跳过闭合 | 光标右已是应得的闭符时再打它 | 不重复插，移过去 |
-| 删空对 | 光标夹在 `()` 中间按退格 | 一次删两侧 |
-| 补全 | 打满 2 个标识符字符 / `Ctrl+Space` | 弹层：本文词优先，其后语言词表 / 文件 / 模型 / 片段 |
-| 接受 | **只有 `Tab`** 或点击某一行 | 回车保持发送；接受后弹层不会自己复开 |
-| 关闭与选择 | `Esc` / `↑` `↓` | `Shift+Enter` 仍是换行 |
-| 挪光标时收起 | `←` `→` / `Home` / `End` | 只把弹层收掉、光标照常移动，**不插任何字**；改完继续打字会重新提示（`↑` `↓` 仍是选候选） |
+| Auto pair | `(` `[` `{` `"` `'` backtick; full-width `（` `【` `「` `《` `“` `‘` | No pairing after a path/identifier character; with text to the **right** only the opener is inserted; skipped when the matching closer is already there |
+| Surround | type any opener over a selection | `selection` → `(selection)`, selection stays on the inner text |
+| Type-over | type a closer already to the right | no duplicate, caret moves past it |
+| Delete empty pair | backspace between `()` | removes both sides |
+| Complete | two identifier characters / `Ctrl+Space` | popup: draft words first, then tables / files / models / snippets |
+| Accept | **`Tab` only**, or click a row | Enter stays the send key; the popup does not reopen after accepting |
+| Dismiss / select | `Esc` / `↑` `↓` | `Shift+Enter` still inserts a newline |
+| Dismiss while moving | `←` `→` / `Home` / `End` | closes the popup, inserts nothing, then typing completes again |
 
-## 候选匹配规则
+## Candidate matching rules
 
-- **文件候选只认「某个路径段以查询开头」**：`index` → `notes/index.diff` 排第一；段内中段匹配要求查询 ≥3 个字符
-- **不做松散模糊（纯子序列）**：路径本来就长，子序列几乎必中，等于「打一个字给你一堆别的文件」，会逼着人逐个核对
-- 子序列只留给词表 / 模型 / 片段这类短候选，且查询至少 3 个字符
+- **File candidates must start a path segment**: `index` → `notes/index.diff` first; a match inside a segment needs 3+ characters
+- **No pure-subsequence matching for paths**: paths are long, a subsequence hits almost everything
+- Subsequences are kept for short candidates (tables / models / snippets) and only for queries of 3+ characters
 
-## 已知边界
+## Known limits
 
-**引号与括号一样自动配对，且这是默认行为。** `"` `'` `“` `‘` 打一个得一对、光标落在中间；
-「标红提示」现在是 `/` 菜单里的**显式开关**（切到它才只插一个、由波浪线提示未闭合）。
-两条护栏照旧：**右边紧跟文字时不补**（在一段已有文字前打前引号只会出一个），**光标前是路径/标识符字符时不补**。
-空对里再打同一个引号会**跳过**（连打三下仍是一对），所以顺带丢掉了"连打三个引号"的用法 —— 需要三连的是 ``` 围栏，那条走反引号，不受影响。
+**Quotes pair by default, like brackets.** `"` `'` `“` `‘` insert a pair with the caret in the middle; “red squiggle” is now an explicit toggle in the `/` menu (switch to it to insert a single character instead). Two guards stay: no pairing when the character to the right is text, and none after a path/identifier character. Typing the same quote inside an empty pair is **skipped** (three presses still give one pair) — the triple-backtick fence is unaffected because backticks are not in the quote family.
 
-历史：2026-10-21 曾把引号改成"只插一个"，原因是配对后靠 DOM Range 复位光标，Lexical 的模型选区不认它，
-快速连打会多冒一个；现在走 `insertAtomic` + `placeCaretVerified` 那条带**文本护栏 + 跨帧校验**的链，
-并加了"空对里再打同一个一律跳过"的兜底，真机（demo 3081）七景读数全对：空框一对 caret=1、连打两下仍是 `""`、打引号后立刻打字落在两符之间。
+**The `<p><br>` in an empty composer is not leftover text.** Lexical always renders `<p dir="auto"><br data-lexical-managed-linebreak="true"></p>`; `innerText` reports it as `"\n"`. Test emptiness with `textContent`; deleting the paragraph gets rebuilt within ~100ms.
 
-**空输入框里那个 `<p><br>` 不是残留字符。** 编辑器（Lexical）渲染空文档时固定是 `<p dir="auto"><br data-lexical-managed-linebreak="true"></p>`，
-而 `innerText` 会把它报成 `"\n"`。判断"输入框是否为空"请看 `textContent`（为空即空），别用 `innerText`；
-手动删掉那个 `<p>` 也会在 100 ms 内被编辑器重建（实测三次取样都被重建）。
+**Strict pairing** is still a toggle in the `/` menu: off (default) pairs quotes with the two guards above; on it also pairs when text is to the right.
 
-**「严格配对」这条开关还在**（`/` 菜单里我们那组，存在浏览器本地）：默认关时引号按上面两条护栏补对；
-打开后连"右边有文字"也照样补对（老行为，慢速输入时更顺手）。
+- **Server-half edits need a `dsh web` restart** (ESM is not re-read); the browser half applies on refresh
+- Word-table keys live on the server, so `inp` → `input` needs one restart after install or table edits
+- Verified against **0.2.0-rc.2+** on the web and desktop profiles (re-run the self-check after a host upgrade)
+- The legacy `textarea` composer has offline coverage only
+- **The host composer's data model is not touched**: `Alt+↑/↓`, `Ctrl+D`, `Ctrl+/` are not implemented
+- **Candidates containing spaces cannot be inserted** by the host editor: `execCommand('insertText')` silently drops text with spaces, and the `paste` channel lands asynchronously. The accept path therefore verifies the whole draft and rolls back that one edit, so the original text is never eaten and the popup stays open; single-word candidates are fine
+- The squiggle is drawn at the **text line's** bottom (measured from text nodes per line), not at the composer's bottom border
+- **Multi-line selections are not wrapped**: the host's paste channel drops the trailing closer and only repaints on the next editor update. Single-line selections wrap normally and undo in one step
+- Completion only inserts text; it does not analyse which symbols are in scope
 
-- **服务端半边改代码要重启 `dsh web`**（ESM 已载入内存不重读）；客户端半边刷新页面即生效
-- 语言词表的键位（如 `inp` → `input`）在**服务端**，因此首次装好或改完词表后，要重启一次才全线生效
-- 只在 **0.2.0-rc.2** 的 web 与桌面端两个 profile 上实测过（宿主版本更新后请重跑自检）
-- 老式 `textarea` 形态的输入框只有离线测试覆盖，真机上没样本
-- **不改宿主 composer 的数据模型**：所以 `Alt+↑/↓` 移动行、`Ctrl+D` 复制行、`Ctrl+/` 注释切换这类要动 Lexical 文档模型的操作**没有做**，别当已有功能
-- **带空格的候选（多词片段）按 `Tab` 插不进去**：宿主编辑器的 `execCommand('insertText')` 在含空格的串上静默不落字（实测 `a{}`、`a(b)` 能落，`a b`、`foo bar` 不落），`paste` 通道又会异步落到文末。现在的做法是「核对整段文本 → 不对就撤掉这一笔」，所以**原文不会被吞**、弹层也留着换一条；单词候选（关键字 / 文件名 / 模型名）正常。
-- 波浪线画在**文字之间那一行**的底边（逐行量文本节点盒子），不再画在输入框底边：改前那条线在 y=503，而文字行底在 y=476，差 27px，看着像给整个框描边。
-- **多行选区（跨行、代码围栏整段）不做包裹**：这台宿主的 paste 通道对含换行的负载会吃掉末尾闭符，补出来的闭符又要等下一次编辑器更新才重绘（实测 3 秒后仍缺、撤一下才出现），撤销还会来回跳。所以这一下什么都不做，选区与原文留在原地；单行选区照常包裹，撤销一拍。
-- 补全只做「插入文本」，不做语义分析：它不知道你的代码里哪些符号可以用
+## Repository layout
 
-## 目录结构
-
-| 路径 | 用途 |
+| Path | Purpose |
 |---|---|
-| `lib/index.js` | 服务端半边：两条只读路由（`/dsh-composer-ease/words`、`/config.json`）与本机信任栅栏 |
-| `lib/client.js` | 浏览器半边：keydown 捕获层、配对与环绕、补全弹层（纯 DOM，无第三方依赖） |
-| `lib/words.js` | 各语言词表（静态数组，出处与 commit 写在文件头） |
-| `test/` | 五支测试 + 真机验收报告（`REPORT-2026-10-16.md`） |
-| `docs/` | README 配图 |
-| `THIRD-PARTY.md` | 借用数据的来源与**许可证原文** |
-| `cordis.patch.yml` | DSH bundle 声明（`dsh.bundle.patch`） |
+| `lib/index.js` | Server half: read-only routes (`/dsh-composer-ease/words`, `/config.json`) and the loopback trust fence |
+| `lib/client.js` | Browser half, generated from `lib/client/*.js` fragments |
+| `lib/words.js` | Language tables (static arrays; provenance in the file header) |
+| `lib/fuzzy.js` | VS Code's fuzzy scoring (verbatim, MIT) |
+| `test/` | Five offline suites, the live matrix and the acceptance reports |
+| `docs/` | README images and notes |
+| `THIRD-PARTY.md` | Borrowed data with full license texts |
+| `cordis.patch.yml` | DSH bundle declaration |
 
-
-
-## 本机只有一份：宿主目录是本仓的 junction
-
-插件在 profile 里被 `link:` 引用。以前 `link:` 指向**另一个目录**，于是"改完忘了同步"就会出现
-仓库是新版、跑的是旧版。现在宿主目录直接是**指向本仓的 junction**，物理上只有一份：
+## One copy on this machine: the host directory is a junction to this repo
 
 ```bash
-node tools/link-host.mjs          # 报告当前关系（不动任何东西）
-node tools/link-host.mjs --apply  # 需要时重新合并成一份（原目录留作 .hostbak 供回滚）
+node tools/link-host.mjs          # report the current relation (changes nothing)
+node tools/link-host.mjs --apply  # merge into one when needed (old dir kept as .hostbak)
 ```
 
-于是本机只剩三样东西：**本仓（= 现役，被宿主直接加载）**、**GitHub（云端）**、
-以及一份**回退包**（`test/rollback-dsh-composer-ease/dsh-composer-ease-v<版本>.zip`）。
-不再有第二份工作副本，也就不存在版本不同步。
+After editing: `npm run build`; the browser half applies on refresh, the server half still needs a `dsh web` restart.
 
-改完代码照旧 `npm run build`；客户端半边刷新页面即生效，服务端半边（`lib/index.js`）仍需重启 `dsh web`。
-
-## 维护者的两个环境变量
+## Maintainer environment variables
 
 ```bash
-# 一般不再需要：宿主目录已经是本仓的 junction（见上一节）
-# 只有换机器/宿主重装后丢了 junction 时，用来核对或重建
-npm run check:host      # 只核对
-npm run link:host -- --apply
-
-# 重录 README 动图（需要先 npm i gifenc pngjs）
-DEMO_DEPS="<装了 gifenc/pngjs 的 node_modules 目录>" npm run record:demo -- "<url>" --out docs/demo.gif
+npm run check:host                    # verify the junction / copy relation
+npm run link:host -- --apply          # rebuild it after moving machines
+DEMO_DEPS="<node_modules with gifenc/pngjs>" npm run record:demo -- "<url>" --out docs/demo.gif
 ```
 
-两者都**不给默认路径**（脚本里写死本机路径既不可移植、也会把机器信息推到公开仓），缺了会直接报错并说明要填什么。
+Neither takes a default path: a hard-coded local path is unportable and leaks machine details into a public repo.
 
-## 开发与测试
+## Development and tests
 
 ```bash
-npm test        # 五支，61 项，0 网络：数据层 / 路由与信任栅栏 / bundle 形状 / 假 DOM 行为测试 / 许可与合规
+npm test        # five offline suites, 181 items, zero network
 ```
 
-- `test/selftest.mjs`：候选排序、模型 id 解析、文件收集封顶、workspace.json v2 形状、词表命中
-- `test/server-routes.mjs`：路由形状、**本机信任栅栏**（非 loopback Host 与跨站 Origin 一律 403）、方法闸、`config.json` 载荷
-- `test/client-smoke.mjs`：bundle 头与导出形状、键位判据、本文词与围栏识别
-- `test/client-behavior.mjs`：**假 DOM 驱动真监听**——配对、环绕、跳闭合、删空对、Ctrl+Space 取数、Tab 接受替换、回车放行、接受后不复开
-- `test/compliance.mjs`：**许可与条例自检（9 项）**——自家 MIT 署名、每个借用件在 THIRD-PARTY.md 里都有仓库+许可+钉住的 commit、
-  MIT/CC0 原文照录、逐字搬来的代码带出处头（含「改了什么」）、运行时零第三方依赖、仓里没有密钥、版本号与更新日志对得上、
-  登记表那侧 `npm` 键合法、**上游版权声明原样保留且排在我们的说明之前**。反向对照过：删掉台账里一行、把版本号改成 9.9.9，它都会红
-- 真机用例矩阵：`node test/real/matrix.mjs "http://127.0.0.1:3081/?token=…" 3` —— 24 条用例（补全 6 / 键位 6 / 配对 7 / `/` 菜单 3 / 稳定性 2）× N 轮，逐轮打印通过数与失败读数；
-  前置是先起干净 demo 宿主（`dsh --profile demo --port 3081 --no-open`），它要活宿主与浏览器，所以不进 `npm test`
-- 真机验收（headless 打真 composer）：脚本已入仓 —— `test/real/real5.mjs`（五场）与 `test/real/real-regress.mjs`（12 条邻接行为），
-  要一个跑在 3081 的纯净 profile；读数与结论见 [test/REPORT-2026-10-20.md](test/REPORT-2026-10-20.md) 与 [test/REPORT-2026-10-16.md](test/REPORT-2026-10-16.md)
+- `test/selftest.mjs`: ranking, model id parsing, file collection caps, `workspace.json` v2, table hits
+- `test/server-routes.mjs`: route shape, the **loopback trust fence** (non-loopback Host / cross-site Origin → 403), method gate, `config.json`
+- `test/client-smoke.mjs`: bundle shape, export surface, keymap decisions, draft words and fence detection
+- `test/client-behavior.mjs`: **fake DOM driving the real listeners** — pairing, surround, type-over, empty-pair delete, `Ctrl+Space`, Tab accept, Enter pass-through, comment lines, arrow dismissal
+- `test/compliance.mjs`: **licensing and rule compliance** — own MIT notice, every borrowed item in THIRD-PARTY.md with repo + license + pinned commit, upstream notices preserved, no runtime dependencies, no secrets, version matches the changelog
+- Live matrix: `node test/real/matrix.mjs "http://127.0.0.1:3081/?token=…" 3` — 32 cases (completion 6 / keys 6 / pairing 7 / `/` menu 3 / edge cases 8 / stability 2) × N rounds, printing per-round pass counts and readings; it needs a running demo host (`dsh --profile demo --port 3081 --no-open`), so it is not part of `npm test`
+- Live acceptance scripts: `test/real/real5.mjs`, `test/real/real-regress.mjs`; reports in `test/REPORT-2026-10-16.md` and `test/REPORT-2026-10-20.md`
 
-改这块前先读 README 的「形态与边界」与语言词表文件头：宿主 composer 是 **Lexical**，它认三条规矩——
-① 不认 `sel.modify(...)`，选区操作必须走「摊平字符偏移 + 显式 Range」；② **不认 `beforeinput` 的 `preventDefault`**，
-它照自己的模型照样插，所以「拦 + 自己插」一定双份，只能「让它插完再收尾」；③ 改选区要**跨帧校验**（它会重渲染并冲掉
-一次性的写入），且 `input` 事件**不保证派发**（空框首次插入就没有），任何收尾都不能只挂在 `onInput` 上。
+The host composer is **Lexical** and follows three rules: it ignores `sel.modify(...)` (use flattened offsets plus an explicit Range), it ignores `beforeinput`'s `preventDefault` (let it insert, then repair), and selection writes need cross-frame verification because `input` is not guaranteed to fire
 
-## 常见问题
+## FAQ
 
-- **打 `inp` 没出现 `input`？** 语言词表在服务端半边：装好之后（或改过词表之后）要重启一次 `dsh web`
-- **为什么回车不接受候选？** 聊天框里回车是发送键；接受请用 `Tab`（0.2.2 起如此，之前回车也算接受，会连插候选）
-- **选中一段再打括号没框住？** 0.3.0 起已修：半角走 keydown、全角与中文输入法走 beforeinput；若你用的是老版本，先升级
-- **为什么不再给一堆不相关的文件？** 0.2.2 起文件候选只认路径段前缀；要更宽的匹配请直接用 `/` 或 `@` 触发
-- **它会改我的文件吗？** 不会。只读工作区文件清单与 settings 真源，一个字节都不写
-- **桌面端怎么装？** 桌面端是独立 profile，用桌面端自己的插件管理器装（`dsh plugin --profile desktop` 会被拒）
+- **Typing `inp` does not offer `input`?** Word tables live on the server half: restart `dsh web` once after installing or editing them
+- **Why does Enter not accept?** Enter is the send key; use `Tab`
+- **Why did a quote only insert one character?** The “red squiggle” toggle in the `/` menu is on; switch back to auto pairing
+- **Does it modify my files?** No. It reads the workspace file list and the settings source of truth and writes nothing
+- **Desktop app?** A separate profile; install through its own plugin manager
 
-## 版本与更新日志
+## Version and changelog
 
-- 版本号：以 `package.json` 为准
-- 每个版本的改了什么、对应哪个提交：见 [CHANGELOG.md](CHANGELOG.md)
-- 早期版本的测试读数与已知边界也在 CHANGELOG 里，README 只讲用法
+- Version: `package.json` is the source of truth
+- What changed in each release and which commit: [CHANGELOG.md](CHANGELOG.md)
 
-## 来源与许可
+## Sources and licenses
 
-- **交互设计**参照 Visual Studio Code（MIT，microsoft/vscode）：word-boundary 抑制、surround、type-over closer、删除空对、
-  word based suggestions 的排序口径——**未复制其源码**，只对齐行为语义
-- **词表数据**借用自 monaco-editor、codemirror/lang-html、codemirror/lang-css、MDN browser-compat-data，
-  每条都在 [THIRD-PARTY.md](THIRD-PARTY.md) 里写明了仓库、commit、取用文件与**许可证原文**；抽取是静态的，运行时不依赖这些项目
-- 本插件自身：MIT（见 [LICENSE](LICENSE)）
+- **Interaction design** follows Visual Studio Code (MIT, microsoft/vscode): word-boundary suppression, surround, type-over closers, empty-pair deletion and the word based suggestion ranking — no source copied except `lib/fuzzy.js` (verbatim, see THIRD-PARTY.md)
+- **Word-table data** comes from monaco-editor, codemirror/lang-html, codemirror/lang-css and MDN browser-compat-data; [THIRD-PARTY.md](THIRD-PARTY.md) records repo, commit, files and the **full license text**. Extraction is static; nothing depends on them at runtime
+- This plugin: MIT (see [LICENSE](LICENSE))
 
 ---
 
-[English README](README.en.md)
-
-## 规范与闸（借 VS Code / DSH 的做法）
-
-- 输入框行为参照 VS Code 的 `editor.suggest.*`（44 个选项里跟进了 8 个，其余是 LSP 专属）；
-  对照表与"还缺什么"在 `docs/借鉴-VSCode与DSH.md`。
-- 管理侧照 DSH：**每条约定一个 `tools/check-*.mjs`**，`npm run check` 一次跑齐
-  （结构 / 重复机制 / 重构到期 / 文档 / 发布），CI 只负责把它们拉起来
-  （`.github/workflows/checks.yml`，ubuntu + windows 矩阵）。
-- 改代码三步：改 `lib/client/*.js` 片段 → `npm run build` → `npm run sync:host`。
-
-## 代码结构（2026-10-22 拆分）
-
-浏览器半边有 1600 多行，拆成 8 个片段放在 `lib/client/`，**发布侧仍是宿主加载的那一个文件**：
-
-```text
-lib/client/_head.js        抬头注释 + __ModuleLoader__ 包裹（17 行）
-lib/client/10-foundation.js  成对符号表 / shouldPair / 取文与摆光标原语
-lib/client/20-pairing.js     框选（wrapSelection / tryUnwrap / repairWrapDup）
-lib/client/30-popup.js       补全弹层：DOM、行样式、渲染、本文词收集
-lib/client/40-language.js    语言投票 / 语言水印 / 拉候选
-lib/client/50-caret.js       插入后光标复位（placeCaretVerified 等）/ acceptCurrent
-lib/client/60-keys.js        键位层 onKeyDown / 两个删除动作
-lib/client/70-input.js       beforeinput·input 两条路 / 引号未闭合标红 / 触发源
-lib/client/80-apply.js       apply：单例守卫、七个监听与卸载
-lib/client/_tail.js          return module.exports + 包裹收尾
-```
-
-- 改代码**只改片段**，然后 `npm run build`（`node tools/build-client.mjs`）拼回 `lib/client.js`；生成物开头有 ⚠ 提示，别直接改它。
-- 为什么不能直接多文件：宿主只认 `exports["./client"]` 指着的那一个文件（`__ModuleLoader__.load` 的 CJS bundle 形态），不做多文件解析。
-- `npm run check:size`（已进 `npm test` 第一步）是**结构闸**：片段 ≤400 行、`lib/index.js` 这类手写文件 ≤600 行、生成物必须与片段一致（`--check`）。超了直接红并提示拆法。
-
-这条闸的由来：本仓 84 次提交里 `refactor` 是 0 次，`client.js` 长到 1629 行 / 80 个函数 / 最长 178 行，
-而原先的闸只查"测试绿 + 版本一致"，看不见结构。
+[中文版 README](README.zh.md)
