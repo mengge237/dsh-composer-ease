@@ -40,8 +40,12 @@ if (firstCode < 0) firstCode = 0
 const out = [...lines.slice(0, firstCode), banner, ...lines.slice(firstCode)].join('\n').replace(/\s+$/, '') + '\n'
 
 if (process.argv.includes('--check')) {
-  const cur = fs.existsSync(OUT) ? fs.readFileSync(OUT, 'utf8') : ''
-  if (cur !== out) {
+ // 换行归一后再比：Windows 上 core.autocrlf=true 会把检出改成 CRLF，
+ // 而这条闸判的是「生成物 = 片段拼出来的」，跟换行风格无关。CI 曾因此整条红。
+ // 两侧都按 LF 比：片段或生成物任意一侧被检出成 CRLF 都不该判红。
+  const norm = (s) => s.replace(/\r\n/g, '\n')
+  const cur = fs.existsSync(OUT) ? norm(fs.readFileSync(OUT, 'utf8')) : ''
+  if (cur !== norm(out)) {
     console.error('client.js 与片段不一致：先跑 node tools/build-client.mjs')
     process.exit(1)
   }
