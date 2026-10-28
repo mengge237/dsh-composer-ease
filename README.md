@@ -226,6 +226,8 @@ npm test        # 五支，61 项，0 网络：数据层 / 路由与信任栅栏
 - `test/compliance.mjs`：**许可与条例自检（9 项）**——自家 MIT 署名、每个借用件在 THIRD-PARTY.md 里都有仓库+许可+钉住的 commit、
   MIT/CC0 原文照录、逐字搬来的代码带出处头（含「改了什么」）、运行时零第三方依赖、仓里没有密钥、版本号与更新日志对得上、
   登记表那侧 `npm` 键合法、**上游版权声明原样保留且排在我们的说明之前**。反向对照过：删掉台账里一行、把版本号改成 9.9.9，它都会红
+- 真机用例矩阵：`node test/real/matrix.mjs "http://127.0.0.1:3081/?token=…" 3` —— 24 条用例（补全 6 / 键位 6 / 配对 7 / `/` 菜单 3 / 稳定性 2）× N 轮，逐轮打印通过数与失败读数；
+  前置是先起干净 demo 宿主（`dsh --profile demo --port 3081 --no-open`），它要活宿主与浏览器，所以不进 `npm test`
 - 真机验收（headless 打真 composer）：脚本已入仓 —— `test/real/real5.mjs`（五场）与 `test/real/real-regress.mjs`（12 条邻接行为），
   要一个跑在 3081 的纯净 profile；读数与结论见 [test/REPORT-2026-10-20.md](test/REPORT-2026-10-20.md) 与 [test/REPORT-2026-10-16.md](test/REPORT-2026-10-16.md)
 
