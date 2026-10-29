@@ -16,7 +16,7 @@ const results = [];
 const VERBOSE = process.argv.includes('--verbose');
 function check(round, name, ok, reading) {
   results.push({ round, name, ok: !!ok, reading: reading === undefined ? '' : String(reading) });
- // --verbose 逐条打印：要拿「某一条真的跑过」当证据时用它，不用等失败才看得到读数
+ // --verbose 逐条打印：要拿「某一条真的跑过」当证据时用它
   if (VERBOSE) console.log((ok ? '  ok   ' : '  FAIL ') + 'r' + round + ' ' + name + (reading === undefined ? '' : '  ← ' + String(reading).slice(0, 120)));
 }
 
