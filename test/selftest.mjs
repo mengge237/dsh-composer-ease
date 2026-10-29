@@ -148,6 +148,13 @@ ok('领域词表：插件开发这套行话能接出更长的词（通用词典�
   assert.deepEqual(miss, [], '这些前缀接不出更长的词：' + miss.join(','))
 })
 
+ok('草稿取词（VS Code 口径）：草稿里的中文词排在最前，且与词典候选去重', () => {
+  const list = buildCandidates('图书', '', '我今天去图书馆看书，图书馆很安静')
+  assert.equal(list[0].value, '图书馆', '草稿里的词要排第一：' + JSON.stringify(list.slice(0, 3).map((c) => c.value)))
+  assert.equal(list[0].detail, '本文', '来源要标本文：' + list[0].detail)
+  assert.equal(list.filter((c) => c.value === '图书馆').length, 1, '同一个词只留一条（去重）')
+})
+
 ok('候选封顶：很短的前缀也只回 ≤12 条', () => {
   const c = buildCandidates('a')
   assert.ok(c.length <= 12, '候选要封顶：' + c.length)
