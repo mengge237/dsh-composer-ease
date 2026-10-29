@@ -51,7 +51,7 @@ On the desktop app use its own plugin manager — `dsh plugin --profile desktop`
 | Completion popup | Opens after two characters: draft words, language keywords and tags, **workspace files**, model ids from settings, snippets |
 | Inline preview | The top candidate's remainder sits after the caret in grey, **following `↑` `↓`**; `Tab` accepts, Enter still sends |
 | `/` menu | Three toggles: quote mode, candidate kinds (four presets), strict pairing. The rows follow the query (`/comp` pushes them aside) and a **mistyped command still completes**: `/compot` → `/compact` |
-| Unclosed quote | A red wave **under the text** (per line, at the text box bottom) plus a hint line; typing is not blocked |
+| Unclosed quote | A red wave **under the offending quote character only** (no line-wide mark, no text hint); typing is not blocked |
 
 ## How file candidates are ranked (change this and the table together)
 
@@ -94,7 +94,7 @@ Implemented in `contextScore()` and `collectFiles()` in `lib/index.js`; the skip
 - **Draft words**: identifiers already in the draft, by frequency, **computed locally** (word based suggestions)
 - **Ranking = VS Code's fuzzy score**: `lib/fuzzy.js` is copied verbatim from microsoft/vscode (MIT, see THIRD-PARTY.md); the match positions it returns bold the characters in the list
 - **Language tables**: 112 HTML tags, 47 JS keywords, 129 Python, 56 Java, 600 CSS properties, 27 HTML global attributes
-- **Chinese words too**: runs of CJK characters are split into 2/3-grams, so typing 「文」 can offer 「文档」
+- **Chinese words too**: runs of CJK characters are split into 2–4 character blocks (a whole run is never offered — that would paste the sentence back), so typing 「文」 can offer 「文档」
 - **Context candidates**: identifiers (4+ chars) from the visible conversation text, labelled “context” — a name you just discussed does not need retyping (read-only, 2s cache, host DOM untouched)
 - **Language inference** from context, then **habit** (a fence or an accepted table candidate counts as a vote, stored in local `localStorage`)
 - **Workspace files** (depth ≤3, `node_modules` skipped, matched on path-segment prefixes) and **model ids + snippets**
@@ -132,7 +132,7 @@ Implemented in `contextScore()` and `collectFiles()` in `lib/index.js`; the skip
 
 ## Known limits
 
-**Quotes pair by default, like brackets.** `"` `'` `“` `‘` insert a pair with the caret in the middle; “red squiggle” is now an explicit toggle in the `/` menu (switch to it to insert a single character instead). Two guards stay: no pairing when the character to the right is text, and none after a path/identifier character. Typing the same quote inside an empty pair is **skipped** (three presses still give one pair) — the triple-backtick fence is unaffected because backticks are not in the quote family.
+**Quotes pair by default, like brackets.** Typing the same quote right after a closed pair opens a **new** pair (that key used to be swallowed). `"` `'` `“` `‘` insert a pair with the caret in the middle; “red squiggle” is now an explicit toggle in the `/` menu (switch to it to insert a single character instead). Two guards stay: no pairing when the character to the right is text, and none after a path/identifier character. Typing the same quote inside an empty pair is **skipped** (three presses still give one pair) — the triple-backtick fence is unaffected because backticks are not in the quote family.
 
 **The `<p><br>` in an empty composer is not leftover text.** Lexical always renders `<p dir="auto"><br data-lexical-managed-linebreak="true"></p>`; `innerText` reports it as `"\n"`. Test emptiness with `textContent`; deleting the paragraph gets rebuilt within ~100ms.
 
