@@ -1,0 +1,30 @@
+# 双语 README 成对记录：每个小节正文的 md5（改一边就要同步另一边并重记）。
+# 重新生成：node tools/check-readme-pairing.mjs --write
+sections:
+  - slug: "Summary"
+    en: be542914d99851bc
+    zh: 67e3702491d4019a
+  - slug: "Table of Contents"
+    en: 82c6bbdf150c80b2
+    zh: 30d6d790b7277aa8
+  - slug: "Install"
+    en: c1a2732a91e030b7
+    zh: 3ee5fce83ff09935
+  - slug: "Use this package"
+    en: 84b72090a79e426d
+    zh: 1be5360456ea7a4f
+  - slug: "Understand the implementation"
+    en: 00544fe8f996f04b
+    zh: 3e18cc21df4d0447
+  - slug: "Boundaries and known limits"
+    en: ebd2eab4a5e734e7
+    zh: 6823f694a307f48b
+  - slug: "Development and tests"
+    en: 52d63fabe0d7917f
+    zh: 3155a27edf0960c8
+  - slug: "Sources and licenses"
+    en: 41d2f7be47179ae9
+    zh: e8ffa4c9b31d8260
+  - slug: "Dev note"
+    en: 44d1e52f610c2210
+    zh: 6fc8f565e2284fb4

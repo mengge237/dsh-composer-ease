@@ -263,19 +263,20 @@ await okAsync('/ 菜单：三条设置行按 query 过滤（宿主那组消失�
   assert.equal(zh[0].name, '引号模式');
 })
 
-ok('中文整串不再当候选：只出 2~4 字词块（否则等于把整句贴回来）', () => {
+// 中文候选一律由服务端词典决定（客户端没有分词器）。这里只守一条：客户端不再自己切汉字串，
+// 所以「整句当候选」这类问题从源头消失，也不再需要一个写死的长度上限。
+ok('客户端不切汉字串：草稿里的中文不进本文词', () => {
   const H = mod.__helpers__
   const list = H.docWords('上好今天早上好', '今').map((c) => c.value)
-  assert.ok(list.length > 0, '要能提出词块：' + JSON.stringify(list))
-  assert.ok(list.every((v) => v.length <= 4), '不许出现整串：' + JSON.stringify(list))
+  assert.equal(list.length, 0, '汉字串不该出现在本文词里：' + JSON.stringify(list))
 })
 
-ok('上下文里的整串汉字同样不当候选', () => {
+ok('客户端不切汉字串：上下文候选里也没有汉字块', () => {
   const H = mod.__helpers__
-  conv.text = '上好今天早上好，我们再看看文档管理'
+  conv.text = '上好今天早上好，我们再看看文档管理 and someIdentifier'
   H.contextReset()
   const list = H.contextWords(mkEd(''))
-  assert.ok(list.every((v) => v.length <= 8), '上下文候选不该是整句：' + JSON.stringify(list.slice(0, 6)))
+  assert.ok(list.every((v) => !/[\u4e00-\u9fff]/.test(v)), '上下文里不该有汉字候选：' + JSON.stringify(list.slice(0, 6)))
   conv.text = ''
   H.contextReset()
 })
@@ -496,24 +497,27 @@ await okAsync('IME 合成期间不补全（打拼音 ye 不会被补成 yield，
   handlers.compositionend({ target: ed })
 })
 
-await okAsync('中文也触发补全，并且草稿里出现过的中文词能被提示（使用中 2026-10-16：文档/变量那个要求）', async () => {
+await okAsync('中文前缀走服务端词典：本地不再自己切词（也就没有整句候选）', async () => {
   fetchReply = { ok: true, candidates: [], wordGate: true }
   const ed = mkEd('先写一段关于文档管理系统的说明，后面再提到文档')
+  const before = fetchCalls.length
   input(ed)
-  await tick()          // 中文要等「完整词义」闸的结果才渲染
-  const pop = popupEl()
-  assert.ok(pop && pop.children.length, '打完整的「文档」要弹')
-  const text = pop.children.map((r) => r.innerText).join('|')
-  assert.match(text, /文档/, '要提示以「文档」开头的更长的词：' + text)
-  assert.match(text, /本文/, '右侧类型标「本文」：' + text)
-  keydown(ed, { key: 'Escape' })
-  const edOne = mkEd('先写一段关于文档的说明，后面再提文')
-  input(edOne)
   await tick()
-  const popOne = popupEl()
-  assert.ok(!popOne || !popOne.children.length || popOne.style.display === 'none', '单字「文」不许弹')
+  assert.ok(fetchCalls.length > before, '中文要问服务端词典')
+ // 本地不再有汉字词，服务端这次回空 → 弹层应当是收起的（旧行为会先拿本地「本文」词渲染一遍）
+  const pop = popupEl()
+  assert.ok(!pop || pop.style.display === 'none', '没有服务端结果时不该弹层：' + (pop ? pop.style.display : 'none'))
+  keydown(ed, { key: 'Escape' })
 })
 
+await okAsync('碎片前缀（档管）由服务端 wordGate=false 收起弹层', async () => {
+  fetchReply = { ok: true, candidates: [], wordGate: false }
+  const ed = mkEd('档管')
+  input(ed)
+  await tick()
+  const pop = popupEl()
+  assert.ok(!pop || pop.style.display === 'none', '碎片不该弹层')
+})
 await okAsync('Esc 关弹层', async () => {
   fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'input' }] }
   const ed = mkEd('inp')

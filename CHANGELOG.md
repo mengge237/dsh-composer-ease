@@ -1,3 +1,9 @@
+- **0.9.53**（2026-10-29，`SHA`）：**中文候选改为词典驱动（去掉长度上限）/ README 按官方模板瘦身并加双语配对闸 / package 元数据对齐官方插件**。
+  ① 边界不再写死：原来「汉字段落最多 4 字」「整串汉字不当候选」都是拍出来的上限，还得靠客户端 n 字切片兜着。现在客户端不再切汉字串（`docWords` / `contextWords` 直接跳过），中文候选只由词典（`lib/cjk-lexicon.js`，约 3 万词）按前缀给出，词长随数据走；`isCompleteWord(prefix)` 这两道前置闸（`wordCandidates` / `buildCandidates` / 路由 `wordGate`）一并换成「词典里有没有以它开头的词」。真机读数：`文档` → 文档管理；`系统` → 系统地 / 系统工程；`档管` → 弹层不开（wordGate=false）；`变化` → 无更长词，收起。
+  ② README 从 221 / 297 行压到 **81 行**（英文主、中文副），改成 deepseek-harness 包 README 的模板：front matter `description` + `kind: package-reference`，小节 Summary / Table of Contents / Install / Use this package / Understand the implementation / Boundaries / Development and tests / Sources and licenses / Dev note；细节搬进 `docs/boundaries-and-implementation.md` 与 `docs/边界与实现.md`（各 36 行）。
+  ③ 新增双语配对闸 `tools/check-readme-pairing.mjs`：两份 README 的 `##` 小节数必须一致，且每节正文的 md5 记在 `README.i18n.yaml`（照官方的记录法）；改一侧不重记就红，`--write` 重新生成。反向对照过：改中文某一节一个字 → rc=1；复原 → 干净。`check:all` 已纳入。
+  ④ `package.json` 对齐官方包：`exports` 改成条件对象（`{ "default": ... }`）、`files` 收窄并加入 `README.i18n.yaml`。改完重启 demo 宿主复跑真机：插件照常加载（`文档` → 文档管理，`档管` 不弹）。
+  离线 185 项（行为 136）、真机 33 条全过。
 - **0.9.52**（2026-10-29，`267751e`）：**闭合引号后再打引号要成对 / 中文不再贴整句 / 标红只标那个引号**（三条一次反馈）。
   ① 引号：旧逻辑在「光标前一个字符是引号且整段已闭合」时把这一键 `preventDefault` 吞掉 —— 反馈就是「其他引号都闭合的情况下，新打的引号没有成对」。现在按**奇偶**判：前一个引号是未闭合的开符才只插一个；已成对就交给 `shouldPair` 开一对新的。读数：`他说"你好"` + `"` → `他说"你好"""`（新对落下，caret 在新对中间）；标红模式仍只插一个。
   ② 中文候选：`docWords` / `contextWords` 原来把整串汉字也当候选，于是「上好」之后接着打「今天早上好」，弹层会把整句当提示贴回来。现在汉字串只切 2~4 字词块（docWords 补 4 字切片），整串不再入选。
