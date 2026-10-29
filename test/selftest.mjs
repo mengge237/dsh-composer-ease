@@ -142,6 +142,12 @@ ok('中文候选长度只受数据约束：词典里的 5~7 字长词能出来�
   assert.ok(natural.indexOf('自然语言处理') >= 0, '6 字词应当能出来：' + JSON.stringify(natural.slice(0, 3)))
 })
 
+ok('领域词表：插件开发这套行话能接出更长的词（通用词典覆盖不到）', () => {
+  const core = ['补全', '引号', '弹层', '宿主', '候选', '触发', '会话', '压缩', '插件', '渲染', '围栏', '片段', '标红', '光标', '波浪', '输入', '菜单', '前缀', '上下文', '词表']
+  const miss = core.filter((p) => !wordCandidates(p, '').some((c) => c.value.length > p.length))
+  assert.deepEqual(miss, [], '这些前缀接不出更长的词：' + miss.join(','))
+})
+
 ok('候选封顶：很短的前缀也只回 ≤12 条', () => {
   const c = buildCandidates('a')
   assert.ok(c.length <= 12, '候选要封顶：' + c.length)
