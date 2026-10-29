@@ -135,6 +135,13 @@ ok('候选管线：docum → document 排在首位（走 buildCandidates，不�
   assert.equal(list[0], 'document', '首位应为 document：' + JSON.stringify(list.slice(0, 3)))
 })
 
+ok('中文候选长度只受数据约束：词典里的 5~7 字长词能出来（没有长度上限）', () => {
+  const list = buildCandidates('数据库').map((x) => x.value)
+  assert.ok(list.indexOf('数据库管理系统') >= 0, '7 字词应当能出来：' + JSON.stringify(list.slice(0, 3)))
+  const natural = buildCandidates('自然语').map((x) => x.value)
+  assert.ok(natural.indexOf('自然语言处理') >= 0, '6 字词应当能出来：' + JSON.stringify(natural.slice(0, 3)))
+})
+
 ok('候选封顶：很短的前缀也只回 ≤12 条', () => {
   const c = buildCandidates('a')
   assert.ok(c.length <= 12, '候选要封顶：' + c.length)

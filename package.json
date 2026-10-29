@@ -1,6 +1,6 @@
 {
   "name": "dsh-composer-ease",
-  "version": "0.9.53",
+  "version": "0.9.54",
   "type": "module",
   "main": "lib/index.js",
   "files": [
@@ -10,7 +10,8 @@
     "README.zh.md",
     "README.i18n.yaml",
     "THIRD-PARTY.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "docs"
   ],
   "dsh": {
     "compatibility": {

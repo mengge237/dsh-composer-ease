@@ -1,3 +1,8 @@
+- **0.9.54**（2026-10-29，`SHA`）：**长词证明（>4 字）/ 发布包含 docs / 配对闸改成逐节解析**（三条复核意见）。
+  ① 上一轮只说「去掉长度上限」，但词典只有 2~4 字，等于无法证明。现在词表补 10 条 5~7 字常用词（中华人民共和国、数据库管理系统、自然语言处理、计算机科学与技术…），并加两条判据：`buildCandidates('数据库')` 必须含 7 字词、`('自然语')` 必须含 6 字词。真机读数：`数据库` → 数据库管理系统（7 字）、`自然语` → 自然语言处理（6 字）、`人工` → 人工湖 / 人工智能技术（7 字）。
+  ② `package.json` 的 `files` 漏了 `docs`，而 README 链到 `docs/boundaries-and-implementation.md` 与 `docs/边界与实现.md` —— 发布包里会成死链。已补 `docs`，并用 `npm pack --dry-run` 核对：两页都在包里（README 4.8kB / 4.4kB、两页 2.6kB / 2.2kB、总 38 个文件）。
+  ③ 双语 README 配对闸原来用「哈希字符串在文件里出现过」判定，两节哈希互换也能过。改成逐条解析成 `[{slug,en,zh}]` 后按序号比对：标题、英文正文、中文正文三格各自对齐。反向对照：互换两个小节的 en 哈希 → rc=1；复原 → 干净。
+  复跑：真机矩阵 33 条全过（含 E9 两段包裹、C3 引号配对、D3 错拼兜底），离线 186 项（selftest 13 → 14）。
 - **0.9.53**（2026-10-29，`27b5318`）：**中文候选改为词典驱动（去掉长度上限）/ README 按官方模板瘦身并加双语配对闸 / package 元数据对齐官方插件**。
   ① 边界不再写死：原来「汉字段落最多 4 字」「整串汉字不当候选」都是拍出来的上限，还得靠客户端 n 字切片兜着。现在客户端不再切汉字串（`docWords` / `contextWords` 直接跳过），中文候选只由词典（`lib/cjk-lexicon.js`，约 3 万词）按前缀给出，词长随数据走；`isCompleteWord(prefix)` 这两道前置闸（`wordCandidates` / `buildCandidates` / 路由 `wordGate`）一并换成「词典里有没有以它开头的词」。真机读数：`文档` → 文档管理；`系统` → 系统地 / 系统工程；`档管` → 弹层不开（wordGate=false）；`变化` → 无更长词，收起。
   ② README 从 221 / 297 行压到 **81 行**（英文主、中文副），改成 deepseek-harness 包 README 的模板：front matter `description` + `kind: package-reference`，小节 Summary / Table of Contents / Install / Use this package / Understand the implementation / Boundaries / Development and tests / Sources and licenses / Dev note；细节搬进 `docs/boundaries-and-implementation.md` 与 `docs/边界与实现.md`（各 36 行）。

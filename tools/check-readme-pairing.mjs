@@ -55,10 +55,23 @@ if (!fs.existsSync(STORE)) {
   console.error('RED  缺 README.i18n.yaml：先跑 node tools/check-readme-pairing.mjs --write')
   process.exit(1)
 }
-const store = fs.readFileSync(STORE, 'utf8')
-for (const r of records) {
-  if (store.indexOf(`en: ${r.en}`) < 0) { console.error(`RED  README.md 的小节「${r.slug}」改了，README.i18n.yaml 没重记`); bad++ }
-  if (store.indexOf(`zh: ${r.zh}`) < 0) { console.error(`RED  README.zh.md 的小节「${r.slug}」改了，README.i18n.yaml 没重记`); bad++ }
+// 逐条解析成 [{slug, en, zh}]：只认「同一个小节的同一格」，防止把两节的哈希互换后仍然通过。
+const stored = []
+for (const line of fs.readFileSync(STORE, 'utf8').split('\n')) {
+  const mSlug = line.match(/^\s*- slug: (.+)$/)
+  if (mSlug) { stored.push({ slug: JSON.parse(mSlug[1]) }); continue }
+  const mPair = line.match(/^\s+(en|zh): ([0-9a-f]{6,})$/i)
+  if (mPair && stored.length) stored[stored.length - 1][mPair[1]] = mPair[2]
+}
+if (stored.length !== records.length) {
+  console.error(`RED  README.i18n.yaml 记了 ${stored.length} 节，README 里有 ${records.length} 节`)
+  bad++
+}
+for (let i = 0; i < Math.min(stored.length, records.length); i++) {
+  const want = records[i], got = stored[i]
+  if (got.slug !== want.slug) { console.error(`RED  第 ${i + 1} 节的标题对不上：记录「${got.slug}」/ 实际「${want.slug}」`); bad++; continue }
+  if (got.en !== want.en) { console.error(`RED  「${want.slug}」的英文正文改了，README.i18n.yaml 没重记`); bad++ }
+  if (got.zh !== want.zh) { console.error(`RED  「${want.slug}」的中文正文改了，README.i18n.yaml 没重记`); bad++ }
 }
 if (bad) { console.error(`\n双语 README 配对闸：${bad} 处不一致`); process.exit(1) }
 console.log(`双语 README 配对闸：干净（${records.length} 个小节，两份小节一一对应）`)
