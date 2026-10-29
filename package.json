@@ -1,13 +1,16 @@
 {
   "name": "dsh-composer-ease",
-  "version": "0.9.52",
+  "version": "0.9.53",
   "type": "module",
   "main": "lib/index.js",
   "files": [
     "lib",
     "cordis.patch.yml",
     "README.md",
-    "THIRD-PARTY.md"
+    "README.zh.md",
+    "README.i18n.yaml",
+    "THIRD-PARTY.md",
+    "CHANGELOG.md"
   ],
   "dsh": {
     "compatibility": {
@@ -24,8 +27,12 @@
     }
   },
   "exports": {
-    ".": "./lib/index.js",
-    "./client": "./lib/client.js",
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -38,14 +45,15 @@
     "sync:host": "node tools/sync-host.mjs",
     "check:host": "node tools/sync-host.mjs --check",
     "check:docs": "node tools/check-docs.mjs",
-    "check:all": "npm run check && npm run check:docs && npm run check:privacy && npm run check:prose && npm run check:copies && npm run build -- --check",
+    "check:all": "npm run check && npm run check:docs && npm run check:readme && npm run check:privacy && npm run check:prose && npm run check:copies && npm run build -- --check",
     "record:demo": "node tools/record-demo.mjs",
     "check:copies": "node tools/copies.mjs --check",
     "sync:copies": "node tools/copies.mjs --sync",
     "link:host": "node tools/link-host.mjs",
     "check:prose": "node tools/verify-comment-prose.mjs",
     "check:privacy": "node tools/check-privacy.mjs",
-    "scrub:public": "node tools/scrub-public.mjs"
+    "scrub:public": "node tools/scrub-public.mjs",
+    "check:readme": "node tools/check-readme-pairing.mjs"
   },
   "license": "MIT",
   "engines": {
