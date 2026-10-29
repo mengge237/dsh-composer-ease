@@ -263,6 +263,22 @@ await okAsync('/ 菜单：三条设置行按 query 过滤（宿主那组消失�
   assert.equal(zh[0].name, '引号模式');
 })
 
+ok('中文整串不再当候选：只出 2~4 字词块（否则等于把整句贴回来）', () => {
+  const H = mod.__helpers__
+  const list = H.docWords('上好今天早上好', '今').map((c) => c.value)
+  assert.ok(list.length > 0, '要能提出词块：' + JSON.stringify(list))
+  assert.ok(list.every((v) => v.length <= 4), '不许出现整串：' + JSON.stringify(list))
+})
+
+ok('上下文里的整串汉字同样不当候选', () => {
+  const H = mod.__helpers__
+  conv.text = '上好今天早上好，我们再看看文档管理'
+  H.contextReset()
+  const list = H.contextWords(mkEd(''))
+  assert.ok(list.every((v) => v.length <= 8), '上下文候选不该是整句：' + JSON.stringify(list.slice(0, 6)))
+  conv.text = ''
+  H.contextReset()
+})
 ok('注释行不提示：行首 // # <!-- --（可缩进）；行内 // 与引号里不算', () => {
   const H = mod.__helpers__
   for (const s of ['// fun', '  // fun', '# fun', '<!-- fun', '-- fun']) assert.equal(H.inCommentLine(s), true, s + ' 应判为注释行');
@@ -686,10 +702,22 @@ ok('有前引号时再打引号只插一个（2026-10-20 的一次反馈）', ()
   assert.equal(ed.value, '“"', '不许补成 “""：' + ed.value)
 })
 
-ok('闭引号后面再打引号也只插一个（中文输入法连打引号会变多个）', () => {
+// 2026-10-29 契约变更（反馈：其他引号都闭合的情况下，新打的引号没有成对）：
+// 已闭合的引号之后，再打同一个引号 = 开一对新的；「不堆一个」请用标红模式。
+ok('闭引号之后再打引号：auto 下开一对新的', () => {
+  mod.__helpers__.setQuoteMode('auto')
   const ed = mkEd('“”', 2)
   keydown(ed, { key: '"', shift: true })
-  assert.equal(ed.value, '“”"', '不许变成 “”""：' + ed.value)
+  assert.equal(ed.value, '“”""', '要成对：' + ed.value)
+  assert.equal(ed.selectionStart, 3, '光标落在新对中间：' + ed.selectionStart)
+})
+
+ok('闭引号之后再打引号：标红模式下只插一个', () => {
+  mod.__helpers__.setQuoteMode('warn')
+  const ed = mkEd('“”', 2)
+  keydown(ed, { key: '"', shift: true })
+  assert.equal(ed.value, '“”"', '标红模式不补：' + ed.value)
+  mod.__helpers__.setQuoteMode('auto')
 })
 
 ok('反引号连打：前两下配成一对，第三下不再被吞（``` 围栏能直接打出来）', () => {
@@ -836,10 +864,11 @@ ok('全角开符后面打半角引号：补闭合，不再凑一对', () => {
   assert.equal(quotes, 2, '应当是「全角开 + 半角闭」两个引号：' + JSON.stringify(ed.value))
 })
 
-ok('已有一对（宽度混写）时不判"未闭合"：不再补第二对', () => {
+// 契约变更（2026-10-29）：混写的成对引号也算「已闭合」，之后再打就是新的一对。
+ok('已有一对（宽度混写）之后再打引号：开一对新的', () => {
   const ed = pressQuote('"abc\u201d', [5, 5], '"')
   const quotes = (ed.value.match(/["\u201c\u201d]/g) || []).length
-  assert.equal(quotes, 3, '既有一对（混写）后再打一个，只多这一个：' + JSON.stringify(ed.value))
+  assert.equal(quotes, 4, '新的一对要落下来：' + JSON.stringify(ed.value))
 })
 
 ok('正常框选没被改坏：选中 abc 打引号仍然框住', () => {
@@ -857,11 +886,11 @@ ok('框完再打同一个引号 = 取消这次框选，内层重新选中', () =
   assert.equal(ed.selectionEnd, 3, '取消后内层要重新选中')
 })
 
-ok('取消框选只对「没被别人改过」的那次生效', () => {
+ok('取消框选只对「没被别人改过」的那次生效：改过就当作新的一对', () => {
   const ed = pressQuote('abc', [0, 3], '"')
   ed.value = '"abX"'                     // 模拟用户在框里改过
   keydown(ed, { key: '"' })
-  assert.equal(ed.value, '"abX"', '内层被改过就不该反选，也不该再堆一个：' + ed.value)
+  assert.equal(ed.value, '"abX"""', '改过就不反选，这一下开一对新的：' + ed.value)
 })
 
 ok('框选期间不弹补全（框选只是一个动作，不该顺手提醒）', () => {
