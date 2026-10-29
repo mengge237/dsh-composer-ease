@@ -99,6 +99,14 @@ ok('words 路由：没给 prefix 也给候选（列表封顶 ≤12），坏 URL 
   assert.ok(a.json.candidates.length > 0, '空前缀也该有候选（公共池 + 文件/模型）')
 })
 
+ok('words 路由：draft 参数——草稿里的中文词排在最前（VS Code 的取词口径）', () => {
+  const draft = encodeURIComponent('我今天去图书馆看书，图书馆很安静')
+  const a = call('/dsh-composer-ease/words?prefix=' + encodeURIComponent('图书') + '&draft=' + draft)
+  assert.equal(a.code, 200)
+  assert.equal(a.json.candidates[0].value, '图书馆', '草稿词要排第一：' + JSON.stringify(a.json.candidates.slice(0, 3).map((c) => c.value)))
+  assert.equal(a.json.candidates[0].detail, '本文', '来源标本文')
+})
+
 ok('方法闸：放行 GET/HEAD，其它一律 405', () => {
   assert.equal(call('/dsh-composer-ease/words', { method: 'HEAD' }).code, 200, 'HEAD 与 GET 同权（探测用）')
   assert.equal(call('/dsh-composer-ease/words', { method: 'POST' }).code, 405, 'POST 应 405')
