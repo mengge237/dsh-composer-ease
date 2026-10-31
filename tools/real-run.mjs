@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// 真机留证：跑 test/real/matrix.mjs 并把结果写成 test/real/last-run.json。
-// 为什么不在 CI 跑：真机矩阵要一个活着的 dsh 宿主（端口 + token）与 Playwright dial，
+// 端到端留证：跑 test/real/matrix.mjs 并把结果写成 test/real/last-run.json。
+// 为什么不在 CI 跑：端到端矩阵要一个活着的 dsh 宿主（端口 + token）与 Playwright dial，
 // 这些在 CI 里能装但不稳定；所以改为「本地跑一次、把读数入仓」，评审看得到证据。
 // 用法：node tools/real-run.mjs <baseUrl> [rounds]
 import fs from 'node:fs'
@@ -36,5 +36,5 @@ const record = {
   failed: (result && result.failed) || [],
 }
 fs.writeFileSync(path.join(ROOT, 'test', 'real', 'last-run.json'), JSON.stringify(record, null, 2) + '\n')
-console.log('真机留证已写：test/real/last-run.json  passed=' + record.passed + '/' + record.total)
+console.log('端到端留证已写：test/real/last-run.json  passed=' + record.passed + '/' + record.total)
 if (record.failedCount) process.exit(1)
