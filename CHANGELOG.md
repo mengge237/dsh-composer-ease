@@ -1,4 +1,4 @@
-- **0.9.63**（2026-10-29，`SHA`）：**keydown 决策接入 `decideType`（VS Code 移植第 1 条路打通）**。
+- **0.9.63**（2026-10-29，`b04f474`）：**keydown 决策接入 `decideType`（VS Code 移植第 1 条路打通）**。
   ① 键盘路径不再自己判「原字符还是换算字符」：`decideType(ch, {before, after, selection, fwHalf})` 一次给出 `open/close`（含全角→半角换算），下面各分支只按 `open/close` 落地；`fwKeyHandled` 让 beforeinput/input 两条路不重复换算（并在 input 里消费掉）。
   ② 真机读数（demo 3081，六条全过）：IME `（` + fwHalf=1 → `()`；`abc` 后打 `(` → `abc()`；空框 `"` → `""`；IME `（` + fwHalf=0 → `（）`；选中整段打 `"` → `"选中这段"`、打 `(` → `(选中这段)`。
   ③ 判据：行为套件 153 项全绿、散文闸干净。登录 3 条输入路里已切 1 条；beforeinput 与 IME 分支下一步同样改为「构造 ctx → decideType → 落地」。
