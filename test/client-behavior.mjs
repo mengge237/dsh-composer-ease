@@ -154,6 +154,18 @@ ok('路径分隔符后打 ( → 也补对（E:/x/ → E:/x/()）', () => {
   assert.equal(b.value, 'E:/x/()')
 })
 
+ok('全角括号开关：关＝保持输入法的 （），开＝打成半角 ()', () => {
+  const H = mod.__helpers__
+  H.setFwHalf(false)
+  const off = mkEd('（')
+  input(off)
+  assert.equal(off.value, '（）', '关时应保持全角对子：' + off.value)
+  H.setFwHalf(true)
+  const on = mkEd('（')
+  input(on)
+  assert.equal(on.value, '()', '开时应换成半角对子：' + on.value)
+  H.setFwHalf(false)
+})
 ok('全角（ 走 input 事件补配对（IME 合成不一定带对应 keydown）', () => {
   const ed = mkEd('（')
   input(ed)
@@ -240,7 +252,7 @@ await okAsync('候选类型预设：一行循环四态，/ 菜单不再被四个
  // / 菜单里的候选行数：引号模式 + 候选类型 + 严格配对 = 3
   const slash = H6.buildTriggerSources().find((x) => x.trigger === '/')
   const rows = await slash.candidates({}, {})
-  assert.equal(rows.length, 4, '/ 菜单应有 4 行：' + rows.map((r) => r.name).join(','))
+  assert.equal(rows.length, 5, '/ 菜单应有 5 行：' + rows.map((r) => r.name).join(','))
   assert.ok(rows.some((r) => r.name === '候选类型'), '要有候选类型这一行')
   assert.ok(rows.some((r) => r.name === '重置插件设置'), '要有重置插件设置这一行')
 })
@@ -261,7 +273,7 @@ await okAsync('/ 菜单：错拼兜底 —— /compot 补出 compact，正常拼
 await okAsync('/ 菜单：三条设置行按 query 过滤（宿主那组消失时别只剩我们）', async () => {
   const H = mod.__helpers__
   const slash = H.buildTriggerSources().find((x) => x.trigger === '/');
-  assert.equal((await slash.candidates({}, {})).length, 4, '空 query 四行都在（引号模式/候选类型/重置插件设置/严格配对）');
+  assert.equal((await slash.candidates({}, {})).length, 5, '空 query 五行都在（引号模式/候选类型/全角括号/重置插件设置/严格配对）');
   const comp = await slash.candidates({}, { query: 'comp' });
   assert.equal(comp.filter((r) => r.name === '引号模式').length, 0, '打 /comp 时设置行让位：' + JSON.stringify(comp.map((r) => r.name)));
   const zh = await slash.candidates({}, { query: '引号' });
