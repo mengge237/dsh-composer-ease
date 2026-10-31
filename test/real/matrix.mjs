@@ -76,7 +76,7 @@ for (let round = 1; round <= ROUNDS; round++) {
   await reset(''); await page.keyboard.type('(', { delay: 20 }); await page.waitForTimeout(250);
   check(round, 'C1 半角括号配对', (await text()) === '()', await text());
   await reset(''); await page.keyboard.type('（', { delay: 20 }); await page.waitForTimeout(300);
-  check(round, 'C2 全角括号配对', (await text()) === '（）', await text());
+  check(round, 'C2 全角括号换半角（默认开）', (await text()) === '()', await text());
   await reset(''); await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(300);
   check(round, 'C3 引号默认配对', (await text()) === '""', await text());
   await reset('abc'); await page.keyboard.press('Control+a'); await page.waitForTimeout(120); await page.keyboard.type('(', { delay: 20 }); await page.waitForTimeout(400);
@@ -102,7 +102,7 @@ for (let round = 1; round <= ROUNDS; round++) {
   // D / 菜单
   await reset(''); await page.keyboard.type('/', { delay: 30 }); await page.waitForTimeout(1000);
   rows = await menuRows();
-  check(round, 'D1 / 菜单三行设置', rows.filter((r) => r.indexOf('引号模式') >= 0 || r.indexOf('候选类型') >= 0 || r.indexOf('严格配对') >= 0).length === 3, rows.length + ' 行');
+  check(round, 'D1 / 菜单五行设置', rows.filter((r) => r.indexOf('引号模式') >= 0 || r.indexOf('候选类型') >= 0 || r.indexOf('全角括号') >= 0 || r.indexOf('重置插件设置') >= 0 || r.indexOf('严格配对') >= 0).length === 5, rows.length + ' 行');
   await reset(''); await page.keyboard.type('/comp', { delay: 35 }); await page.waitForTimeout(1100);
   rows = await menuRows();
   check(round, 'D2 /comp 设置行让位', rows.filter((r) => r.indexOf('引号模式') >= 0).length === 0 && rows.some((r) => r.indexOf('compact') >= 0), rows.length + ' 行');

@@ -1,6 +1,6 @@
 {
   "name": "dsh-composer-ease",
-  "version": "0.9.65",
+  "version": "0.9.66",
   "type": "module",
   "main": "lib/index.js",
   "files": [
@@ -10,8 +10,7 @@
     "README.zh.md",
     "README.i18n.yaml",
     "THIRD-PARTY.md",
-    "CHANGELOG.md",
-    "docs"
+    "CHANGELOG.md"
   ],
   "dsh": {
     "compatibility": {
@@ -46,7 +45,7 @@
     "sync:host": "node tools/sync-host.mjs",
     "check:host": "node tools/sync-host.mjs --check",
     "check:docs": "node tools/check-docs.mjs",
-    "check:all": "npm run check && npm run check:docs && npm run check:readme && npm run check:privacy && npm run check:prose && npm run check:copies && npm run build -- --check",
+    "check:all": "npm run check && npm run check:docs && npm run check:readme && npm run check:entry && npm run check:privacy && npm run check:prose && npm run check:copies && npm run build -- --check && npm run check:real",
     "record:demo": "node tools/record-demo.mjs",
     "check:copies": "node tools/copies.mjs --check",
     "sync:copies": "node tools/copies.mjs --sync",
@@ -54,7 +53,10 @@
     "check:prose": "node tools/verify-comment-prose.mjs",
     "check:privacy": "node tools/check-privacy.mjs",
     "scrub:public": "node tools/scrub-public.mjs",
-    "check:readme": "node tools/check-readme-pairing.mjs"
+    "check:readme": "node tools/check-readme-pairing.mjs",
+    "test:real": "node tools/real-run.mjs",
+    "check:entry": "node tools/check-entry-sync.mjs",
+    "check:real": "node tools/check-real-stale.mjs"
   },
   "license": "MIT",
   "engines": {

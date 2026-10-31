@@ -1,0 +1,10 @@
+{
+  "ranAt": "2026-10-31T15:56:33.228Z",
+  "packageVersion": "0.9.65",
+  "baseUrlHost": "http://127.0.0.1:3081/?token=***",
+  "rounds": 1,
+  "total": 33,
+  "passed": 33,
+  "failedCount": 0,
+  "failed": []
+}
