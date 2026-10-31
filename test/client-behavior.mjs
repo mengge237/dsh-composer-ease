@@ -331,7 +331,7 @@ ok('VS Code 复刻·编辑列表：词后仍成对（本插件的刻意偏差，
 })
 // ── 决策层（纯函数）──────────────────────────────────────────────────────
 // 照 VS Code 的 typeWithInterceptors：先算出「该做什么」，再由 applier 落地。
-// 这些用例不碰 DOM，跑得快、看得清 —— 事件层那几张矩阵只留少量真机必测项。
+// 纯函数用例：不碰 DOM，覆盖决策层。
 ok('decideType：空框打 ( → pair；右边已是闭符 → skip', () => {
   const H = mod.__helpers__
   H.setQuoteMode('auto'); H.setFwHalf(true)

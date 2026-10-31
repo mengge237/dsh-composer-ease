@@ -1,3 +1,6 @@
+- **0.9.62**（2026-10-29，`SHA`）：**注释瘦身回契约（散文闸干净）**。
+  散文闸此前 6 处红：两处第一人称（「我们」「不是 VS Code 的」）、三处叙事词（真机/实测）、一处 9 行注释块。现全部改写成短约束（每处 ≤2 行，只写「为什么」），散文闸回到干净；行为零改动，五支套件 206 项全过。
+  说明：把三条输入路切到 `buildTypeEdits` + 单 applier 的改动本轮试过一版，`（` 换算与「成对家族不叠罗汉」互相干扰（得到 `（(`、`（` 两种错形状），已整体回滚，留待单独一轮做。
 - **0.9.61**（2026-10-29，`664ec27`）：**复刻 VS Code 的打字拦截层（模式枚举 + before 集合 + 编辑列表）**。
   ① 常量照本机产物逐字搬：`DEFAULT_AUTOCLOSE_BEFORE_LANGUAGE_DEFINED_QUOTES = ";:.,=}])> \t"`、`…BRACKETS = "'\"`;:.,=}])> \t"`、`…WHITESPACE = " \t"`；模式枚举 `always|languageDefined|beforeWhitespace|never`。
   ② 新增 `autoCloseMode/setAutoCloseMode`、`shouldAutoCloseBefore(prev, mode, kind)`、`buildTypeEdits(ch, ctx) → [{range,text,caret,select}]` —— 与 VS Code 的 `typeWithInterceptors` 同构：先把该做什么算成编辑列表，再由 applier 统一落地。
