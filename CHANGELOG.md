@@ -1,3 +1,8 @@
+- **0.9.64**（2026-10-29，`SHA`）：**beforeinput 也接入 `decideType`（VS Code 移植第 2 条路）；`flushBeforeFix` 重写**。
+  ① beforeinput 不再自己判：`decideType(ch, {before, after, fwHalf})` → `insert` 时零干预，其余把 `pendingFix` 记成 `skip|convert|pair`，落地仍在 `flushBeforeFix`。
+  ② `flushBeforeFix` 按动作重排（surround / convert / skip / pair），convert 用梯子等原生全角字符落地后「合成 Backspace 删掉 + 插半角对子」——上一版把 convert 分支插进了 skip 块里（因而从不执行），重写后修好。
+  ③ 真机七条全过：IME `（`（fwHalf=1）→ `()`、IME `【` → `[]`、`abc` 后打 `(` → `abc()`、空框 `"` → `""`、IME `（`（fwHalf=0）→ `（）`、框选 `"` → `"选中这段"`、框选 `(` → `(选中这段)`。
+  ④ 判据：行为套件 153 项、离线 206 项全过；散文闸干净。剩输入法 `onInput` 那条路仍有一份换算分支（已用 `fwKeyHandled` 防重复），下一步与另两条合并。
 - **0.9.63**（2026-10-29，`b04f474`）：**keydown 决策接入 `decideType`（VS Code 移植第 1 条路打通）**。
   ① 键盘路径不再自己判「原字符还是换算字符」：`decideType(ch, {before, after, selection, fwHalf})` 一次给出 `open/close`（含全角→半角换算），下面各分支只按 `open/close` 落地；`fwKeyHandled` 让 beforeinput/input 两条路不重复换算（并在 input 里消费掉）。
   ② 真机读数（demo 3081，六条全过）：IME `（` + fwHalf=1 → `()`；`abc` 后打 `(` → `abc()`；空框 `"` → `""`；IME `（` + fwHalf=0 → `（）`；选中整段打 `"` → `"选中这段"`、打 `(` → `(选中这段)`。
