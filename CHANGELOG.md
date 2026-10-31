@@ -1,4 +1,4 @@
-- **0.9.60**（2026-10-29，`SHA`）：**配对收敛出「唯一决策入口」`decideType`（照 VS Code 的 typeWithInterceptors）**。
+- **0.9.60**（2026-10-29，`13f9e46`）：**配对收敛出「唯一决策入口」`decideType`（照 VS Code 的 typeWithInterceptors）**。
   本地从 VS Code 产物里挖到的路子（不是猜）：① 设置是**模式**不是规则（`autoClosingBrackets`／`autoClosingQuotes` = `always|languageDefined|beforeWhitespace|never`）；② 成对表来自**语言配置**（`getAutoClosingPairs` / `getSurroundingPairs`）；③ 判定是一个 `shouldAutoCloseBefore(regex)` + token 类型（`_inString/_inComment/_inRegEx`）；④ 编辑是 `typeWithInterceptors(...)` 一次算出编辑列表，再由模型统一 `executeEdits`。
   我们过去是「逐段在事件层打补丁」，所以选中/删除会和宿主模型脱节（全角换算栽的就是这类）。本版先落第 ④ 条的骨架：`decideType(ch, ctx)` 纯函数，返回 `wrap | skip | convert | pair | insert`，不碰 DOM；矩阵测试直接打这张表（新增 4 例，行为套件 143 → **147 项**）。
   下一步（未做）：把 keydown / beforeinput / 输入法三条路都改成「先 decideType → 再由单个 applier 落地」，之后删除散落在事件层的重复判定。
