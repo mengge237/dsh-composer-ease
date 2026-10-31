@@ -1,4 +1,4 @@
-- **0.9.61**（2026-10-29，`SHA`）：**复刻 VS Code 的打字拦截层（模式枚举 + before 集合 + 编辑列表）**。
+- **0.9.61**（2026-10-29，`664ec27`）：**复刻 VS Code 的打字拦截层（模式枚举 + before 集合 + 编辑列表）**。
   ① 常量照本机产物逐字搬：`DEFAULT_AUTOCLOSE_BEFORE_LANGUAGE_DEFINED_QUOTES = ";:.,=}])> \t"`、`…BRACKETS = "'\"`;:.,=}])> \t"`、`…WHITESPACE = " \t"`；模式枚举 `always|languageDefined|beforeWhitespace|never`。
   ② 新增 `autoCloseMode/setAutoCloseMode`、`shouldAutoCloseBefore(prev, mode, kind)`、`buildTypeEdits(ch, ctx) → [{range,text,caret,select}]` —— 与 VS Code 的 `typeWithInterceptors` 同构：先把该做什么算成编辑列表，再由 applier 统一落地。
   ③ 一处**刻意偏差**（已写进注释与测试）：`languageDefined` 下我们允许词/中文后成对 —— 聊天框里 `abc` 后打 `(` 要 `abc()`，VS Code 的 before 集合里没有字母。
