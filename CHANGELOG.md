@@ -1,4 +1,4 @@
-- **0.9.67**（2026-11-01，`SHA`）：**补 npm 元数据 + 免令牌发布流程（回应「npm 描述不对」「令牌只有 7 天」）。**
+- **0.9.67**（2026-11-01，`2e15bbb`）：**补 npm 元数据 + 免令牌发布流程（回应「npm 描述不对」「令牌只有 7 天」）。**
   ① npm 页面描述此前是空的 `description`，npm 回落到 README 的 YAML front matter，于是显示成 `--- description: "…"` 这种脏文本。现在 `package.json` 补了 `description`（英文一句）、`keywords`（dsh-plugin / deepseek-harness / composer / autocomplete / cordis）、`repository`、`homepage`、`bugs`。
   ② 新增 `.github/workflows/publish.yml`：用 npm **Trusted Publishing（OIDC）** 发布 —— `permissions: id-token: write` + `npm publish --provenance`，**不需要任何 npm 令牌、不会过期**，同时带 provenance。触发方式是 GitHub Release 发布或手动 dispatch。
   ③ 说明：仓库里这次只改元数据与 CI，没有改运行代码；npm 上仍是 0.9.66（该版本 package.json 的 description 为空）。要让它显示正确描述，需要 0.9.67 发一次（走 CI 或任一枚可发布令牌）。
