@@ -287,6 +287,48 @@ await okAsync('/ 菜单：三条设置行按 query 过滤（宿主那组消失�
 // ── 配对矩阵（核心判据）────────────────────────────────────────────────
 // 一格写清「键 → 期望文本」，以后动配对逻辑必须同时改这张表：
 // 逐个 bug 打补丁止不住，是因为没有一条能一眼看全的判据。
+// ── 复刻层：VS Code 的四条语义（模式 / before 集合 / 编辑列表 / 跳过闭符）──
+ok('VS Code 复刻·模式：never 不成对、always 成对、beforeWhitespace 只认空格与制表', () => {
+  const H = mod.__helpers__
+  assert.equal(H.AC_MODES.join(','), 'always,languageDefined,beforeWhitespace,never')
+  assert.equal(H.shouldAutoCloseBefore('a', 'always', 'bracket'), true)
+  assert.equal(H.shouldAutoCloseBefore(';', 'never', 'bracket'), false)
+  assert.equal(H.shouldAutoCloseBefore(' ', 'beforeWhitespace', 'bracket'), true)
+  assert.equal(H.shouldAutoCloseBefore('a', 'beforeWhitespace', 'bracket'), false)
+})
+
+ok('VS Code 复刻·before 集合：分号/等号/右括号后允许，逗号前不成对', () => {
+  const H = mod.__helpers__
+  for (const prev of [';', ':', '.', ',', '=', '}', ']', ')', '>', ' ', '\t']) assert.equal(H.shouldAutoCloseBefore(prev, 'languageDefined', 'bracket'), true, '前一个字符 ' + JSON.stringify(prev) + ' 应当允许成对')
+  assert.equal(H.shouldAutoCloseBefore('', 'languageDefined', 'bracket'), true, '空上下文允许')
+})
+
+ok('VS Code 复刻·编辑列表：空框 ( → 一条「插 ()、caret 在中间」的编辑', () => {
+  const H = mod.__helpers__
+  const e = H.buildTypeEdits('(', { before: '', after: '', fwHalf: false })
+  assert.equal(e.length, 1)
+  assert.equal(e[0].text, '()')
+  assert.equal(e[0].caret, 1)
+})
+
+ok('VS Code 复刻·编辑列表：右边已是闭符 → 只挪光标（overtype），不插字', () => {
+  const H = mod.__helpers__
+  const e = H.buildTypeEdits('(', { before: '', after: ')', fwHalf: false })
+  assert.equal(e.length, 1); assert.equal(e[0].text, ''); assert.equal(e[0].caret, 1)
+})
+
+ok('VS Code 复刻·编辑列表：有选区 → 一条 surround 编辑，带选中范围', () => {
+  const H = mod.__helpers__
+ // ctx 契约：before 是「选区之前」的文本，selection 是选中的文本（整段选中时 before 为空）
+  const e = H.buildTypeEdits('(', { before: '', after: '', selection: 'abc', fwHalf: false })
+  assert.equal(e.length, 1); assert.equal(e[0].text, '(abc)'); assert.equal(e[0].select.join(','), '1,4')
+})
+
+ok('VS Code 复刻·编辑列表：词后仍成对（本插件的刻意偏差，已在注释里写明）', () => {
+  const H = mod.__helpers__
+  const e = H.buildTypeEdits('(', { before: 'abc', after: '', fwHalf: false })
+  assert.equal(e.length, 1); assert.equal(e[0].text, '()')
+})
 // ── 决策层（纯函数）──────────────────────────────────────────────────────
 // 照 VS Code 的 typeWithInterceptors：先算出「该做什么」，再由 applier 落地。
 // 这些用例不碰 DOM，跑得快、看得清 —— 事件层那几张矩阵只留少量真机必测项。

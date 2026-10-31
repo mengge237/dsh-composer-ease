@@ -1,3 +1,9 @@
+- **0.9.61**（2026-10-29，`SHA`）：**复刻 VS Code 的打字拦截层（模式枚举 + before 集合 + 编辑列表）**。
+  ① 常量照本机产物逐字搬：`DEFAULT_AUTOCLOSE_BEFORE_LANGUAGE_DEFINED_QUOTES = ";:.,=}])> \t"`、`…BRACKETS = "'\"`;:.,=}])> \t"`、`…WHITESPACE = " \t"`；模式枚举 `always|languageDefined|beforeWhitespace|never`。
+  ② 新增 `autoCloseMode/setAutoCloseMode`、`shouldAutoCloseBefore(prev, mode, kind)`、`buildTypeEdits(ch, ctx) → [{range,text,caret,select}]` —— 与 VS Code 的 `typeWithInterceptors` 同构：先把该做什么算成编辑列表，再由 applier 统一落地。
+  ③ 一处**刻意偏差**（已写进注释与测试）：`languageDefined` 下我们允许词/中文后成对 —— 聊天框里 `abc` 后打 `(` 要 `abc()`，VS Code 的 before 集合里没有字母。
+  ④ 判据：新增 6 组复刻用例（模式语义、before 集合逐字符、编辑列表三条形状、词后成对的偏差），行为套件 147 → **153 项**。
+  ⑤ ctx 契约写成判据：`before` 是「选区之前」的文本，`selection` 是选中文本（整段选中时 `before` 为空）—— 这一条先写错、被测试抓住。
 - **0.9.60**（2026-10-29，`13f9e46`）：**配对收敛出「唯一决策入口」`decideType`（照 VS Code 的 typeWithInterceptors）**。
   本地从 VS Code 产物里挖到的路子（不是猜）：① 设置是**模式**不是规则（`autoClosingBrackets`／`autoClosingQuotes` = `always|languageDefined|beforeWhitespace|never`）；② 成对表来自**语言配置**（`getAutoClosingPairs` / `getSurroundingPairs`）；③ 判定是一个 `shouldAutoCloseBefore(regex)` + token 类型（`_inString/_inComment/_inRegEx`）；④ 编辑是 `typeWithInterceptors(...)` 一次算出编辑列表，再由模型统一 `executeEdits`。
   我们过去是「逐段在事件层打补丁」，所以选中/删除会和宿主模型脱节（全角换算栽的就是这类）。本版先落第 ④ 条的骨架：`decideType(ch, ctx)` 纯函数，返回 `wrap | skip | convert | pair | insert`，不碰 DOM；矩阵测试直接打这张表（新增 4 例，行为套件 143 → **147 项**）。
