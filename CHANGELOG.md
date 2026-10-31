@@ -1,3 +1,7 @@
+- **0.9.65**（2026-10-29，`SHA`）：**去掉输入法分支里的重复换算（三条输入路统一到 `decideType`）**。
+  ① `onInput` 里那份「替换前一个全角字符」的分支删除：换算已由 beforeinput 的 `decideType` 统一给出 `convert`，两条路同时换算会互相打架。`fwKeyHandled` 只保留「清标记」的作用。
+  ② 真机复验七条：IME `（`/`【`（开关开）→ `()`/`[]`、`abc` 后打 `(` → `abc()`、空框 `"` → `""`、IME `（`（开关关）→ `（）`、框选 `"`/`(` → `"选中这段"`/`(选中这段)`。
+  ③ 判据：行为套件 153 项、离线 206 项全过；散文闸干净；`check:refactor` 由上一条 `refactor:` 提交复位。
 - **0.9.64**（2026-10-29，`4b2b695`）：**beforeinput 也接入 `decideType`（VS Code 移植第 2 条路）；`flushBeforeFix` 重写**。
   ① beforeinput 不再自己判：`decideType(ch, {before, after, fwHalf})` → `insert` 时零干预，其余把 `pendingFix` 记成 `skip|convert|pair`，落地仍在 `flushBeforeFix`。
   ② `flushBeforeFix` 按动作重排（surround / convert / skip / pair），convert 用梯子等原生全角字符落地后「合成 Backspace 删掉 + 插半角对子」——上一版把 convert 分支插进了 skip 块里（因而从不执行），重写后修好。
