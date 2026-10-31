@@ -140,13 +140,18 @@ ok('空框打 ( → 配对成 ()，caret 落中间', () => {
   assert.ok(ev.prevented, '要 preventDefault，否则宿主会再插一个 (')
 })
 
-ok('标识符/路径后打 ( → 只插一个（保护 call( 与 E:/path 场景）', () => {
+// 口径改了（对齐 VS Code `autoClosingBrackets: languageDefined`）：词/数字后**也补对**。
+// 旧行为「标识符后只插一个」正是用户看到的「括号不配对」，这里改成矩阵里的一格。
+ok('标识符后打 ( → 也补对（abc → abc()）', () => {
   const a = mkEd('abc')
   keydown(a, { key: '(' })
-  assert.equal(a.value, 'abc(')
+  assert.equal(a.value, 'abc()')
+})
+
+ok('路径分隔符后打 ( → 也补对（E:/x/ → E:/x/()）', () => {
   const b = mkEd('E:/x/')
   keydown(b, { key: '(' })
-  assert.equal(b.value, 'E:/x/(')
+  assert.equal(b.value, 'E:/x/()')
 })
 
 ok('全角（ 走 input 事件补配对（IME 合成不一定带对应 keydown）', () => {
@@ -235,8 +240,9 @@ await okAsync('候选类型预设：一行循环四态，/ 菜单不再被四个
  // / 菜单里的候选行数：引号模式 + 候选类型 + 严格配对 = 3
   const slash = H6.buildTriggerSources().find((x) => x.trigger === '/')
   const rows = await slash.candidates({}, {})
-  assert.equal(rows.length, 3, '/ 菜单应只有 3 行：' + rows.map((r) => r.name).join(','))
+  assert.equal(rows.length, 4, '/ 菜单应有 4 行：' + rows.map((r) => r.name).join(','))
   assert.ok(rows.some((r) => r.name === '候选类型'), '要有候选类型这一行')
+  assert.ok(rows.some((r) => r.name === '重置插件设置'), '要有重置插件设置这一行')
 })
 
 await okAsync('/ 菜单：错拼兜底 —— /compot 补出 compact，正常拼写与宿主已给出的行都不重复', async () => {
@@ -255,7 +261,7 @@ await okAsync('/ 菜单：错拼兜底 —— /compot 补出 compact，正常拼
 await okAsync('/ 菜单：三条设置行按 query 过滤（宿主那组消失时别只剩我们）', async () => {
   const H = mod.__helpers__
   const slash = H.buildTriggerSources().find((x) => x.trigger === '/');
-  assert.equal((await slash.candidates({}, {})).length, 3, '空 query 三行都在');
+  assert.equal((await slash.candidates({}, {})).length, 4, '空 query 四行都在（引号模式/候选类型/重置插件设置/严格配对）');
   const comp = await slash.candidates({}, { query: 'comp' });
   assert.equal(comp.filter((r) => r.name === '引号模式').length, 0, '打 /comp 时设置行让位：' + JSON.stringify(comp.map((r) => r.name)));
   const zh = await slash.candidates({}, { query: '引号' });
@@ -263,6 +269,70 @@ await okAsync('/ 菜单：三条设置行按 query 过滤（宿主那组消失�
   assert.equal(zh[0].name, '引号模式');
 })
 
+// ── 配对矩阵（核心判据）────────────────────────────────────────────────
+// 一格写清「键 → 期望文本」，以后动配对逻辑必须同时改这张表：
+// 逐个 bug 打补丁止不住，是因为没有一条能一眼看全的判据。
+const PAIR_MATRIX = [
+  ['(', '()'], ['[', '[]'], ['{', '{}'],
+  ['"', '""'], ["'", "''"], ['`', '``'],
+  ['（', '（）'], ['【', '【】'], ['「', '「」'], ['《', '《》'],
+]
+
+ok('配对矩阵·默认（auto）：每个开符都得到对应闭符', () => {
+  const H = mod.__helpers__
+  fetchReply = { ok: true, candidates: [], wordGate: true }
+  H.setQuoteMode('auto')
+  const bad = []
+  for (const pair of PAIR_MATRIX) {
+    const ed = mkEd('')
+    input(ed)
+    keydown(ed, { key: pair[0] })
+    if (ed.value !== pair[1]) bad.push(pair[0] + ' → ' + JSON.stringify(ed.value) + '（期望 ' + JSON.stringify(pair[1]) + '）')
+  }
+  assert.deepEqual(bad, [], '配对结果与矩阵不符：' + bad.join('；'))
+})
+
+ok('配对矩阵·默认（auto）：英文与中文之后也补对', () => {
+  const H = mod.__helpers__
+  fetchReply = { ok: true, candidates: [], wordGate: true }
+  H.setQuoteMode('auto')
+  const cases = [['abc', '"', 'abc""'], ['你好', '"', '你好""'], ['abc', '(', 'abc()']]
+  const bad = []
+  for (const c of cases) {
+    const ed = mkEd(c[0])
+    input(ed)
+    keydown(ed, { key: c[1] })
+    if (ed.value !== c[2]) bad.push(c[0] + ' + ' + c[1] + ' → ' + JSON.stringify(ed.value) + '（期望 ' + JSON.stringify(c[2]) + '）')
+  }
+  assert.deepEqual(bad, [], '上下文配对与矩阵不符：' + bad.join('；'))
+})
+
+ok('配对矩阵·标红模式（warn）：引号只插一个，括号仍补对', () => {
+  const H = mod.__helpers__
+  fetchReply = { ok: true, candidates: [], wordGate: true }
+  H.setQuoteMode('warn')
+  const ed = mkEd('')
+  input(ed)
+  keydown(ed, { key: '"' })
+  assert.equal(ed.value, '"', 'warn 模式引号只插一个：' + ed.value)
+  const ed2 = mkEd('')
+  input(ed2)
+  keydown(ed2, { key: '(' })
+  assert.equal(ed2.value, '()', 'warn 模式括号照旧配对：' + ed2.value)
+  H.setQuoteMode('auto')
+})
+
+ok('设置迁移：旧版存下的 quoteMode=warn 被 schema 迁移清掉，当前版保留显式选择', () => {
+  const H = mod.__helpers__
+  sandbox.window.localStorage.setItem('dsh-composer-ease:quoteMode', 'warn')
+  sandbox.window.localStorage.removeItem('dsh-composer-ease:schema')
+  H.migrateSettings()
+  assert.equal(H.quoteMode(), 'auto', '迁移后应回到 auto')
+  H.setQuoteMode('warn')
+  H.migrateSettings()
+  assert.equal(H.quoteMode(), 'warn', 'schema 已是当前版时保留用户选择')
+  H.setQuoteMode('auto')
+})
 // 中文候选一律由服务端词典决定（客户端没有分词器）。这里只守一条：客户端不再自己切汉字串，
 // 所以「整句当候选」这类问题从源头消失，也不再需要一个写死的长度上限。
 ok('客户端不切汉字串：草稿里的中文不进本文词', () => {
@@ -991,14 +1061,20 @@ ok('矩阵·auto 模式连按三下引号 → 仍是一对', () => {
   assert.equal(ed.value, '""', '三下仍是一对：' + ed.value)
 })
 
-// 6) 标识符/路径后面不配对（保护代码）
-for (const text of ['a', 'a(', 'E:/path', 'foo.', 'x@y']) {
-  ok(`矩阵·${text} 后打 ( → 只插一个`, () => {
+// 6) 对齐 VS Code `autoClosingBrackets: languageDefined`：词/数字/路径后**照样补对**；
+//    只有上一个字符本身就是成对符号时才不补（避免 (( 这种叠罗汉）。
+for (const text of ['a', 'E:/path', 'foo.', 'x@y']) {
+  ok(`矩阵·${text} 后打 ( → 补对（VS Code 口径）`, () => {
     const ed = mkEd(text, text.length)
     keydown(ed, { key: '(' })
-    assert.equal(ed.value, text + '(', '不该配对：' + ed.value)
+    assert.equal(ed.value, text + '()', '应当补对：' + ed.value)
   })
 }
+ok('矩阵·a( 后打 ( → 只插一个（上一个字符已是开符）', () => {
+  const ed = mkEd('a(', 2)
+  keydown(ed, { key: '(' })
+  assert.equal(ed.value, 'a((', '叠罗汉不该再补对：' + ed.value)
+})
 
 // 7) 中文正文后面仍要配对
 ok('矩阵·中文正文后打 ( → 配对', () => {

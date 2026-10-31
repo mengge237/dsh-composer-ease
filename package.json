@@ -1,6 +1,6 @@
 {
   "name": "dsh-composer-ease",
-  "version": "0.9.56",
+  "version": "0.9.57",
   "type": "module",
   "main": "lib/index.js",
   "files": [

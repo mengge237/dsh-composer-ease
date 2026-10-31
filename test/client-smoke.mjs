@@ -53,13 +53,16 @@ ok('严格配对开关：默认关，能写入也能读回', () => {
 })
 
 ok('配对判据：光标前是路径/标识符字符就不自动配对（保护输入路径与函数调用场景）', () => {
-  assert.equal(H.shouldPair('open E:/S_Software'), false, '结尾是标识符：像路径/词中，别配对')
+ // 口径改了（对齐 VS Code）：词/路径后面照样补对；只有上一字符本身是成对符号时才不补
+  assert.equal(H.shouldPair('open E:/S_Software'), true, '路径后也补对（VS Code 口径）')
+  assert.equal(H.shouldPair('('), false, '上一个字符是开符时不叠罗汉')
   assert.equal(H.shouldPair('写一个'), true, '结尾是 CJK 字：该配对')
  // 改口径：成对家族前面的符号一律不补对（原来这里断言 false→改成 true 的那条已作废）
   assert.equal(H.shouldPair('call('), false, '光标已在 ( 后：只插一个，不再补成 (()')
   assert.equal(H.shouldPair('list['), false, '方括号同理：不补')
   assert.equal(H.shouldPair('“'), false, '中文前引号后：不补')
-  assert.equal(H.shouldPair('path/'), false, '结尾 / 视作路径中：不配')
+  // 口径改了（对齐 VS Code）：路径分隔符后也补对
+  assert.equal(H.shouldPair('path/'), true, '路径分隔符后也补对')
 })
 ok('配对判据看右边：右边紧跟文字时只插一个开符（使用中 2026-10-16 踩到「在文字前打前引号被补成一对」）', () => {
   assert.equal(H.shouldPair('', 'abc'), false, '右边是字母：只插前引号')
