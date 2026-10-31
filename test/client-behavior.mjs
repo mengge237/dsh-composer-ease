@@ -154,7 +154,7 @@ ok('路径分隔符后打 ( → 也补对（E:/x/ → E:/x/()）', () => {
   assert.equal(b.value, 'E:/x/()')
 })
 
-ok('全角括号开关：关＝保持输入法的 （），开＝打成半角 ()', () => {
+ok('全角括号开关：默认开＝打成半角 ()，显式关＝保持全角（）', () => {
   const H = mod.__helpers__
   H.setFwHalf(false)
   const off = mkEd('（')
@@ -164,13 +164,16 @@ ok('全角括号开关：关＝保持输入法的 （），开＝打成半角 ()
   const on = mkEd('（')
   input(on)
   assert.equal(on.value, '()', '开时应换成半角对子：' + on.value)
-  H.setFwHalf(false)
+  H.setFwHalf(true)
 })
-ok('全角（ 走 input 事件补配对（IME 合成不一定带对应 keydown）', () => {
+ok('全角（ 走 input 事件：默认换算成半角 ()（关掉开关时补全角对子）', () => {
+  const H = mod.__helpers__
+  H.setFwHalf(false)
   const ed = mkEd('（')
   input(ed)
-  assert.equal(ed.value, '（）', '全角也要补出配对：' + ed.value)
+  assert.equal(ed.value, '（）', '关掉开关时全角也要补出配对：' + ed.value)
   assert.equal(ed.selectionStart, 1, 'caret 要落在中间（真机会再推一拍校正）')
+  H.setFwHalf(true)
 })
 
 ok('选中一段再打 ( → 环绕成 (选区)，选区保持选中', () => {
@@ -284,16 +287,18 @@ await okAsync('/ 菜单：三条设置行按 query 过滤（宿主那组消失�
 // ── 配对矩阵（核心判据）────────────────────────────────────────────────
 // 一格写清「键 → 期望文本」，以后动配对逻辑必须同时改这张表：
 // 逐个 bug 打补丁止不住，是因为没有一条能一眼看全的判据。
+// 第三列＝全角括号开关关掉时的期望（默认开：全角括号换成半角对子）
 const PAIR_MATRIX = [
-  ['(', '()'], ['[', '[]'], ['{', '{}'],
-  ['"', '""'], ["'", "''"], ['`', '``'],
-  ['（', '（）'], ['【', '【】'], ['「', '「」'], ['《', '《》'],
+  ['(', '()', '()'], ['[', '[]', '[]'], ['{', '{}', '{}'],
+  ['"', '""', '""'], ["'", "''", "''"], ['`', '``', '``'],
+  ['（', '()', '（）'], ['【', '[]', '【】'], ['「', '「」', '「」'], ['《', '《》', '《》'],
 ]
 
-ok('配对矩阵·默认（auto）：每个开符都得到对应闭符', () => {
+ok('配对矩阵·默认（auto，全角括号开关开）：每个开符都得到对应闭符', () => {
   const H = mod.__helpers__
   fetchReply = { ok: true, candidates: [], wordGate: true }
   H.setQuoteMode('auto')
+  H.setFwHalf(true)
   const bad = []
   for (const pair of PAIR_MATRIX) {
     const ed = mkEd('')
@@ -302,6 +307,23 @@ ok('配对矩阵·默认（auto）：每个开符都得到对应闭符', () => {
     if (ed.value !== pair[1]) bad.push(pair[0] + ' → ' + JSON.stringify(ed.value) + '（期望 ' + JSON.stringify(pair[1]) + '）')
   }
   assert.deepEqual(bad, [], '配对结果与矩阵不符：' + bad.join('；'))
+})
+
+
+ok('配对矩阵·全角括号开关关掉：全角开符配全角闭符', () => {
+  const H = mod.__helpers__
+  fetchReply = { ok: true, candidates: [], wordGate: true }
+  H.setFwHalf(false)
+  const bad = []
+  for (const pair of PAIR_MATRIX) {
+    if (pair[2] === pair[1]) continue
+    const ed = mkEd('')
+    input(ed)
+    keydown(ed, { key: pair[0] })
+    if (ed.value !== pair[2]) bad.push(pair[0] + ' → ' + JSON.stringify(ed.value) + '（期望 ' + JSON.stringify(pair[2]) + '）')
+  }
+  assert.deepEqual(bad, [], '关掉开关时与矩阵不符：' + bad.join('；'))
+  H.setFwHalf(true)
 })
 
 ok('配对矩阵·默认（auto）：英文与中文之后也补对', () => {
@@ -856,6 +878,8 @@ ok('水印角度随语言种数增长并封顶 45°（1→14、2→26、3→38�
 })
 
 ok('成对家族一刀切：前一个字符是任意成对符号时，只插一个、不补闭符', () => {
+  const H = mod.__helpers__
+  H.setFwHalf(false)   // 这条验的是「不叠罗汉」规则本身，先关掉全角→半角换算
   const cases = [['(', ')'], ['[', ']'], ['{', '}'], ['（', '）'], ['【', '】'], ['「', '」'], ['“', '”'], ['"', '"'], ["'", "'"], ['`', '`']]
   for (const [open, close] of cases) {
     const ed = mkEd(open, 1)                              // 光标就在这个符号之后
@@ -864,6 +888,11 @@ ok('成对家族一刀切：前一个字符是任意成对符号时，只插一�
     assert.equal(ed.value.length, 2, `总长必须是 2（只多插这一个字符）：` + ed.value.length)
     if (open !== close) assert.ok(!ed.value.includes(close), `不许出现闭符 ${close}：` + ed.value)
   }
+  H.setFwHalf(true)
+  // 开关打开时同一个键会被换成半角，形状变成「全角 + 半角对子」的一半，单独钉住
+  const fw = mkEd('（', 1)
+  keydown(fw, { key: '（' })
+  assert.equal(fw.value, '（(', '全角（ 后打（：第二个被换成半角开符：' + fw.value)
 })
 
 ok('多行选区加符号：换行必须原样保留，不许被并成一行', () => {
@@ -997,12 +1026,13 @@ function bi(ed, data) {
 
 // 1) 空框：**括号家族**补成一对、光标在中间；**引号家族**只插一个（契约变更：
 // 补对要靠 DOM Range 把光标塞回两符之间，Lexical 的模型选区不认 → 快速连打会多出一个引号）。
-for (const [open, close] of [['(', ')'], ['[', ']'], ['{', '}'], ['`', '`'],
-                             ['（', '）'], ['【', '】'], ['「', '」'], ['『', '』'], ['《', '》'], ['〈', '〉']]) {
-  ok(`矩阵·空框打 ${open} → 补成 ${open}${close}，caret 在中间`, () => {
+// 全角括号默认被换成半角（fwHalf 默认开），所以期望值按开关换算后再断言
+for (const [open, close, expect] of [['(', ')', '()'], ['[', ']', '[]'], ['{', '}', '{}'], ['`', '`', '``'],
+                             ['（', '）', '()'], ['【', '】', '[]'], ['「', '」', '「」'], ['『', '』', '『』'], ['《', '》', '《》'], ['〈', '〉', '〈〉']]) {
+  ok(`矩阵·空框打 ${open} → 补成 ${expect}，caret 在中间`, () => {
     const ed = mkEd('')
     keydown(ed, { key: open })
-    assert.equal(ed.value, open + close, `期望 ${open}${close}，实得 ` + ed.value)
+    assert.equal(ed.value, expect, `期望 ${expect}，实得 ` + ed.value)
     assert.equal(ed.selectionStart, 1, 'caret 应在中间：' + ed.selectionStart)
   })
 }
@@ -1020,11 +1050,11 @@ for (const q of ['"', "'", '“', '‘']) {
 mod.__helpers__.setQuoteMode('auto')
 
 // 2) 光标前已有「未闭合」的开符：只插一个（这是核心那条）
-for (const [open, close, text] of [['"', '"', '"你好'], ["'", "'", "'abc"], ['`', '`', '`code'], ['“', '”', '“文字'], ['（', '）', '（说明']]) {
+for (const [open, close, text, want] of [['"', '"', '"你好', '"'], ["'", "'", "'abc", "'"], ['`', '`', '`code', '`'], ['“', '”', '“文字', '“'], ['（', '）', '（说明', '()']]) {   // 换算发生在规则之前：全角（ 先变成半角 (，再按半角规则补对
   ok(`矩阵·${text} 末尾再打 ${open} → 只插一个`, () => {
     const ed = mkEd(text, text.length)
     keydown(ed, { key: open })
-    assert.equal(ed.value, text + open, `期望 ${text}${open}，实得 ` + ed.value)
+    assert.equal(ed.value, text + want, `期望 ${text}${want}，实得 ` + ed.value)
   })
 }
 
