@@ -62,7 +62,7 @@
   "engines": {
     "node": ">=20"
   },
-  "description": "VS Code feel for the DeepSeek Harness Web composer: bracket/quote pairing, wrap-on-selection, and a completion popup over draft words, language tables, workspace files and model ids. Full-width brackets from a Chinese IME default to half-width ().",
+  "description": "Composer for the DeepSeek Harness Web GUI: bracket and quote pairing, wrap-on-selection, closer skipping, empty-pair backspace, and a completion popup over draft words, language tables, workspace files and model ids. Full-width brackets typed through a Chinese IME are converted to half-width ().",
   "keywords": [
     "dsh-plugin",
     "deepseek-harness",

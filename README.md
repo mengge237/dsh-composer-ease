@@ -1,5 +1,5 @@
 ---
-description: "VS Code-feel composer for the DeepSeek Harness Web GUI: bracket/quote pairing, wrapping a selection, and a completion popup fed by draft words, language tables, workspace files, model ids and snippets; for DSH users and maintainers of composer plugins."
+description: "Composer for the DeepSeek Harness Web GUI: bracket and quote pairing, wrap-on-selection, closer skipping, empty-pair backspace, and a completion popup over draft words, language tables, workspace files and model ids. Full-width brackets typed through a Chinese IME are converted to half-width ()."
 kind: "package-reference"
 ---
 
