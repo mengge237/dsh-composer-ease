@@ -11,7 +11,9 @@ const bad = []
 const need = ['id', 'name', 'nameEn', 'author', 'repo', 'category', 'subcategory', 'description', 'descriptionEn']
 for (const k of need) if (!entry[k]) bad.push('条目缺字段：' + k)
 if (entry.id !== pkg.name) bad.push('id 与包名不一致：' + entry.id + ' vs ' + pkg.name)
-const repo = String(pkg.repository && pkg.repository.url || pkg.repository || '').replace(/\.git$/, '')
+const repo = String(pkg.repository && pkg.repository.url || pkg.repository || '')
+  .replace(/^git\+/, '')
+  .replace(/\.git$/, '')
 if (repo && entry.repo !== repo) bad.push('repo 与 package.json 不一致：' + entry.repo + ' vs ' + repo)
 // 描述里出现形如 0.9.x 的版本号就必须等于当前版本（避免再写「当前 0.9.1」这种 stagnation）
 for (const text of [entry.description, entry.descriptionEn, entry.name, entry.nameEn]) {

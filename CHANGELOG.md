@@ -1,3 +1,7 @@
+- **0.9.67**（2026-11-01，`SHA`）：**补 npm 元数据 + 免令牌发布流程（回应「npm 描述不对」「令牌只有 7 天」）。**
+  ① npm 页面描述此前是空的 `description`，npm 回落到 README 的 YAML front matter，于是显示成 `--- description: "…"` 这种脏文本。现在 `package.json` 补了 `description`（英文一句）、`keywords`（dsh-plugin / deepseek-harness / composer / autocomplete / cordis）、`repository`、`homepage`、`bugs`。
+  ② 新增 `.github/workflows/publish.yml`：用 npm **Trusted Publishing（OIDC）** 发布 —— `permissions: id-token: write` + `npm publish --provenance`，**不需要任何 npm 令牌、不会过期**，同时带 provenance。触发方式是 GitHub Release 发布或手动 dispatch。
+  ③ 说明：仓库里这次只改元数据与 CI，没有改运行代码；npm 上仍是 0.9.66（该版本 package.json 的 description 为空）。要让它显示正确描述，需要 0.9.67 发一次（走 CI 或任一枚可发布令牌）。
 - **0.9.66**（2026-10-31，`15dcf47`）：**真机留证入仓 + 条目同步闸（回应「PR 总是慢一步」「没有真机复现」两条反馈）**。
   ① 真机复现变成可查的产物：`npm run test:real -- <url>` 跑 33 条真机矩阵并写 `test/real/last-run.json`（时间、包版本、通过数、失败明细，token 脱敏）；`npm run check:real` 检查留证新鲜度（超 14 天或版本不符就提示补跑），已进 `check:all`。
   ② 首次运行就抓到两条真失败：`C2 全角括号配对`（期望 `（）`，实际 `()` —— 0.9.59 改了默认）、`D1 / 菜单三行设置`（实际 5 行 —— 0.9.58 加了「全角括号」「重置插件设置」）。两条用例按新契约更新后 **33/33**。

@@ -1,6 +1,6 @@
 {
   "name": "dsh-composer-ease",
-  "version": "0.9.66",
+  "version": "0.9.67",
   "type": "module",
   "main": "lib/index.js",
   "files": [
@@ -61,5 +61,21 @@
   "license": "MIT",
   "engines": {
     "node": ">=20"
+  },
+  "description": "VS Code feel for the DeepSeek Harness Web composer: bracket/quote pairing, wrap-on-selection, and a completion popup over draft words, language tables, workspace files and model ids. Full-width brackets from a Chinese IME default to half-width ().",
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "composer",
+    "autocomplete",
+    "cordis"
+  ],
+  "homepage": "https://github.com/mengge237/dsh-composer-ease#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mengge237/dsh-composer-ease.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mengge237/dsh-composer-ease/issues"
   }
 }
