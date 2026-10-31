@@ -287,6 +287,35 @@ await okAsync('/ 菜单：三条设置行按 query 过滤（宿主那组消失�
 // ── 配对矩阵（核心判据）────────────────────────────────────────────────
 // 一格写清「键 → 期望文本」，以后动配对逻辑必须同时改这张表：
 // 逐个 bug 打补丁止不住，是因为没有一条能一眼看全的判据。
+// ── 决策层（纯函数）──────────────────────────────────────────────────────
+// 照 VS Code 的 typeWithInterceptors：先算出「该做什么」，再由 applier 落地。
+// 这些用例不碰 DOM，跑得快、看得清 —— 事件层那几张矩阵只留少量真机必测项。
+ok('decideType：空框打 ( → pair；右边已是闭符 → skip', () => {
+  const H = mod.__helpers__
+  H.setQuoteMode('auto'); H.setFwHalf(true)
+  assert.equal(H.decideType('(', { before: '', after: '' }).action, 'pair')
+  assert.equal(H.decideType('(', { before: '', after: ')' }).action, 'skip')
+})
+
+ok('decideType：有选区 → wrap（不是 pair，也不是 insert）', () => {
+  const H = mod.__helpers__
+  assert.equal(H.decideType('"', { before: 'abc', after: '', selection: 'abc' }).action, 'wrap')
+})
+
+ok('decideType：全角括号开关开 → convert 成半角对子；关 → 按全角配对', () => {
+  const H = mod.__helpers__
+  const on = H.decideType('（', { before: '', after: '', fwHalf: true })
+  assert.equal(on.action, 'convert'); assert.equal(on.open, '('); assert.equal(on.close, ')')
+  const off = H.decideType('（', { before: '', after: '', fwHalf: false })
+  assert.equal(off.open, '（'); assert.equal(off.close, '）')
+})
+
+ok('decideType：未闭合开符之后再打同一个 → insert（不叠罗汉）', () => {
+  const H = mod.__helpers__
+  H.setQuoteMode('auto'); H.setFwHalf(true)
+  const r = H.decideType('"', { before: '他说"', after: '' })
+  assert.equal(r.action, 'insert')
+})
 // 第三列＝全角括号开关关掉时的期望（默认开：全角括号换成半角对子）
 const PAIR_MATRIX = [
   ['(', '()', '()'], ['[', '[]', '[]'], ['{', '{}', '{}'],
