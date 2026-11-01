@@ -20,6 +20,10 @@ jobs:
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
+      - name: npm 11.5.1+（Trusted Publishing 的最低版本；Node 22 自带的是 10.x）
+        run: |
+          npm install -g npm@^11.5.1
+          npm --version
       - run: npm install --ignore-scripts
       - run: npm run check:all
       - run: npm publish --provenance --access public
