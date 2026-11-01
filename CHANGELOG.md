@@ -1,3 +1,9 @@
+- **0.9.68**（2026-11-01，`d958138`）：**输入法那条路不再多出引号，选中句子框得住了（回应「Shift+引号出三个」「框不住句子」）。**
+  ① 三引号的根因：中文输入法打 `“` 先起 composition，beforeinput 在合成期间就补闭符，插 DOM 那一下把合成打断，浏览器随后把合成串再落一次 —— 实测空框 `“` 得 `“”“`，带选区得 `““abc”`。现在合成期（`isComposing` / `insertCompositionText`）零干预，上屏后再收尾：`“` → `“”`、`（` → `()`。
+  ② 框不住的根因：compositionstart 那一刻浏览器已把选区换成上屏字符，句子没了，之后补什么都补不回来。现在 compositionstart 记「起点 + 内层」，compositionend 后先删掉那个上屏字符、再把 `开符+内层+闭符` 粘回去 —— 选中 `abc` 上屏 `“` 得 `“abc”`、上屏 `（` 得 `(abc)`（旧行为是 `（()`，或整段被吞）。
+  ③ 闭符越过：光标后已有一个自动补的闭符时，再上屏 `”` 不多插一个（`“你好”` 不会变 `“你好””`）。
+  ④ 两条路统一：框选也认「全角括号」开关（旧行为框出来是 `（abc）`，与单打一个 `（` 得 `()` 各说各话）。
+  ⑤ 判据：真机矩阵 33 → **38 条**（新增 C8–C12：组成上屏、上屏框选、闭符越过），一轮 38/38 写入 `test/real/last-run.json`；离线 `npm test` 全过（行为套件 154 项）；散文/结构/文档/隐私/双语文案/条目同步/副本各闸全绿。
 - **0.9.67**（2026-11-01，`2e15bbb`）：**补 npm 元数据 + 免令牌发布流程（回应「npm 描述不对」「令牌只有 7 天」）。**
   ① npm 页面描述此前是空的 `description`，npm 回落到 README 的 YAML front matter，于是显示成 `--- description: "…"` 这种脏文本。现在 `package.json` 补了 `description`（英文一句）、`keywords`（dsh-plugin / deepseek-harness / composer / autocomplete / cordis）、`repository`、`homepage`、`bugs`。
   ② 新增 `.github/workflows/publish.yml`：用 npm **Trusted Publishing（OIDC）** 发布 —— `permissions: id-token: write` + `npm publish --provenance`，**不需要任何 npm 令牌、不会过期**，同时带 provenance。触发方式是 GitHub Release 发布或手动 dispatch。
