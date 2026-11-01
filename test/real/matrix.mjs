@@ -1,8 +1,8 @@
-// 用例矩阵：一条命令把 33 个用例在同一台运行中的宿主上跑 N 轮，输出每轮的通过/失败与实际值。
+// 用例矩阵：一条命令把 38 个用例在同一台运行中的宿主上跑 N 轮，输出每轮的通过/失败与实际值。
 // 前置：先起一个干净的 demo 宿主 —— dsh --profile demo --port 3081 --no-open
 // 用法：node test/real/matrix.mjs "http://127.0.0.1:3081/?token=…" 3
 // 为什么放在 test/real/：它要活宿主与浏览器，不进 npm test（那五支是离线假 DOM / 纯逻辑）。
-// 判据：每轮 33 条全绿才算过；失败项会打印实际值（弹层状态、文本、caret），不用再补日志。
+// 判据：每轮 38 条全绿才算过；失败项会打印实际值（弹层状态、文本、caret），不用再补日志。
 let chromium
 for (const spec of ['playwright', process.env.PLAYWRIGHT_ENTRY].filter(Boolean)) {
   try { ({ chromium } = await import(spec)); break } catch (e) {}
@@ -34,6 +34,15 @@ for (let round = 1; round <= ROUNDS; round++) {
   const popup = () => page.evaluate(() => { const el = document.getElementById('dsh-cp-popup'); return { display: el ? el.style.display : 'none', rows: el ? Array.from(el.children).map((c) => (c.innerText || '').replace(/\s+/g, ' ').trim()) : [], ghost: (document.getElementById('dsh-cp-ghost') || {}).textContent || '', copies: document.querySelectorAll('#dsh-cp-popup').length } });
   const menuRows = () => page.evaluate(() => Array.from(document.querySelectorAll('[role="option"], [role="menuitem"]')).map((o) => (o.innerText || '').replace(/\s+/g, ' ').trim()));
   const caret = () => page.evaluate(() => { const root = document.querySelector('[data-composer-input]'); const sel = window.getSelection(); if (!sel || !sel.rangeCount) return -1; const r = sel.getRangeAt(0); const pre = r.cloneRange(); pre.selectNodeContents(root); pre.setEnd(r.startContainer, r.startOffset); return pre.toString().length });
+  const cdp = await page.context().newCDPSession(page)
+ // 输入法那两条路：上屏（无组成）与「组成 + 上屏」—— 后者才是中文输入法的日常形状
+  const imeType = async (t) => { await cdp.send('Input.insertText', { text: t }); await page.waitForTimeout(420) }
+  const imeCompose = async (t) => {
+    await cdp.send('Input.imeSetComposition', { text: t, selectionStart: t.length, selectionEnd: t.length })
+    await page.waitForTimeout(60)
+    await cdp.send('Input.insertText', { text: t })
+    await page.waitForTimeout(520)
+  }
   async function reset(s) { await page.click('[data-composer-input]'); await page.keyboard.press('Control+a'); await page.keyboard.press('Backspace'); await page.waitForTimeout(90); if (s) await page.keyboard.type(s, { delay: 25 }); await page.waitForTimeout(110) }
   async function seedType(s) { await page.keyboard.type(s, { delay: 45 }); await page.waitForTimeout(650) }
 
@@ -98,6 +107,18 @@ for (let round = 1; round <= ROUNDS; round++) {
     return { waves, textBottom: line ? Math.round(line.bottom) : null, boxBottom: Math.round(root.getBoundingClientRect().bottom) }
   });
   check(round, 'C7 未闭合波浪线贴文字', warn.waves.length > 0 && warn.textBottom !== null && Math.abs(warn.waves[0] - warn.textBottom) <= 4, JSON.stringify(warn));
+
+  // C8-C12 输入法路径（组成与上屏），三引号/框不住那两类的回归闸
+  await reset(''); await imeCompose('\u201c');
+  check(round, 'C8 组成上屏 “ 只落一对', (await text()) === '\u201c\u201d', await text());
+  await reset(''); await imeCompose('\uff08');
+  check(round, 'C9 组成上屏 （ 换半角一对', (await text()) === '()', await text());
+  await reset('abc'); await page.keyboard.press('Control+a'); await page.waitForTimeout(140); await imeCompose('\u201c');
+  check(round, 'C10 选中 + 组成上屏 “ 框得住', (await text()) === '\u201cabc\u201d', await text());
+  await reset('abc'); await page.keyboard.press('Control+a'); await page.waitForTimeout(140); await imeType('\uff08');
+  check(round, 'C11 选中 + 上屏 （ 框得住且换半角', (await text()) === '(abc)', await text());
+  await reset(''); await imeType('\u201c'); await page.keyboard.type('\u4f60\u597d', { delay: 25 }); await imeType('\u201d');
+  check(round, 'C12 引号写完再打闭符不多一个', (await text()) === '\u201c\u4f60\u597d\u201d', await text());
 
   // D / 菜单
   await reset(''); await page.keyboard.type('/', { delay: 30 }); await page.waitForTimeout(1000);

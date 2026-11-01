@@ -62,7 +62,7 @@ dsh plugin --profile web remove dsh-composer-ease
 npm run build          # 片段 → lib/client.js
 npm test               # 五支离线套件，185 项，0 网络
 npm run check:all      # 结构 / 重复 / 重构预算 / 文档 / 隐私 / 散文 / 副本
-node test/real/matrix.mjs "http://127.0.0.1:3081/?token=…" 3 --verbose   # 真机矩阵，每轮 33 条
+node test/real/matrix.mjs "http://127.0.0.1:3081/?token=…" 3 --verbose   # 真机矩阵，每轮 38 条
 ```
 
 宿主 composer 是 Lexical：不认 `sel.modify(...)`、不认 `beforeinput` 的 `preventDefault`、`input` 事件不保证派发 —— 选区操作一律走「摊平偏移 + 显式 Range + 跨帧校验」。

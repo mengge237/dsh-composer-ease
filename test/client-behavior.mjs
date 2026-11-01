@@ -840,9 +840,21 @@ ok('框选后打符号：走 beforeinput 把选区框起来（中文输入法/�
   const ev = { target: ed, data: '（', prevented: false, preventDefault() { this.prevented = true } }
   handlers.beforeinput(ev)
   assert.equal(ev.prevented, true, '要拦住宿主自己插那个字符')
-  assert.equal(ed.value, '（xyz）', '要框成 开符+选区+闭符：' + ed.value)
+ // 全角括号开关默认开：框出来跟单打一个 （ 一样换半角（旧期望是 （xyz），两条路各说各话）
+  assert.equal(ed.value, '(xyz)', '要框成 开符+选区+闭符：' + ed.value)
   assert.equal(ed.selectionStart, ed.value.length, '光标落在闭符之后（使用中 2026-10-20 定的落点）')
   assert.equal(ed.selectionEnd, ed.value.length, '不再回选到内层内容')
+})
+
+ok('框选 + 全角括号开关关掉：照输入法给的 （ 框', () => {
+  sandbox.window.localStorage.setItem('dsh-composer-ease:fullwidthHalf', '0')
+  const ed = mkEd('xyz', 3)
+  ed.selectionStart = 0
+  ed.selectionEnd = 3
+  const ev = { target: ed, data: '（', prevented: false, preventDefault() { this.prevented = true } }
+  handlers.beforeinput(ev)
+  assert.equal(ed.value, '（xyz）', '开关关掉就该用全角：' + ed.value)
+  sandbox.window.localStorage.removeItem('dsh-composer-ease:fullwidthHalf')
 })
 
 await okAsync('行内灰字提示：首位候选比已打的前缀多出来的那截贴在光标后（VSCode inline suggestion 手感）', async () => {
