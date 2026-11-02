@@ -3,6 +3,7 @@
   ② 现状（2026-11-02 实测）：run `41464342688` 对 0.9.70 发布回 `404 … could not be found or you do not have permission`，`https://registry.npmjs.org/dsh-composer-ease/0.9.70` 同回 404，线上 `latest=0.9.69` —— 说明 npm 侧 Trusted Publisher 绑定还没生效。
   ③ 校正一条误判：对**已存在**版本重发时 npm 会先回 `You cannot publish over the previously published versions`，那是版本存在性检查、发生在认证之前，**不能**当作「认证已通过」的证据（本版一度据此误判，已更正）。
   ④ 前置条件已在仓库里备齐：`checkout` 的 `fetch-depth: 0`、CI 里 `npm install -g npm@^11.5.1`；缺的只是 npm 页面上那条 publisher 绑定（user/repo/workflow 逐字对齐、Environment 留空、勾 npm publish）。
+  ⑦ **provider 契约（P1）**：新增 `registerProvider({id, priority, triggerChars, provide})`，返回 disposer；候选统一规整成 `{kind,value,label,detail,sortText,filterText,commitChars,src}`；排序按 priority → sortText → label（VS Code 的 sortText 语义）；某家抛错/超时只丢它自己那一份；注册口优先 `ctx.provide('composerEase', …)`，退 `window.__DSH_COMPOSER_EASE__`。其它插件因此可以往补全里喂候选，不必自绘弹层。行为套件新增契约用例（排序 / triggerChars 过滤 / 失败隔离 / disposer），共 155 项。
   ⑥ 补全取词改为**上下文优先**（对齐 VS Code 的 `wordBasedSuggestions`）：新增 `draftTokenWords` 从草稿里取标识符（`useEffect`/`useMemo` 这类），与原有中文分词取词一起排最前；`rankCandidates` 增加**来源优先**（本文 > 词典/词表 > 文件/模型/片段），词典降为兜底且只留少量补位；新增 `showWords` 同位开关「词典兜底」（关掉后只用本文取词）。实测：`use` + 草稿含 hooks → 前置 `useMemo(本文) useEffect(本文) useContext(本文)`；`临` + 草稿含「临时目录」→ `临时(本文)` 从第 4 位升到第 1 位；`words=0` 时只剩本文词。
   ⑤ 另修一处交互：**鼠标一点就收弹层**（与方向键同口径）。旧行为只有方向键 / Home / End / 移出焦点会收，鼠标点输入框时弹层赖着不走；现在 document 上挂 `mousedown`，点在弹层内部不拦（那是「接受这一行」）。smoke 的监听数 6 → 7。
 - **0.9.69**（2026-11-02，`195173d`）：**全角半角不再交替；括号换算后光标留在括号里；`<` 也能框住选区。**

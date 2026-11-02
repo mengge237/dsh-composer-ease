@@ -739,6 +739,28 @@ ok('右边已经是同一个引号：跳过去，不再补一对（否则越打�
   assert.equal(ev.prevented, true)
 })
 
+ok('provider 契约：注册/排序/触发字符/失败隔离，都按 VS Code 的语义走', async () => {
+  const H = mod.__helpers__
+  const seen = []
+  const d1 = H.registerProvider({ id: 'low', priority: 20, provide: ({ prefix }) => { seen.push('low:' + prefix); return [{ label: 'zeta', insertText: 'zeta', sortText: 'b' }] } })
+  const d2 = H.registerProvider({ id: 'high', priority: 10, provide: () => [{ label: 'alpha', value: 'alpha', sortText: 'a' }] })
+  const d3 = H.registerProvider({ id: 'boom', priority: 30, provide: () => { throw new Error('x') } })
+  const d4 = H.registerProvider({ id: 'dotonly', priority: 5, triggerChars: ['.'], provide: () => [{ label: 'never', value: 'never' }] })
+  const items = await H.providerCandidates('al')
+  assert.equal(items.map((x) => x.value).join(','), 'alpha,zeta', 'priority 小的先、同层按 sortText：' + JSON.stringify(items.map((x) => x.value)))
+  assert.equal(items[0].src, 'provider:high', '候选要带来源标记')
+ // 其它用例也会驱动补全管线，所以只断言「本轮前缀被问过」且「triggerChars 不匹配的从未被问」
+  assert.ok(seen.indexOf('low:al') >= 0, '本轮前缀要被问到：' + JSON.stringify(seen))
+  assert.equal(seen.filter((s) => s.indexOf('dotonly') >= 0).length, 0, 'triggerChars 不匹配的来源不该被调用：' + JSON.stringify(seen))
+  assert.equal(H.__providerList__().length, 4, '注册了四家（dotonly 也在表里，只是本轮不触发）')
+  const bad = H.registerProvider({ id: 'no-provide' })
+  bad()
+  d1(); d2(); d3(); d4()
+  assert.equal(H.__providerList__().length, 0, 'disposer 之后一家都不剩')
+  const api = H.exposeProviderApi({})
+  assert.ok(api && typeof api.register === 'function', '要交出注册口（cordis 拿不到时退到 window）')
+})
+
 ok('全角/IME 路径同样看右边：右边有字就只插开符', () => {
   const ed = mkEd('“文字', 1)                         // 宿主已经把「插入，光标在引号后
   input(ed, '“')
