@@ -1,7 +1,8 @@
-- **0.9.70**（2026-11-02，`b99b453`）：**发版链路改走 Trusted Publishing（OIDC），本版即链路自证。**
-  ① 本版无功能变更，唯一目的是把「改版本 → push → `gh workflow run publish.yml` → 注册表可见」这条闭环跑通一次：CI 用 `id-token: write` 换 npm 短期令牌、`npm publish --provenance`，全过程不需要 2FA、不存任何长期令牌。
-  ② 前置已在前几版补齐：`checkout` 加 `fetch-depth: 0`（否则看提交历史的闸在浅克隆里恒红）、CI 里 `npm install -g npm@^11.5.1`（Trusted Publishing 要求，Node 22 镜像自带 10.9.9）。
-  ③ 判据：工作流成功后核 `https://registry.npmjs.org/dsh-composer-ease/0.9.70` 返回 200、包根 `dist-tags.latest=0.9.70`、tarball 文件数与本地一致、provenance 可查。
+- **0.9.70**（2026-11-02，`b99b453`）：**待发布：本版用于打通 OIDC 发版链路，当前仍未成功（CI 回 404）。**
+  ① 目的：把「改版本 → push → `gh workflow run publish.yml` → 注册表可见」跑通，之后发版不再需要本机按指纹、也不存长期令牌。
+  ② 现状（2026-11-02 实测）：run `41464342688` 对 0.9.70 发布回 `404 … could not be found or you do not have permission`，`https://registry.npmjs.org/dsh-composer-ease/0.9.70` 同回 404，线上 `latest=0.9.69` —— 说明 npm 侧 Trusted Publisher 绑定还没生效。
+  ③ 校正一条误判：对**已存在**版本重发时 npm 会先回 `You cannot publish over the previously published versions`，那是版本存在性检查、发生在认证之前，**不能**当作「认证已通过」的证据（本版一度据此误判，已更正）。
+  ④ 前置条件已在仓库里备齐：`checkout` 的 `fetch-depth: 0`、CI 里 `npm install -g npm@^11.5.1`；缺的只是 npm 页面上那条 publisher 绑定（user/repo/workflow 逐字对齐、Environment 留空、勾 npm publish）。
 - **0.9.69**（2026-11-02，`195173d`）：**全角半角不再交替；括号换算后光标留在括号里；`<` 也能框住选区。**
   ① 全角闭符过去按字面落地，开符却被换成半角，于是 `（` 得 `()`、再打 `）` 得 `()）`，看起来就是「全角半角来回交替」。现在 `）`/`】` 与开符同一套换算（`FW_CLOSE_ASCII`），光标后已有半角那个就按「越过」处理，一对括号宽度始终一致。
   ② 括号换算后光标停在**对子之间**（补 `ensureCaretAt`）：旧行为落在闭符之后，接着打的正文跑到括号外面，再框选就成了 `"()abc"` —— 这类「引号把上次的括号一起框进来」正是这条。
