@@ -1,4 +1,4 @@
-- **0.9.70**（2026-11-02，`ci`）：**发版链路改走 Trusted Publishing（OIDC），本版即链路自证。**
+- **0.9.70**（2026-11-02，`b99b453`）：**发版链路改走 Trusted Publishing（OIDC），本版即链路自证。**
   ① 本版无功能变更，唯一目的是把「改版本 → push → `gh workflow run publish.yml` → 注册表可见」这条闭环跑通一次：CI 用 `id-token: write` 换 npm 短期令牌、`npm publish --provenance`，全过程不需要 2FA、不存任何长期令牌。
   ② 前置已在前几版补齐：`checkout` 加 `fetch-depth: 0`（否则看提交历史的闸在浅克隆里恒红）、CI 里 `npm install -g npm@^11.5.1`（Trusted Publishing 要求，Node 22 镜像自带 10.9.9）。
   ③ 判据：工作流成功后核 `https://registry.npmjs.org/dsh-composer-ease/0.9.70` 返回 200、包根 `dist-tags.latest=0.9.70`、tarball 文件数与本地一致、provenance 可查。
