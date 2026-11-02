@@ -118,9 +118,9 @@ ok('apply 挂监听并返回 disposer（假 document 记数）', () => {
   sandbox.document.addEventListener = () => adds++
   sandbox.document.removeEventListener = () => removes++
   const dispose = mod.apply({})
-  assert.equal(adds, 6)
+  assert.equal(adds, 7)          // keydown / beforeinput / input / mousedown / focusout / compositionstart / compositionend
   dispose()
-  assert.equal(removes, 6)
+  assert.equal(removes, 7)
 })
 
 console.log(`\n${n} 项全过`)
