@@ -128,6 +128,9 @@ for (let round = 1; round <= ROUNDS; round++) {
   check(round, 'C15 选中 + 上屏 < 框得住', (await text()) === '<abc>', await text());
   await reset(''); await imeType('\uff08'); await page.keyboard.type('abc', { delay: 25 }); await page.waitForTimeout(200);
   check(round, 'C16 括号里打的字留在括号内', (await text()) === '(abc)', await text());
+  // C17：组成上屏补出来的那一对，光标必须留在两符之间，否则下一字打到引号外面
+  await reset(''); await imeCompose('\u201c'); await page.keyboard.type('X', { delay: 15 }); await page.waitForTimeout(300);
+  check(round, 'C17 上屏成对后打字落在引号内', (await text()) === '\u201cX\u201d', await text() + ' caret=' + await caret());
 
   // D / 菜单
   await reset(''); await page.keyboard.type('/', { delay: 30 }); await page.waitForTimeout(1000);
