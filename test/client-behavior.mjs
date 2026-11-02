@@ -257,7 +257,7 @@ await okAsync('候选类型预设：一行循环四态，/ 菜单不再被四个
   const rows = await slash.candidates({}, {})
   assert.equal(rows.length, 1, '/ 菜单只该有严格配对一行：' + rows.map((r) => r.name).join(','))
   assert.equal(rows[0].name, '严格配对', '唯一那行是严格配对')
-  assert.ok(H6.settingsRows().length === 6, '设置页那一行要有六个开关（含词典兜底）')
+  assert.ok(H6.settingsRows().length === 7, '设置页那一行要有七个开关（含行内建议与词典兜底）')
 })
 
 await okAsync('/ 菜单：错拼兜底 —— /compot 补出 compact，正常拼写与宿主已给出的行都不重复', async () => {
