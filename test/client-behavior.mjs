@@ -752,11 +752,13 @@ ok('provider 契约：注册/排序/触发字符/失败隔离，都按 VS Code �
  // 其它用例也会驱动补全管线，所以只断言「本轮前缀被问过」且「triggerChars 不匹配的从未被问」
   assert.ok(seen.indexOf('low:al') >= 0, '本轮前缀要被问到：' + JSON.stringify(seen))
   assert.equal(seen.filter((s) => s.indexOf('dotonly') >= 0).length, 0, 'triggerChars 不匹配的来源不该被调用：' + JSON.stringify(seen))
-  assert.equal(H.__providerList__().length, 4, '注册了四家（dotonly 也在表里，只是本轮不触发）')
+ // 内建两家（builtin-context / builtin-local）也在表里：注册 4 家测试源后共 6 家
+  assert.ok(H.__providerList__().length >= 4 && H.__providerList__().indexOf('builtin-context') >= 0,
+    '内建源要作为 provider 在表里：' + JSON.stringify(H.__providerList__()))
   const bad = H.registerProvider({ id: 'no-provide' })
   bad()
   d1(); d2(); d3(); d4()
-  assert.equal(H.__providerList__().length, 0, 'disposer 之后一家都不剩')
+  assert.equal(H.__providerList__().filter((id) => id.indexOf('builtin-') < 0).length, 0, 'disposer 之后只剩内建那两家')
   const api = H.exposeProviderApi({})
   assert.ok(api && typeof api.register === 'function', '要交出注册口（cordis 拿不到时退到 window）')
 })
