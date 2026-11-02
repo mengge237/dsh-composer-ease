@@ -37,6 +37,12 @@
 2. **暴露面**：优先 cordis 服务（`inject: ['composerEase']`），取不到时退 `window.__DSH_COMPOSER_EASE__`，并把注册句柄返回给调用方做 dispose。
 3. **我们自己也降级为一个 provider**（priority 最低）：词典/文件/模型都走同一契约，别再无接口地塞进渲染层。宿主 `/`、`@` 触发位保持现状（只留严格配对一行），不与官方源抢。
 
+## 三之二、当前落地边界（2026-11-02）
+
+- **已 provider 化**：`builtin-context`（上下文词，priority 5）、`builtin-local`（草稿本地词，priority 12）；管线通过 `builtinSources(prefix, ed)` 复用同一段实现，所以外部调用方看到的内建源与管线用的是同一份代码。
+- **尚未 provider 化**：服务端那一路（词典 / 文件 / 模型）。它带着 `wordGate`（"这是不是完整词义"的闸）与 `lang` 两个管线专属参数，且必须在首屏之后异步回来；改成 provider 需要把这两个参数经 ctx 传下去并回填 gate，本轮试过一半、因改动落在热路径且 diff 过大而回滚（保留在 `a607a38` 之后的状态）。
+- 结论：**外部 provider 已经可插**（`window.__DSH_COMPOSER_EASE__.register`），内建源 2/3 已统一到同一契约；剩下那一路是显式记账的边界，不是遗忘。
+
 ## 四、分阶段与验收
 
 - **P0（先做，风险最低）**：加 `wordBasedSuggestions` 同构的「会话草稿 + 当前文件上下文」取词，并把词典降为兜底；开关沿用 `showWords` 语义。
