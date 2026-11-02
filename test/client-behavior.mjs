@@ -759,6 +759,12 @@ ok('provider 契约：注册/排序/触发字符/失败隔离，都按 VS Code �
   bad()
   d1(); d2(); d3(); d4()
   assert.equal(H.__providerList__().filter((id) => id.indexOf('builtin-') < 0).length, 0, 'disposer 之后只剩内建那两家')
+ // 服务端那一路是「缓存视图」：记住一次结果后，provider 直接给回来，**不再发请求**
+  const beforeFetch = fetchCalls.length
+  H.rememberServerItems('inp', [{ kind: 'word', value: 'input', detail: 'html 标签' }])
+  const served = await H.providerCandidates('inp')
+  assert.ok(served.some((x) => x.value === 'input'), 'builtin-server 要能把管线结果给出来：' + JSON.stringify(served.map((x) => x.value)))
+  assert.equal(fetchCalls.length, beforeFetch, 'builtin-server 不该自己发请求')
   const api = H.exposeProviderApi({})
   assert.ok(api && typeof api.register === 'function', '要交出注册口（cordis 拿不到时退到 window）')
 })
