@@ -35,7 +35,7 @@ dsh plugin --profile web remove dsh-composer-ease
 ## 使用本包
 
 | 操作 | 键 / 触发 | 行为 |
-|---|---|---|
+| --- | --- | --- |
 | 自动配对 | `(` `[` `{` `"` `'` 反引号与全角家族 | 光标落在中间；光标前是路径/标识符字符、或右边紧跟文字时不配对 |
 | 环绕选区 | 选中后打任意开符 | `内容` → `(内容)`；只支持单行选区（见边界） |
 | 跳闭合 / 删空对 | 右边已是闭符 / 光标夹在 `()` 里按退格 | 不重复插；一次删两侧 |
@@ -62,7 +62,7 @@ dsh plugin --profile web remove dsh-composer-ease
 npm run build          # 片段 → lib/client.js
 npm test               # 五支离线套件，185 项，0 网络
 npm run check:all      # 结构 / 重复 / 重构预算 / 文档 / 隐私 / 散文 / 副本
-node test/real/matrix.mjs "http://127.0.0.1:3081/?token=…" 3 --verbose   # 真机矩阵，每轮 45 条
+node test/real/matrix.mjs "http://127.0.0.1:3081/?token=…" 3 --verbose   # 真机矩阵，每轮 47 条
 ```
 
 宿主 composer 是 Lexical：不认 `sel.modify(...)`、不认 `beforeinput` 的 `preventDefault`、`input` 事件不保证派发 —— 选区操作一律走「摊平偏移 + 显式 Range + 跨帧校验」。

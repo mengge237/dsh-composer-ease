@@ -140,6 +140,21 @@ for (let round = 1; round <= ROUNDS; round++) {
   const wrapped = await text()
   check(round, 'C19 上屏后立刻框选仍包得住', wrapped === '"' + inner19 + '"', JSON.stringify(wrapped));
 
+  // C22：字符触发 + provider 契约（别家插件注册的来源能进补全）
+  await page.evaluate(() => {
+    const api = window.__DSH_COMPOSER_EASE__
+    if (!api) return
+    if (api.__t) api.__t()
+    api.__t = api.register({ id: 'matrix-dot', priority: 1, triggerChars: ['.'], provide: () => [{ label: 'beta', insertText: 'beta' }] })
+  })
+  await reset(''); await page.keyboard.type('a.', { delay: 30 }); await page.waitForTimeout(700);
+  const dotRows = await popup();
+  check(round, 'C22 点号触发 provider 候选', dotRows.display === 'block' && dotRows.rows.some((r) => r.indexOf('beta') >= 0), dotRows.display + ' / ' + dotRows.rows.slice(0, 2).join(' | '));
+  await page.evaluate(() => { const api = window.__DSH_COMPOSER_EASE__; if (api && api.__t) { api.__t(); api.__t = null } })
+  await reset(''); await page.keyboard.type('a.', { delay: 30 }); await page.waitForTimeout(600);
+  const dotRows2 = await popup();
+  check(round, 'C23 撤掉 provider 后点号不出层', dotRows2.display !== 'block', dotRows2.display)
+
   // D / 菜单
   await reset(''); await page.keyboard.type('/', { delay: 30 }); await page.waitForTimeout(1000);
   rows = await menuRows();
