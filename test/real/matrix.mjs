@@ -119,6 +119,15 @@ for (let round = 1; round <= ROUNDS; round++) {
   check(round, 'C11 选中 + 上屏 （ 框得住且换半角', (await text()) === '(abc)', await text());
   await reset(''); await imeType('\u201c'); await page.keyboard.type('\u4f60\u597d', { delay: 25 }); await imeType('\u201d');
   check(round, 'C12 引号写完再打闭符不多一个', (await text()) === '\u201c\u4f60\u597d\u201d', await text());
+  // C13-C16：全角闭符换算、括号内光标、< 包裹、括号后打字不跑到外面
+  await reset(''); await imeType('\uff09');
+  check(round, 'C13 全角闭符换成半角', (await text()) === ')', await text());
+  await reset(''); await imeType('\uff08');
+  check(round, 'C14 括号换算后光标在括号内', (await text()) === '()' && (await caret()) === 1, await text() + ' caret=' + await caret());
+  await reset('abc'); await page.keyboard.press('Control+a'); await page.waitForTimeout(140); await imeType('<');
+  check(round, 'C15 选中 + 上屏 < 框得住', (await text()) === '<abc>', await text());
+  await reset(''); await imeType('\uff08'); await page.keyboard.type('abc', { delay: 25 }); await page.waitForTimeout(200);
+  check(round, 'C16 括号里打的字留在括号内', (await text()) === '(abc)', await text());
 
   // D / 菜单
   await reset(''); await page.keyboard.type('/', { delay: 30 }); await page.waitForTimeout(1000);
