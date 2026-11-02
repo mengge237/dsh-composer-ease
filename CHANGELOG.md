@@ -3,6 +3,7 @@
   ② 现状（2026-11-02 实测）：run `41464342688` 对 0.9.70 发布回 `404 … could not be found or you do not have permission`，`https://registry.npmjs.org/dsh-composer-ease/0.9.70` 同回 404，线上 `latest=0.9.69` —— 说明 npm 侧 Trusted Publisher 绑定还没生效。
   ③ 校正一条误判：对**已存在**版本重发时 npm 会先回 `You cannot publish over the previously published versions`，那是版本存在性检查、发生在认证之前，**不能**当作「认证已通过」的证据（本版一度据此误判，已更正）。
   ④ 前置条件已在仓库里备齐：`checkout` 的 `fetch-depth: 0`、CI 里 `npm install -g npm@^11.5.1`；缺的只是 npm 页面上那条 publisher 绑定（user/repo/workflow 逐字对齐、Environment 留空、勾 npm publish）。
+  ⑤ 另修一处交互：**鼠标一点就收弹层**（与方向键同口径）。旧行为只有方向键 / Home / End / 移出焦点会收，鼠标点输入框时弹层赖着不走；现在 document 上挂 `mousedown`，点在弹层内部不拦（那是「接受这一行」）。smoke 的监听数 6 → 7。
 - **0.9.69**（2026-11-02，`195173d`）：**全角半角不再交替；括号换算后光标留在括号里；`<` 也能框住选区。**
   ① 全角闭符过去按字面落地，开符却被换成半角，于是 `（` 得 `()`、再打 `）` 得 `()）`，看起来就是「全角半角来回交替」。现在 `）`/`】` 与开符同一套换算（`FW_CLOSE_ASCII`），光标后已有半角那个就按「越过」处理，一对括号宽度始终一致。
   ② 括号换算后光标停在**对子之间**（补 `ensureCaretAt`）：旧行为落在闭符之后，接着打的正文跑到括号外面，再框选就成了 `"()abc"` —— 这类「引号把上次的括号一起框进来」正是这条。
