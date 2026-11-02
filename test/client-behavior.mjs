@@ -252,12 +252,12 @@ await okAsync('候选类型预设：一行循环四态，/ 菜单不再被四个
   assert.equal(H6.isKindOn('snippet'), false, '只有词：片段关')
   H6.cycleKindPreset(); assert.equal(H6.kindPresetLabel(), '全关')
   H6.cycleKindPreset(); assert.equal(H6.kindPresetLabel(), '全部')
- // / 菜单里的候选行数：引号模式 + 候选类型 + 严格配对 = 3
+ // 设置类搬去设置页后，"/" 只留「严格配对」一行（触发位是命令与技能的地盘）
   const slash = H6.buildTriggerSources().find((x) => x.trigger === '/')
   const rows = await slash.candidates({}, {})
-  assert.equal(rows.length, 5, '/ 菜单应有 5 行：' + rows.map((r) => r.name).join(','))
-  assert.ok(rows.some((r) => r.name === '候选类型'), '要有候选类型这一行')
-  assert.ok(rows.some((r) => r.name === '重置插件设置'), '要有重置插件设置这一行')
+  assert.equal(rows.length, 1, '/ 菜单只该有严格配对一行：' + rows.map((r) => r.name).join(','))
+  assert.equal(rows[0].name, '严格配对', '唯一那行是严格配对')
+  assert.ok(H6.settingsRows().length === 5, '设置页那一行仍要五个开关')
 })
 
 await okAsync('/ 菜单：错拼兜底 —— /compot 补出 compact，正常拼写与宿主已给出的行都不重复', async () => {
@@ -276,12 +276,12 @@ await okAsync('/ 菜单：错拼兜底 —— /compot 补出 compact，正常拼
 await okAsync('/ 菜单：三条设置行按 query 过滤（宿主那组消失时别只剩我们）', async () => {
   const H = mod.__helpers__
   const slash = H.buildTriggerSources().find((x) => x.trigger === '/');
-  assert.equal((await slash.candidates({}, {})).length, 5, '空 query 五行都在（引号模式/候选类型/全角括号/重置插件设置/严格配对）');
+  assert.equal((await slash.candidates({}, {})).length, 1, '空 query 只剩严格配对一行');
   const comp = await slash.candidates({}, { query: 'comp' });
-  assert.equal(comp.filter((r) => r.name === '引号模式').length, 0, '打 /comp 时设置行让位：' + JSON.stringify(comp.map((r) => r.name)));
-  const zh = await slash.candidates({}, { query: '引号' });
-  assert.equal(zh.length, 1, '打 /引号 只留一条：' + JSON.stringify(zh.map((r) => r.name)));
-  assert.equal(zh[0].name, '引号模式');
+  assert.equal(comp.filter((r) => r.name === '严格配对').length, 0, '打 /comp 时设置行让位：' + JSON.stringify(comp.map((r) => r.name)));
+  const zh = await slash.candidates({}, { query: '严格' });
+  assert.equal(zh.length, 1, '打 /严格 只留一条：' + JSON.stringify(zh.map((r) => r.name)));
+  assert.equal(zh[0].name, '严格配对');
 })
 
 // ── 配对矩阵（核心判据）────────────────────────────────────────────────

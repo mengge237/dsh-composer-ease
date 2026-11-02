@@ -143,7 +143,9 @@ for (let round = 1; round <= ROUNDS; round++) {
   // D / 菜单
   await reset(''); await page.keyboard.type('/', { delay: 30 }); await page.waitForTimeout(1000);
   rows = await menuRows();
-  check(round, 'D1 / 菜单五行设置', rows.filter((r) => r.indexOf('引号模式') >= 0 || r.indexOf('候选类型') >= 0 || r.indexOf('全角括号') >= 0 || r.indexOf('重置插件设置') >= 0 || r.indexOf('严格配对') >= 0).length === 5, rows.length + ' 行');
+ // 设置类入口已搬去设置页："/" 只留一行「严格配对」，其余四项不该再出现在这里
+  check(round, 'D1 / 菜单只留严格配对一行', rows.filter((r) => r.indexOf('严格配对') >= 0).length === 1
+    && rows.filter((r) => r.indexOf('引号模式') >= 0 || r.indexOf('候选类型') >= 0 || r.indexOf('全角括号') >= 0 || r.indexOf('重置插件设置') >= 0).length === 0, rows.length + ' 行');
   await reset(''); await page.keyboard.type('/comp', { delay: 35 }); await page.waitForTimeout(1100);
   rows = await menuRows();
   check(round, 'D2 /comp 设置行让位', rows.filter((r) => r.indexOf('引号模式') >= 0).length === 0 && rows.some((r) => r.indexOf('compact') >= 0), rows.length + ' 行');
