@@ -134,6 +134,11 @@ for (let round = 1; round <= ROUNDS; round++) {
   // C18-C19：上屏之后**紧接着**输入（闭符走粘贴原子编辑，落点由那次编辑决定）
   await reset(''); await imeCompose('\u201c'); await page.keyboard.type('ab', { delay: 8 }); await page.waitForTimeout(400);
   check(round, 'C18 上屏后立刻打字仍在引号内', (await text()) === '\u201cab\u201d', await text());
+  await reset(''); await imeCompose('\u201c'); await page.keyboard.type('ab', { delay: 8 }); await page.waitForTimeout(250);
+  const inner19 = await text()
+  await page.keyboard.press('Control+a'); await page.waitForTimeout(120); await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(600);
+  const wrapped = await text()
+  check(round, 'C19 上屏后立刻框选仍包得住', wrapped === '"' + inner19 + '"', JSON.stringify(wrapped));
 
   // D / 菜单
   await reset(''); await page.keyboard.type('/', { delay: 30 }); await page.waitForTimeout(1000);
