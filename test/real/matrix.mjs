@@ -131,6 +131,9 @@ for (let round = 1; round <= ROUNDS; round++) {
   // C17：组成上屏补出来的那一对，光标必须留在两符之间，否则下一字打到引号外面
   await reset(''); await imeCompose('\u201c'); await page.keyboard.type('X', { delay: 15 }); await page.waitForTimeout(300);
   check(round, 'C17 上屏成对后打字落在引号内', (await text()) === '\u201cX\u201d', await text() + ' caret=' + await caret());
+  // C18-C19：上屏之后**紧接着**输入（闭符走粘贴原子编辑，落点由那次编辑决定）
+  await reset(''); await imeCompose('\u201c'); await page.keyboard.type('ab', { delay: 8 }); await page.waitForTimeout(400);
+  check(round, 'C18 上屏后立刻打字仍在引号内', (await text()) === '\u201cab\u201d', await text());
 
   // D / 菜单
   await reset(''); await page.keyboard.type('/', { delay: 30 }); await page.waitForTimeout(1000);
