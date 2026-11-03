@@ -62,7 +62,7 @@ See [docs/boundaries-and-implementation.md](docs/boundaries-and-implementation.m
 npm run build          # fragments → lib/client.js
 npm test               # five offline suites, 185 items, zero network
 npm run check:all      # structure, duplicates, refactor budget, docs, privacy, prose, copies
-node test/real/matrix.mjs "http://127.0.0.1:3081/?token=…" 3 --verbose   # live matrix, 47 cases per round
+node test/real/matrix.mjs "http://127.0.0.1:3081/?token=…" 3 --verbose   # live matrix, 49 cases per round
 ```
 
 The host composer is Lexical: it ignores `sel.modify(...)`, ignores `beforeinput`'s `preventDefault`, and does not guarantee an `input` event — selection work uses flattened offsets plus explicit Ranges and cross-frame verification.

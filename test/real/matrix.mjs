@@ -134,6 +134,13 @@ for (let round = 1; round <= ROUNDS; round++) {
   // C18-C19：上屏之后**紧接着**输入（闭符走粘贴原子编辑，落点由那次编辑决定）
   await reset(''); await imeCompose('\u201c'); await page.keyboard.type('ab', { delay: 8 }); await page.waitForTimeout(400);
   check(round, 'C18 上屏后立刻打字仍在引号内', (await text()) === '\u201cab\u201d', await text());
+  // C18b：框住一段之后紧接着打字，字必须落进引号里（不是跑到闭符后面）
+  await reset('abc'); await page.keyboard.press('Control+a'); await page.waitForTimeout(140); await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(60);
+  await page.keyboard.type('X', { delay: 10 }); await page.waitForTimeout(400);
+  check(round, 'C18b 框住后立刻打字落在引号内', (await text()) === '"abcX"', await text());
+  await reset('abc'); await page.keyboard.press('Control+a'); await page.waitForTimeout(140); await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(450);
+  await page.keyboard.type('Y', { delay: 10 }); await page.waitForTimeout(400);
+  check(round, 'C18c 框住等待后再打字仍落在引号内', (await text()) === '"abcY"', await text());
   await reset(''); await imeCompose('\u201c'); await page.keyboard.type('ab', { delay: 8 }); await page.waitForTimeout(250);
   const inner19 = await text()
   await page.keyboard.press('Control+a'); await page.waitForTimeout(120); await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(600);
