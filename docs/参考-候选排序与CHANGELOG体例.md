@@ -150,9 +150,9 @@ node tools/gen-lexicon.mjs \
 
 | 文件 | 内容 | 手改？ |
 |---|---|---|
-| `lib/en-common.js` | **手写**常用词 518 条（常用度先验） | ✅ 可以改，这是唯一该手改的词表 |
-| `lib/en-lexicon.js` | 生成物：30,581 词（30k 词表 ∩ 语料排序）+ `EN_RANK` + `EN_COMMON` | ❌ 生成 |
-| `lib/domain-words.js` | 生成物：66 个本机领域词（`dsh` / `gh-archive` / `deepseek-harness`） | ❌ 生成 |
+| `lib/en-common.js` | **手写**常用词 518 条（常用度先验） | 可以改，这是唯一该手改的词表 |
+| `lib/en-lexicon.js` | 生成物：30,581 词（30k 词表 ∩ 语料排序）+ `EN_RANK` + `EN_COMMON` | 生成物，不手改 |
+| `lib/domain-words.js` | 生成物：66 个本机领域词（`dsh` / `gh-archive` / `deepseek-harness`） | 生成物，不手改 |
 
 **T2 的做法**：`an-array-of-english-words@2.0.0`（MIT，274,937 词）→ 只留 3-12 字符纯字母 → **用本机语料频次排序**取前 30k。
 词表本身没有词频，单纯按长度排会让 `deled` 压过 `delete`；所以顺序那一半来自 T3 的语料统计。

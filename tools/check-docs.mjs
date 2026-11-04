@@ -66,6 +66,11 @@ for (const f of files) {
     bad++
     console.error(`RED  留了 TODO/FIXME：${rel}`)
   }
+ // 表情符号不进对外文档：要强调就用文字，机器判据比口头约定可靠。
+  if (/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/u.test(text)) {
+    bad++
+    console.error(`RED  文档里有表情符号：${rel}`)
+  }
  // 只查行内链接；代码围栏里的示例跳过（否则 doc 里写 `[x](y)` 当例子会假红）
  // 围栏代码块 + **行内代码**都要剥掉：文档里用反引号展示 `[x](y)` 这种语法是常态，
  // 不剥就会被当成死链（写「如何做 README 图」时出现）。

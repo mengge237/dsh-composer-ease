@@ -29,13 +29,14 @@ const SKIP = new Set(['words.js', 'cjk-lexicon.js', 'en-lexicon.js', 'en-common.
 // vendored 上游代码（注释是原作者写的英文，不按本仓口径改）
 const VENDORED = new Set(['fuzzy.js'])
 // 契约上限：只许往下调，不许上调（每清一批就调低一次）
-const MAX = { date: 0, firstPerson: 0, narrative: 0, block: 0, longLine: 0 }
+const MAX = { date: 0, firstPerson: 0, narrative: 0, block: 0, longLine: 0, emoji: 0 }
 
 const RULES = [
   { id: 'date', what: '注释里写日期（属于 CHANGELOG）', rx: /20\d{2}-\d{1,2}-\d{1,2}/ },
   { id: 'firstPerson', what: '第一人称/对话痕迹', rx: /本人|我们|使用中/ },
   { id: 'narrative', what: '叙事故障词（踩到/教训/真机/读数…）', rx: /踩到|踩过|教训|别再|真机|读数/ },
   { id: 'longLine', what: '单行注释超 120 字符', rx: null },
+  { id: 'emoji', what: '注释里有表情符号', rx: /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/u },
 ]
 
 function walk(dir, out = []) {
@@ -48,7 +49,7 @@ function walk(dir, out = []) {
   return out
 }
 
-const hits = { date: [], firstPerson: [], narrative: [], block: [], longLine: [] }
+const hits = { date: [], firstPerson: [], narrative: [], block: [], longLine: [], emoji: [] }
 for (const file of walk(ROOT)) {
   const rel = path.relative(ROOT, file).replace(/\\/g, '/')
   const lines = fs.readFileSync(file, 'utf8').split('\n')

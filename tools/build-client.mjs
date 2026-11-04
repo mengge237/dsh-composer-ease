@@ -26,7 +26,7 @@ if (!files.includes('_head.js') || !files.includes('_tail.js')) {
 const read = (f) => fs.readFileSync(path.join(DIR, f), 'utf8').replace(/\s+$/, '')
 const parts = [read('_head.js'), ...mods.map(read), read('_tail.js')]
 const banner = [
-  '// ⚠ 本文件由 tools/build-client.mjs 从 lib/client/*.js 生成，**不要直接改**。',
+  '// 注意：本文件由 tools/build-client.mjs 从 lib/client/*.js 生成，**不要直接改**。',
   '// 改片段：lib/client/' + mods.join('、'),
   '',
 ].join('\n')
