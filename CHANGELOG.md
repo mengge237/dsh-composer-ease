@@ -1,3 +1,7 @@
+- **0.9.71**（2026-11-04，无 sha）：**两道闸新增表情判据；CI 取全历史**
+  ① `check-docs` 与 `verify-comment-prose` 各加一条：文档与注释里出现表情即红（上限 0）；仓里原有 5 个符号已清（生成头里的警告符两处、文档表格里的勾叉三处）。
+  ② `checks.yml` 的 checkout 加 `fetch-depth: 0`：浅克隆只有 1 条提交，`check:refactor` 因此误判成红，这是此前每次推送都发失败信的真因。
+  ③ 本地 12 道闸 + 五支离线套件退出码全 0；推后 checks 运行 `41834451674` 两平台皆绿。
 - **0.9.70**（2026-11-02，`b99b453`）：**待发布：本版用于打通 OIDC 发版链路，当前仍未成功（CI 回 404）。**
   ① 目的：把「改版本 → push → `gh workflow run publish.yml` → 注册表可见」跑通，之后发版不再需要本机按指纹、也不存长期令牌。
   ② 现状（2026-11-02 实测）：run `41464342688` 对 0.9.70 发布回 `404 … could not be found or you do not have permission`，`https://registry.npmjs.org/dsh-composer-ease/0.9.70` 同回 404，线上 `latest=0.9.69` —— 说明 npm 侧 Trusted Publisher 绑定还没生效。
