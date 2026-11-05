@@ -21,6 +21,7 @@
 - 一次提交一件事；按路径提交（`git add -- <paths>`），**不要** `git add -A`。
 - 发版两段式：先提交代码，拿到 sha 后把 CHANGELOG 条目里的占位换成该 sha，再提交一次。
 - 版本号只在 `package.json` 与 `CHANGELOG.md` 首条出现，两处必须一致。
+- 对外文字两套口径：本仓 README / CHANGELOG 不用 emoji、不写别家产品名；提交到别人清单（如 awesome 列表）的条目只服从对方表格格式——星数填数字、描述纯文本，表头里的符号是对方的，不动。
 
 ## 注释口径（`check:prose` 的阈值不是拍的）
 

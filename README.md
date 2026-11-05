@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-composer-ease` is a DSH bundle plugin that gives the Web composer the editing feel of VS Code: brackets and quotes pair up, typing an opener over a selection wraps it, a closer over an existing closer is skipped, backspace removes an empty pair, and a completion popup opens after two characters. The browser half is plain DOM; the server half exposes two read-only loopback routes and writes nothing.
+`dsh-composer-ease` is a DSH bundle plugin that adds a completion popup to the DSH Web composer, with bracket and quote pairing: brackets and quotes pair up, typing an opener over a selection wraps it, a closer over an existing closer is skipped, backspace removes an empty pair, and a completion popup opens after two characters. The browser half is plain DOM; the server half exposes two read-only loopback routes and writes nothing.
 
 ![overview](docs/banner.svg)
 
