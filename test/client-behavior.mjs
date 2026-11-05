@@ -75,6 +75,9 @@ const sandbox = {
     HTMLTextAreaElement: FakeTextArea,
     localStorage: { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k) },
     getComputedStyle: () => ({ font: '13px monospace' }),
+ // keydown / beforeinput 现在挂 window capture（要早于编辑器根节点上的宿主监听）
+    addEventListener: (t, fn) => { handlers[t] = fn },
+    removeEventListener: () => {},
   },
   document: documentFake,
   fetch: (url) => {

@@ -113,14 +113,20 @@ ok('inferLang：没写围栏时按上下文推语言（使用中 2026-10-16 提�
   assert.equal(H.inferLang('这段 const a = await fetch(x)'), 'javascript', 'const/await → javascript')
   assert.equal(H.inferLang('今天天气不错'), '', '没有技术线索就回空（交给习惯/公共池）')
 })
-ok('apply 挂监听并返回 disposer（假 document 记数）', () => {
-  let adds = 0, removes = 0
-  sandbox.document.addEventListener = () => adds++
-  sandbox.document.removeEventListener = () => removes++
+ok('apply 挂监听并返回 disposer（window 2 条 + document 5 条）', () => {
+  let docAdds = 0, docRemoves = 0, winAdds = 0, winRemoves = 0
+  sandbox.document.addEventListener = () => docAdds++
+  sandbox.document.removeEventListener = () => docRemoves++
+  sandbox.window.addEventListener = () => winAdds++
+  sandbox.window.removeEventListener = () => winRemoves++
   const dispose = mod.apply({})
-  assert.equal(adds, 7)          // keydown / beforeinput / input / mousedown / focusout / compositionstart / compositionend
+ // keydown / beforeinput 挂 window capture（宿主监听在编辑器根节点上，document 级早不过它）；
+ // 其余五条仍挂 document：input / mousedown / focusout / compositionstart / compositionend
+  assert.equal(winAdds, 2)
+  assert.equal(docAdds, 5)
   dispose()
-  assert.equal(removes, 7)
+  assert.equal(winRemoves, 2)
+  assert.equal(docRemoves, 5)
 })
 
 console.log(`\n${n} 项全过`)
