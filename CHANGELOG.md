@@ -1,3 +1,8 @@
+- **0.9.72**（2026-11-05，无 sha）：**框选被宿主先手吃掉（偶发留残余）修掉；对外文字去掉别家编辑器名**
+  ① 根因：宿主的 beforeinput/keydown 监听挂在编辑器根节点，`document` 级 capture 晚于它，宿主先把选区替掉一部分，栈上再粘贴就留下 `(abcdef)bcdef` 这类残余；残余在 40ms 就在、900ms 不变（`execCommand('delete')` 在 Lexical 上不落地）。
+  ② 修法：监听改挂 `window` capture（取不到 window 时退回 `document`）；粘贴对 Lexical 推后一拍、对文本域保持同步；落定后按 `open+inner+close` 归位，且只在残余确实是原选区尾巴时动手。
+  ③ 读数：真机矩阵 49/49、包裹压力 100/100（Ctrl+A / Shift / 引号 / 输入法四条路）、输入法时间线 0/60；离线五支套件全过。
+  ④ 文档：README 中英首段改为「给 DSH Web 输入框加一个补全提示框，并带括号与引号的配对」；`CONTRIBUTING` 写明两套对外文字口径（本仓不用 emoji、不写别家产品名；对外清单条目只服从对方表格格式）。
 - **0.9.71**（2026-11-04，无 sha）：**两道闸新增表情判据；CI 取全历史**
   ① `check-docs` 与 `verify-comment-prose` 各加一条：文档与注释里出现表情即红（上限 0）；仓里原有 5 个符号已清（生成头里的警告符两处、文档表格里的勾叉三处）。
   ② `checks.yml` 的 checkout 加 `fetch-depth: 0`：浅克隆只有 1 条提交，`check:refactor` 因此误判成红，这是此前每次推送都发失败信的真因。
