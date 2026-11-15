@@ -116,7 +116,7 @@ for (let round = 1; round <= ROUNDS; round++) {
   await reset('abc'); await page.keyboard.press('Control+a'); await page.waitForTimeout(140); await imeCompose('\u201c');
   check(round, 'C10 选中 + 组成上屏 “ 框得住', (await text()) === '\u201cabc\u201d', await text());
   await reset('abc'); await page.keyboard.press('Control+a'); await page.waitForTimeout(140); await imeType('\uff08');
-  check(round, 'C11 选中 + 上屏 （ 框得住且换半角', (await text()) === '(abc)', await text());
+  check(round, 'C11 选中 + 上屏 （ 框得住且保持全角', (await text()) === '（abc）', await text());
   await reset(''); await imeType('\u201c'); await page.keyboard.type('\u4f60\u597d', { delay: 25 }); await imeType('\u201d');
   check(round, 'C12 引号写完再打闭符不多一个', (await text()) === '\u201c\u4f60\u597d\u201d', await text());
   // C13-C16：全角闭符换算、括号内光标、< 包裹、括号后打字不跑到外面

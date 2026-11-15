@@ -600,7 +600,7 @@ await okAsync('方向键改选中：ArrowDown 之后 Tab 接受第二条（2026-
 })
 
 await okAsync('点击候选行：点哪条就插哪条（不再固定插第一条）', async () => {
-  fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'deferred', detail: '词典' }, { kind: 'word', value: 'denote', detail: '词典' }] }
+  fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'delta', detail: '词典' }, { kind: 'word', value: 'dense', detail: '词典' }] }
   const ed = mkEd('de')
   keydown(ed, { key: ' ', code: 'Space', ctrl: true })
   await tick()
@@ -608,7 +608,7 @@ await okAsync('点击候选行：点哪条就插哪条（不再固定插第一�
   const rows = [...p.children]
   assert.equal(rows.length, 2, '两条候选两行：' + rows.length)
   rows[1].onmousedown({ preventDefault() {} })
-  assert.equal(ed.value, 'denote', '点第二行应插入第二条：' + ed.value)
+  assert.equal(ed.value, 'dense', '点第二行应插入第二条：' + ed.value)
 })
 
 await okAsync('打两个字母自动弹（不用快捷键），本文词排在前面不等网络', async () => {
@@ -873,8 +873,8 @@ ok('框选后打符号：走 beforeinput 把选区框起来（中文输入法/�
   const ev = { target: ed, data: '（', prevented: false, preventDefault() { this.prevented = true } }
   handlers.beforeinput(ev)
   assert.equal(ev.prevented, true, '要拦住宿主自己插那个字符')
- // 全角括号开关默认开：框出来跟单打一个 （ 一样换半角（旧期望是 （xyz），两条路各说各话）
-  assert.equal(ed.value, '(xyz)', '要框成 开符+选区+闭符：' + ed.value)
+ // 包裹按用户真正按下的那个符号走：全角进、全角出（宽度换算只留给没有选区的补对）
+  assert.equal(ed.value, '（xyz）', '要框成 开符+选区+闭符：' + ed.value)
   assert.equal(ed.selectionStart, ed.value.length, '光标落在闭符之后（使用中 2026-10-20 定的落点）')
   assert.equal(ed.selectionEnd, ed.value.length, '不再回选到内层内容')
 })
@@ -1448,4 +1448,19 @@ ok('lintQuotes：未闭合给输入框打标，闭合后撤标（VS Code 的 squ
   ed.value = '"已闭合"'
   H.lintQuotes(ed)
   assert.notEqual(ed.getAttribute('data-dce-quote-warn'), '1', '闭合后应撤标')
+})
+
+ok('候选排序：前缀质量分级 + 近期使用衰减（不再只按来源优先级）', () => {
+  const H = mod.__helpers__
+  assert.equal(H.matchQuality('fun', 'function'), 1, '严格前缀')
+  assert.equal(H.matchQuality('unc', 'function'), 0.45, '出现在词中且不是词首')
+  assert.equal(H.matchQuality('tion', 'function'), 0.45, '后缀同样按词中算')
+  assert.equal(H.matchQuality('zzz', 'function'), 0, '没命中给 0')
+  const base = { providerPriority: 50 }
+  H.noteAccepted('bar')
+  const hot = H.scoreItem(Object.assign({ value: 'bar' }, base), 'ba')
+  const cold = H.scoreItem(Object.assign({ value: 'baz' }, base), 'ba')
+  assert.ok(hot > cold, '同前缀质量下，最近被接受过的项分更高：' + hot + ' vs ' + cold)
+  const far = H.scoreItem(Object.assign({ value: 'qux' }, { providerPriority: 5 }), 'ba')
+  assert.equal(far, 0, '前缀没命中直接 0 分，来源再高也不排上来')
 })
