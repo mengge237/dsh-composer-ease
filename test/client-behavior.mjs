@@ -1454,7 +1454,8 @@ ok('候选排序：前缀质量分级 + 近期使用衰减（不再只按来源�
   const H = mod.__helpers__
   assert.equal(H.matchQuality('fun', 'function'), 1, '严格前缀')
   assert.equal(H.matchQuality('unc', 'function'), 0.45, '出现在词中且不是词首')
-  assert.equal(H.matchQuality('tion', 'function'), 0.45, '后缀同样按词中算')
+  assert.equal(H.matchQuality('tion', 'function'), 0.2, '长前缀（≥4）落在词中：降到最低档，只沉不丢')
+  assert.equal(H.matchQuality('unc', 'function'), 0.45, '短前缀落在词中：正常档')
   assert.equal(H.matchQuality('zzz', 'function'), 0, '没命中给 0')
   const base = { providerPriority: 50 }
   H.noteAccepted('bar')
@@ -1463,4 +1464,15 @@ ok('候选排序：前缀质量分级 + 近期使用衰减（不再只按来源�
   assert.ok(hot > cold, '同前缀质量下，最近被接受过的项分更高：' + hot + ' vs ' + cold)
   const far = H.scoreItem(Object.assign({ value: 'qux' }, { providerPriority: 5 }), 'ba')
   assert.equal(far, 0, '前缀没命中直接 0 分，来源再高也不排上来')
+})
+
+await okAsync('提交字符：候选声明了某个字符，按它就等于接受这条（VS Code 的 commitCharacters）', async () => {
+  fetchReply = { ok: true, candidates: [{ kind: 'word', value: 'omega', label: 'omega', commitChars: ';' }] }
+  const ed = mkEd('om')
+  keydown(ed, { key: ' ', code: 'Space', ctrl: true })
+  await tick()
+  assert.equal(popupEl().style.display, 'block', '弹层要显示')
+  keydown(ed, { key: ';' })
+  await tick()
+  assert.equal(ed.value, 'omega', '按提交字符应当先接受候选：' + ed.value)
 })
