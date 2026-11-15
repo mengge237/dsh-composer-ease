@@ -1476,3 +1476,12 @@ await okAsync('提交字符：候选声明了某个字符，按它就等于接�
   await tick()
   assert.equal(ed.value, 'omega', '按提交字符应当先接受候选：' + ed.value)
 })
+
+ok('两段放宽：有前缀/词首命中的候选时，只落在词中的词类候选不再并排（VS Code filterGraceful 口径）', () => {
+  const H = mod.__helpers__
+  const mixed = [{ kind: 'word', value: 'delete' }, { kind: 'word', value: 'code' }, { kind: 'file', value: 'src/code.ts' }]
+  const kept = H.gracefulFilter(mixed, 'de').map((i) => i.value)
+  assert.equal(JSON.stringify(kept), JSON.stringify(['delete', 'src/code.ts']), '词中命中的词类候选被收掉，文件类不受影响：' + JSON.stringify(kept))
+  const onlyMid = [{ kind: 'word', value: 'code' }]
+  assert.equal(JSON.stringify(H.gracefulFilter(onlyMid, 'de').map((i) => i.value)), JSON.stringify(['code']), '严格与词首都为空时，词中命中的要放回来')
+})
