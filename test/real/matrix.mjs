@@ -131,6 +131,19 @@ for (let round = 1; round <= ROUNDS; round++) {
   // C17：组成上屏补出来的那一对，光标必须留在两符之间，否则下一字打到引号外面
   await reset(''); await imeCompose('\u201c'); await page.keyboard.type('X', { delay: 15 }); await page.waitForTimeout(300);
   check(round, 'C17 上屏成对后打字落在引号内', (await text()) === '\u201cX\u201d', await text() + ' caret=' + await caret());
+  // C20-C23：多行包裹、嵌套包裹、包裹后立刻打闭符、包裹后撤销（2026-11-16 真机实测口径）
+  await reset('ab'); await page.keyboard.press('Shift+Enter'); await page.keyboard.type('cd', { delay: 20 }); await page.waitForTimeout(200);
+  await page.keyboard.press('Control+a'); await page.waitForTimeout(140); await imeType('(');
+  check(round, 'C20 多行选区也能整段框住', (await text()) === '(ab\ncd)', await JSON.stringify(await text()));
+  await reset('outer text'); await page.keyboard.press('Control+a'); await page.waitForTimeout(140); await imeType('(');
+  await page.waitForTimeout(300); await page.keyboard.press('Control+a'); await page.waitForTimeout(140); await imeType('\u300c');
+  check(round, 'C21 已包裹的整段再包一层', (await text()) === '\u300c(outer text)\u300d', await text());
+  await reset('abc'); await page.keyboard.press('Control+a'); await page.waitForTimeout(140); await imeType('(');
+  await page.waitForTimeout(360); await imeType(')'); await page.waitForTimeout(300);
+  check(round, 'C22 包裹后立刻打闭符不多一个', (await text()) === '(abc)', await text());
+  await reset('abc'); await page.keyboard.press('Control+a'); await page.waitForTimeout(140); await imeType('(');
+  await page.waitForTimeout(420); await page.keyboard.press('Control+z'); await page.waitForTimeout(420);
+  check(round, 'C23 包裹后撤销一次回到裸文本', (await text()) === 'abc', await text());
   // C18-C19：上屏之后**紧接着**输入（闭符走粘贴原子编辑，落点由那次编辑决定）
   await reset(''); await imeCompose('\u201c'); await page.keyboard.type('ab', { delay: 8 }); await page.waitForTimeout(400);
   check(round, 'C18 上屏后立刻打字仍在引号内', (await text()) === '\u201cab\u201d', await text());
