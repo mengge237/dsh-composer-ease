@@ -1485,3 +1485,30 @@ ok('两段放宽：有前缀/词首命中的候选时，只落在词中的词类
   const onlyMid = [{ kind: 'word', value: 'code' }]
   assert.equal(JSON.stringify(H.gracefulFilter(onlyMid, 'de').map((i) => i.value)), JSON.stringify(['code']), '严格与词首都为空时，词中命中的要放回来')
 })
+
+ok('成对家族表驱动：14 个符号的「选中包裹」一律按按下什么配对', () => {
+  const H = mod.__helpers__
+  const FAMILIES = [['(', ')'], ['[', ']'], ['{', '}'], ['"', '"'], ["'", "'"], ['<', '>'],
+    ['（', '）'], ['【', '】'], ['「', '」'], ['『', '』'], ['《', '》'], ['〈', '〉'], ['“', '”'], ['‘', '’']]
+  const badWrap = [], badEmpty = []
+  FAMILIES.forEach(([open, close]) => {
+    const wrap = H.decideType(open, { before: '', after: '', selection: 'abc', fwHalf: false })
+    if (wrap.action !== 'wrap' || wrap.open !== open || wrap.close !== close) badWrap.push('包裹 ' + open + ' → ' + JSON.stringify(wrap))
+ // 空框那一档只有括号归 decideType 管；引号与 < 由各自模式决定（warn 只插一个、< 只用于包裹），不在这一格里断言
+    if ('([{（【「『《〈'.indexOf(open) >= 0) {
+      const empty = H.decideType(open, { before: '', after: '', selection: '', fwHalf: false })
+      if (empty.action !== 'pair') badEmpty.push('空框 ' + open + ' → ' + empty.action)
+    }
+  })
+  assert.equal(JSON.stringify(badWrap), '[]', '包裹表驱动不一致：' + badWrap.join('；'))
+  assert.equal(JSON.stringify(badEmpty), '[]', '空框补对表驱动不一致：' + badEmpty.join('；'))
+})
+
+ok('引号族越过：已经写成 "hi" 时再打全角引号，不再多插一个', () => {
+  const H = mod.__helpers__
+  ;['“', '‘', '”', '’'].forEach((ch) => {
+    const d = H.decideType(ch, { before: '"hi', after: '"', selection: '', fwHalf: false })
+    assert.equal(d.action, 'skip', ch + ' 应当越过已有引号，实际 ' + d.action)
+  })
+ // 空框里引号补不补对由模式决定（warn 只插一个），那条口径在别处断言，这里只测「越过」
+})
