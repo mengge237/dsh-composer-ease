@@ -131,7 +131,14 @@ for (let round = 1; round <= ROUNDS; round++) {
   // C17：组成上屏补出来的那一对，光标必须留在两符之间，否则下一字打到引号外面
   await reset(''); await imeCompose('\u201c'); await page.keyboard.type('X', { delay: 15 }); await page.waitForTimeout(300);
   check(round, 'C17 上屏成对后打字落在引号内', (await text()) === '\u201cX\u201d', await text() + ' caret=' + await caret());
-  // C20-C23：多行包裹、嵌套包裹、包裹后立刻打闭符、包裹后撤销（2026-11-16 真机实测口径）
+  // C20-C23：多行包裹、嵌套包裹、包裹后立刻打闭符、包裹后撤销（2026-11-16 真机实测口径）  // C24-C25：有选区按 Ctrl+Space 要弹层（此前无反应）、一次上屏长文本不许被配对逻辑拆开
+  await reset('abcdef'); await page.keyboard.press('Shift+ArrowLeft'); await page.keyboard.press('Shift+ArrowLeft'); await page.waitForTimeout(150);
+  await page.keyboard.press('Control+ '); await page.waitForTimeout(700);
+  const ppSel = await popup();
+  check(round, 'C24 有选区按 Ctrl+Space 也弹层', (await text()) === 'abcdef' && ppSel.display !== 'none' && ppSel.rows.length > 0, JSON.stringify({ display: ppSel.display, rows: ppSel.rows.slice(0, 2) }));
+  await reset(''); await imeType('这是一个很长的中文句子，包含“引号”与（括号）还有 English words 与 123。'); await page.waitForTimeout(500);
+  check(round, 'C25 一次上屏长文本不被拆开', (await text()) === '这是一个很长的中文句子，包含“引号”与（括号）还有 English words 与 123。', (await text()).slice(0, 40));
+
   await reset('ab'); await page.keyboard.press('Shift+Enter'); await page.keyboard.type('cd', { delay: 20 }); await page.waitForTimeout(200);
   await page.keyboard.press('Control+a'); await page.waitForTimeout(140); await imeType('(');
   check(round, 'C20 多行选区也能整段框住', (await text()) === '(ab\ncd)', await JSON.stringify(await text()));
