@@ -131,7 +131,12 @@ for (let round = 1; round <= ROUNDS; round++) {
   // C17：组成上屏补出来的那一对，光标必须留在两符之间，否则下一字打到引号外面
   await reset(''); await imeCompose('\u201c'); await page.keyboard.type('X', { delay: 15 }); await page.waitForTimeout(300);
   check(round, 'C17 上屏成对后打字落在引号内', (await text()) === '\u201cX\u201d', await text() + ' caret=' + await caret());
-  // C20-C23：多行包裹、嵌套包裹、包裹后立刻打闭符、包裹后撤销（2026-11-16 真机实测口径）  // C24-C25：有选区按 Ctrl+Space 要弹层（此前无反应）、一次上屏长文本不许被配对逻辑拆开
+  // C20-C23：多行包裹、嵌套包裹、包裹后立刻打闭符、包裹后撤销（2026-11-16 真机实测口径）  // C26：片段候选接受 —— 文字要落地、弹层要收起（此前 Tab 之后文本不变、弹层还在）
+  await reset(''); await page.keyboard.type('fn', { delay: 25 }); await page.waitForTimeout(1000);
+  await page.keyboard.press('Tab'); await page.waitForTimeout(900);
+  check(round, 'C26 片段候选接受后文字落地且弹层收起', /^function [A-Za-z]*\(/.test(await text().catch(() => '')) || (await text()).indexOf('function ') === 0
+    ? (await popup()).display === 'none' && (await text()).indexOf('function ') === 0 : false, JSON.stringify((await text()).slice(0, 40)));
+  // C24-C25：有选区按 Ctrl+Space 要弹层（此前无反应）、一次上屏长文本不许被配对逻辑拆开
   await reset('abcdef'); await page.keyboard.press('Shift+ArrowLeft'); await page.keyboard.press('Shift+ArrowLeft'); await page.waitForTimeout(150);
   await page.keyboard.press('Control+ '); await page.waitForTimeout(700);
   const ppSel = await popup();
