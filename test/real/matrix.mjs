@@ -22,6 +22,8 @@ function check(round, name, ok, reading) {
 
 for (let round = 1; round <= ROUNDS; round++) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+ // 剪贴板权限：C27 要真粘一次（合成粘贴在宿主上不落字，必须走真实 Ctrl+V）
+  try { await page.context().grantPermissions(['clipboard-read', 'clipboard-write']) } catch (e0) {}
   const errors = [];
   page.on('console', (m) => { if (m.type() === 'error' && String(m.text()).indexOf('deepseek-account') < 0) errors.push(m.text()) });
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
@@ -131,7 +133,14 @@ for (let round = 1; round <= ROUNDS; round++) {
   // C17：组成上屏补出来的那一对，光标必须留在两符之间，否则下一字打到引号外面
   await reset(''); await imeCompose('\u201c'); await page.keyboard.type('X', { delay: 15 }); await page.waitForTimeout(300);
   check(round, 'C17 上屏成对后打字落在引号内', (await text()) === '\u201cX\u201d', await text() + ' caret=' + await caret());
-  // C20-C23：多行包裹、嵌套包裹、包裹后立刻打闭符、包裹后撤销：片段候选接受 —— 文字要落地、弹层要收起（此前 Tab 之后文本不变、弹层还在）
+  // C20-C23：多行包裹、嵌套包裹、包裹后立刻打闭符、包裹后撤销
+  // C26：片段候选接受 —— 文字要落地、弹层要收起
+  // C27：自动补出来的空对里粘贴，内容要落在两个符号之间（此前落到对子外面）
+  await reset(''); await page.keyboard.press('Shift+Quote'); await page.waitForTimeout(450);
+  const pairBase = await text();
+  await page.evaluate(async () => { try { await navigator.clipboard.writeText('hello') } catch (e) {} });
+  await page.keyboard.press('Control+v'); await page.waitForTimeout(800);
+  check(round, 'C27 空对里粘贴落在符号之间', pairBase === '""' && (await text()) === '"hello"', JSON.stringify({ base: pairBase, after: await text() }));
   await reset(''); await page.keyboard.type('fn', { delay: 25 }); await page.waitForTimeout(1000);
   await page.keyboard.press('Tab'); await page.waitForTimeout(900);
   check(round, 'C26 片段候选接受后文字落地且弹层收起', /^function [A-Za-z]*\(/.test(await text().catch(() => '')) || (await text()).indexOf('function ') === 0
