@@ -1514,3 +1514,11 @@ ok('引号族越过：已经写成 "hi" 时再打全角引号，不再多插一�
   })
  // 空框里引号补不补对由模式决定（warn 只插一个），那条口径在别处断言，这里只测「越过」
 })
+ok('空前缀也给草稿词：Ctrl+Space 直接要候选时，本文里的标识符排在关键字前面', () => {
+  const H = mod.__helpers__
+  const ed = mkEd('alpha beta gamma alpha')
+  const got = H.builtinSources('', ed).local.map((i) => i.value)
+  assert.equal(JSON.stringify(got.slice(0, 3)), JSON.stringify(['alpha', 'beta', 'gamma']), '按出现次数排：' + JSON.stringify(got))
+  const withPrefix = H.builtinSources('al', ed).local.map((i) => i.value)
+  assert.equal(withPrefix[0], 'alpha', '有前缀时仍按前缀过滤：' + JSON.stringify(withPrefix))
+})
