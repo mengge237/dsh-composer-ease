@@ -24,7 +24,7 @@ function call(path, { method = 'GET', host = '127.0.0.1:3080', origin } = {}) {
 
 ok('注册了两条路由，路径与 kind 符合预期', () => {
   const paths = routes.map((r) => r.path).sort()
-  assert.deepEqual(paths, ['/dsh-composer-ease/config.json', '/dsh-composer-ease/words'])
+  assert.deepEqual(paths, ['/dsh-composer-ease/config.json', '/dsh-composer-ease/symbols', '/dsh-composer-ease/words'])
   assert.ok(routes.every((r) => r.kind === 'exact'))
 })
 

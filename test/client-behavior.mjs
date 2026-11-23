@@ -207,9 +207,11 @@ await okAsync('Ctrl+Space → 打 words 路由；候选回来弹层渲染，Tab 
   const ed = mkEd('inp')
   const before = fetchCalls.length
   keydown(ed, { key: ' ', code: 'Space', ctrl: true })
-  assert.equal(fetchCalls.length, before + 1, 'Ctrl+Space 要发一次请求')
-  assert.match(fetchCalls[fetchCalls.length - 1], /prefix=inp/, '要带当前 token')
+  const wordsCalls = fetchCalls.slice(before).filter((u) => u.indexOf('/words') >= 0)
+  assert.equal(wordsCalls.length, 1, 'Ctrl+Space 要发一次 words 请求：' + JSON.stringify(fetchCalls.slice(before)))
+  assert.match(fetchCalls.filter((u) => u.indexOf('/words') >= 0).pop(), /prefix=inp/, '要带当前 token')
   await tick()
+  await tick()   // words 与 symbols 并行取，合并晚一层微任务
   const p = popupEl()
   assert.ok(p && p.style.display === 'block', '弹层要显示')
   assert.equal(p.children.length, 1, '一条候选一行：' + p.children.length)
@@ -526,7 +528,8 @@ ok('注释行的四种写法都不发请求（# / <!-- / -- / 缩进 //）', () 
 ok('行内 // 不算注释行：照常发请求（URL 与除号不受影响）', () => {
   const before = fetchCalls.length
   input(mkEd('a // fun'))
-  assert.equal(fetchCalls.length, before + 1, '行内 // 仍应提示')
+  const wordsOnly = fetchCalls.slice(before).filter((u) => u.indexOf('/words') >= 0)
+  assert.equal(wordsOnly.length, 1, '行内 // 仍应提示：' + JSON.stringify(fetchCalls.slice(before)))
 })
 
 ok('空对里第三下引号仍是一对（反引号不受限，围栏照常三连）', () => {
@@ -618,7 +621,8 @@ await okAsync('打两个字母自动弹（不用快捷键），本文词排在�
   const ed = mkEd('inputValue inputHandler inp')
   const before = fetchCalls.length
   input(ed)
-  assert.equal(fetchCalls.length, before + 1, '自动触发也要发请求')
+  const autoWords = fetchCalls.slice(before).filter((u) => u.indexOf('/words') >= 0)
+  assert.equal(autoWords.length, 1, '自动触发也要发请求：' + JSON.stringify(fetchCalls.slice(before)))
   const p = popupEl()
   assert.ok(p && p.style.display === 'block', '弹层要立刻显示（本地词先上屏）')
   assert.match(p.children[0].innerText, /inputValue/, '本地词应当排第一：' + p.children[0].innerText)
@@ -635,7 +639,7 @@ await okAsync('回车后迟到的补全响应不复活浮层与灰字', async ()
   try {
     const before = fetchCalls.length
     keydown(ed, { key: ' ', code: 'Space', ctrl: true })
-    assert.equal(fetchCalls.length, before + 1, '要发出候选请求')
+    assert.equal(fetchCalls.slice(before).filter((u) => u.indexOf('/words') >= 0).length, 1, '要发出候选请求')
     keydown(ed, { key: 'Enter' })      // 响应还没回来就回车发送
     ed.value = ''                      // 发送后输入框被清空
     ed.selectionStart = ed.selectionEnd = 0
@@ -723,8 +727,8 @@ await okAsync("'@' 仍走插件自己的补全（只有 '/' 让位）", async ()
   const ed = mkEd('@rea')
   const before = fetchCalls.length
   input(ed)
-  assert.equal(fetchCalls.length, before + 1, '@ 仍要拉候选')
-  assert.match(fetchCalls[fetchCalls.length - 1], /prefix=%40rea/, '要把 @rea 当 token 带上')
+  assert.equal(fetchCalls.slice(before).filter((u) => u.indexOf('/words') >= 0).length, 1, '@ 仍要拉候选')
+  assert.match(fetchCalls.filter((u) => u.indexOf('/words') >= 0).pop(), /prefix=%40rea/, '要把 @rea 当 token 带上')
   await tick()
 })
 
@@ -831,8 +835,8 @@ await okAsync('围栏语言提示：```python 后的记号按 python 上词表',
   const ed = mkEd('```python\ndef')
   const before = fetchCalls.length
   input(ed)
-  assert.equal(fetchCalls.length, before + 1)
-  assert.match(fetchCalls[fetchCalls.length - 1], /lang=python/, '要把语言提示带给服务端：' + fetchCalls[fetchCalls.length - 1])
+  assert.equal(fetchCalls.slice(before).filter((u) => u.indexOf('/words') >= 0).length, 1)
+  assert.match(fetchCalls.filter((u) => u.indexOf('/words') >= 0).pop(), /lang=python/, '要把语言提示带给服务端：' + fetchCalls.filter((u) => u.indexOf('/words') >= 0).pop())
   await tick()
 })
 
@@ -917,8 +921,8 @@ await okAsync('语言习惯：接受过哪套词表的候选，下次没写围�
   const before = fetchCalls.length
   const ed2 = mkEd('pri')
   input(ed2)
-  assert.equal(fetchCalls.length, before + 1)
-  assert.match(fetchCalls[fetchCalls.length - 1], /lang=python/, '没写围栏也要带上习惯语言：' + fetchCalls[fetchCalls.length - 1])
+  assert.equal(fetchCalls.slice(before).filter((u) => u.indexOf('/words') >= 0).length, 1)
+  assert.match(fetchCalls.filter((u) => u.indexOf('/words') >= 0).pop(), /lang=python/, '没写围栏也要带上习惯语言：' + fetchCalls.filter((u) => u.indexOf('/words') >= 0).pop())
   store.clear()
 })
 
@@ -978,7 +982,7 @@ await okAsync('语言水印：对话里是 Java 时，右下角压一块写着 j
   assert.match(wm.style.cssText, /pointer-events:none/, '水印不许吃点击')
   assert.equal(wm.attrs['aria-hidden'], 'true', '装饰元素不进无障碍树')
   assert.equal(p.children.filter((c) => c.attrs && c.attrs['data-dsh-cp-head']).length, 0, '顶部说明行必须已经删掉')
-  assert.match(fetchCalls[fetchCalls.length - 1], /lang=java/, '推断出的语言要带给服务端：' + fetchCalls[fetchCalls.length - 1])
+  assert.match(fetchCalls.filter((u) => u.indexOf('/words') >= 0).pop(), /lang=java/, '推断出的语言要带给服务端：' + fetchCalls.filter((u) => u.indexOf('/words') >= 0).pop())
   assert.equal(rowsOf(p).length >= 1, true, '水印不能挤掉候选行：' + rowsOf(p).length)
   conv.text = ''
   mod.__helpers__.contextReset()
