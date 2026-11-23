@@ -1597,3 +1597,12 @@ ok('agent 步骤模板：触发词命中时给骨架，草稿过长不介入', (
   assert.equal(H.stepCandidatesFor(long), null, '草稿超过 40 字不介入')
   assert.equal(H.stepCandidatesFor(mkEd('随便写点东西')), null, '没命中触发词不介入')
 })
+ok('工作流历史挖「下一步」：只读本机历史，草稿非空不介入', () => {
+  const H = mod.__helpers__
+  H.rememberPrompt('跑一遍真机矩阵')
+  H.rememberPrompt('整理失败的用例并修复')
+  H.rememberPrompt('跑一遍真机矩阵')
+  const got = H.nextStepCandidates('')
+  assert.ok(got && got.indexOf('整理失败的用例并修复') >= 0, '历史上「跑一遍…」后面跟过「整理…」：' + JSON.stringify(got))
+  assert.equal(H.nextStepCandidates('已有草稿'), null, '草稿非空不介入')
+})
