@@ -1522,3 +1522,19 @@ ok('空前缀也给草稿词：Ctrl+Space 直接要候选时，本文里的标�
   const withPrefix = H.builtinSources('al', ed).local.map((i) => i.value)
   assert.equal(withPrefix[0], 'alpha', '有前缀时仍按前缀过滤：' + JSON.stringify(withPrefix))
 })
+ok('闭符不该镜像成对：已有开符时上屏闭符按字面落一个', () => {
+  const H = mod.__helpers__
+  assert.equal(H.shouldMirrorCloser('a(', ')'), false, '前面悬着开符：不镜像')
+  assert.equal(H.shouldMirrorCloser('', ')'), true, '没有开符可闭合：按镜像补一对')
+  assert.equal(H.shouldMirrorCloser('a(', '（'), false, '开符不进这条判定')
+  assert.equal(H.shouldMirrorCloser('a“', '”'), false, '引号族同样按悬空判')
+})
+
+ok('框住之后在末尾再打开符仍要补对（旧规则一刀切，只出一个）', () => {
+  const H = mod.__helpers__
+  assert.equal(H.shouldPair('(abc)', '', '['), true, '跟在闭符后面应补对')
+  assert.equal(H.shouldPair('(', '', '('), false, '紧跟一个开符时不再套一对')
+  const ed = mkEd('(abc)', 5)
+  keydown(ed, { key: '[' })
+  assert.equal(ed.value, '(abc)[]', '末尾应得一对：' + ed.value)
+})
