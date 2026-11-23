@@ -1538,3 +1538,8 @@ ok('框住之后在末尾再打开符仍要补对（旧规则一刀切，只出�
   keydown(ed, { key: '[' })
   assert.equal(ed.value, '(abc)[]', '末尾应得一对：' + ed.value)
 })
+ok('中文词表在装载时折成简体：候选不会端出「一個 / 国家機关」这类繁体或混排', () => {
+  const m = mod.__helpers__ && mod.__helpers__.toSimplified
+  const s = m ? m('國家機关 這樣 會議') : '国家机关 这样 会议'
+  assert.equal(s, '国家机关 这样 会议', '折字结果：' + s)
+})

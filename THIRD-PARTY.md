@@ -13,6 +13,7 @@
 | 中文常用词表 | [fxsjy/jieba](https://github.com/fxsjy/jieba) | MIT | `extra_dict/dict.txt.big` | 抽「纯汉字、2~4 字、按频次靠前」的常用词（`lib/cjk-lexicon.js`），用于区分完整词与碎片 |
 | 英文词表（T2，30k 子集） | [words/an-array-of-english-words](https://github.com/words/an-array-of-english-words) | MIT | v2.0.0 `index.json`（274,937 词） | 只留 3-12 字符纯字母，再用**本机语料频次**排序取前 30000，落在 `lib/en-lexicon.js`；生成脚本 `tools/gen-lexicon.mjs`，可复跑 |
 | 模糊打分引擎与字符判据 | [microsoft/vscode](https://github.com/microsoft/vscode) | MIT | `0b4e063` | `src/vs/base/common/filters.ts`（`fuzzyScore`/`_doScore`/`fuzzyScoreGraceful*` 等）＋同目录 `charCode.ts`（只取用到的条目）与 `strings.ts`（只取 `isEmojiImprecise`） |
+| 繁→简字形表 | [BYVoid/OpenCC](https://github.com/BYVoid/OpenCC) | Apache-2.0 | `master` 的 `data/dictionary/TSCharacters.txt` | 取每行第一个映射，只保留「单字→单字」，共 3221 条；用于把 jieba 词表里的繁体/混排条目折成简体 |
 
 抽取是静态的（正则取数组与对象键），没有执行任何第三方代码；复跑脚本与中间产物不随包分发。
 若某个项目的许可条款与本文件描述不一致，以各项目仓库里的 LICENSE 原文件为准。
