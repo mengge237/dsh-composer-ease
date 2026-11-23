@@ -1560,3 +1560,15 @@ ok('习惯学习：接受过的词按次数加权，跨会话从 localStorage �
   assert.ok(H.habitBoost('数据库') > once, '记两次应更高：' + once + ' → ' + H.habitBoost('数据库'))
   assert.equal(H.habitBoost('没记过的词'), 0, '没记过的是 0')
 })
+ok('历史召回：↑ 翻上一条、↓ 回退，支持前缀过滤', () => {
+  const H = mod.__helpers__
+  H.rememberPrompt('第一个 prompt：跑测试')
+  H.rememberPrompt('第二个 prompt：提交代码')
+  H.histReset()
+  assert.equal(H.histOlder(''), '第二个 prompt：提交代码', '先给最近一条')
+  assert.equal(H.histOlder(''), '第一个 prompt：跑测试', '再 ↑ 给更早一条')
+  assert.equal(H.histNewer(''), '第二个 prompt：提交代码', '↓ 回到较新一条')
+  assert.equal(H.histNewer(''), '', '翻过最新一条还原成原来的输入')
+  H.histReset()
+  assert.equal(H.histOlder('第一'), '第一个 prompt：跑测试', '带前缀只翻匹配的那条')
+})
