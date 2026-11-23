@@ -1659,3 +1659,25 @@ ok('诊断驱动：失败日志里的 文件:行 会抬高该文件的候选', (
   assert.ok(H.scoreItem(fileHit, 'a') > H.scoreItem(fileMiss, 'a'), '失败文件里的候选更靠前')
   H.setFailFiles([])
 })
+ok('步骤感知排序覆盖五类步骤：search 偏文件、fail 偏符号', () => {
+  const H = mod.__helpers__
+  const fileIt = { kind: 'file', value: 'lib/a.js', detail: 'a.js', providerPriority: 50 }
+  const symIt = { kind: 'word', src: 'symbol', value: 'alphaBeta', detail: 'function (a, b) · lib/b.js', providerPriority: 50 }
+  H.setFailFiles([])
+  const scoreBoth = () => ({ f: H.scoreItem(fileIt, 'a'), s: H.scoreItem(symIt, 'a') })
+  H.noteStep('read', '读取 lib/b.js')
+  const base = scoreBoth()
+  H.noteStep('search', '查找文件 glob')
+  const afterSearch = scoreBoth()
+  assert.ok(afterSearch.f - base.f > afterSearch.s - base.s, 'search 之后文件的加幅大于符号：' + JSON.stringify([base, afterSearch]))
+  H.noteStep('fail', '运行 npm test 失败')
+  const afterFail = scoreBoth()
+  assert.ok(afterFail.s - base.s > afterFail.f - base.f, 'fail 之后符号的加幅大于文件：' + JSON.stringify([base, afterFail]))
+})
+ok('步骤分类不被侧栏噪声污染：相对时间与侧栏条目不算步骤', () => {
+  const H = mod.__helpers__
+  assert.equal(H.classifyStep('运行 node probe-boom.mjs 查报错  22分钟'), '', '带相对时间的侧栏条目不算步骤')
+  assert.equal(H.classifyStep('运行 node probe-boom.mjs 查报错'), 'fail', '真工具卡仍算 fail')
+  assert.equal(H.classifyStep('Search for extractSymbols, scanSymbols'), 'search', '英文搜索卡算 search')
+  assert.equal(H.classifyStep('Read first ten lines and comment context'), 'read', '英文读取卡算 read')
+})
