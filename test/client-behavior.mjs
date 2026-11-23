@@ -1637,3 +1637,25 @@ ok('步骤感知排序：刚改完文件后，文件候选分数高于通用词'
   const after = H.scoreItem(fileItem, 'a') - H.scoreItem(wordItem, 'a')
   assert.ok(after > before, '编辑之后文件候选应更占优：' + before + ' → ' + after)
 })
+ok('词法状态机：注释里不提示、字符串里不提示代码类、行内 // 照常提示', () => {
+  const H = mod.__helpers__
+  assert.equal(H.lexicalContext('a // fun').state, 'plain', '行内 // 不是注释')
+  assert.equal(H.lexicalContext('   // fun').state, 'line', '行首 // 是注释')
+  assert.equal(H.lexicalContext('# fun').state, 'line', '行首 # 是注释')
+  assert.equal(H.lexicalContext('<!-- fun').state, 'line', 'HTML 注释')
+  assert.equal(H.lexicalContext('a /* b').state, 'block', '未闭合块注释')
+  assert.equal(H.lexicalContext('a /* b */ c').state, 'plain', '闭合后又回普通态')
+  assert.equal(H.lexicalContext('say "hi').state, 'string', '未闭合字符串')
+  assert.equal(H.lexicalContext('say "hi" ok').state, 'plain', '闭合后回普通态')
+  assert.equal(H.lexicalContext('say "a \\" b" ok').state, 'plain', '转义引号不算闭合')
+})
+ok('诊断驱动：失败日志里的 文件:行 会抬高该文件的候选', () => {
+  const H = mod.__helpers__
+  assert.equal(JSON.stringify(H.extractFailFiles('at foo (lib/a.js:12:3)\nC:/x/b.py:7')), JSON.stringify(['a.js', 'b.py']), '抽出 basename 去重')
+  assert.equal(H.extractFailFiles('没有路径的一行').length, 0, '没有路径时为空')
+  H.setFailFiles(['a.js'])
+  const fileHit = { kind: 'file', value: 'lib/a.js', detail: 'a.js', providerPriority: 50 }
+  const fileMiss = { kind: 'file', value: 'lib/z.js', detail: 'z.js', providerPriority: 50 }
+  assert.ok(H.scoreItem(fileHit, 'a') > H.scoreItem(fileMiss, 'a'), '失败文件里的候选更靠前')
+  H.setFailFiles([])
+})
