@@ -19,7 +19,7 @@ const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace
 const MAX_LINES = Number(process.env.MAX_CLIENT_LINES || 400)
 const MAX_FILE_LINES = Number(process.env.MAX_FILE_LINES || 600)
 // 生成物与数据文件不计行数：它们是数据，不是逻辑。
-const EXEMPT = new Set(['cjk-lexicon.js', 'cjk-script.js', 'en-lexicon.js', 'domain-words.js', 'en-common.js', 'words.js'])
+const EXEMPT = new Set(['cjk-lexicon.js', 'cjk-script.js', 'pinyin-data.js', 'en-lexicon.js', 'domain-words.js', 'en-common.js', 'words.js'])
 
 const count = (p) => fs.readFileSync(p, 'utf8').split('\n').length
 let bad = 0
