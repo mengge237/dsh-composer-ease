@@ -1681,3 +1681,12 @@ ok('步骤分类不被侧栏噪声污染：相对时间与侧栏条目不算步�
   assert.equal(H.classifyStep('Search for extractSymbols, scanSymbols'), 'search', '英文搜索卡算 search')
   assert.equal(H.classifyStep('Read first ten lines and comment context'), 'read', '英文读取卡算 read')
 })
+ok('中文起手字给骨架：两个字起就能看到，六个字以上不再介入', () => {
+  const H = mod.__helpers__
+  const hits = H.starterCandidatesFor('请')
+  assert.ok(hits && hits.length >= 1, '「请」应命中骨架：' + JSON.stringify(hits && hits.map((x) => x.label)))
+  assert.equal(hits[0].kind, 'snippet', '按片段接受')
+  assert.ok(H.starterCandidatesFor('请帮').length >= 1, '「请帮」仍命中')
+  assert.equal(H.starterCandidatesFor('这是一段很长的中文句子啊'), null, '超过 6 字不介入')
+  assert.equal(H.starterCandidatesFor('xyz'), null, '非起手字不介入')
+})
