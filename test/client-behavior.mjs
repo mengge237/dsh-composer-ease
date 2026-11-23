@@ -1614,11 +1614,26 @@ ok('步骤观察（不依赖宿主包）：按可见文字归类，并给出上�
   const H = mod.__helpers__
   assert.equal(H.classifyStep('Edit lib/a.js'), 'edit', 'Edit 块归为 edit')
   assert.equal(H.classifyStep('Bash npm test'), 'run', 'Bash 块归为 run')
-  assert.equal(H.classifyStep('报错：Cannot read property'), 'fail', '报错文字归为 fail')
+  assert.equal(H.classifyStep('运行 npm test 失败'), 'fail', '工具卡带失败字样归为 fail')
+  assert.equal(H.classifyStep('报错：Cannot read property'), '', '单纯报错正文不是工具卡，不归类')
   assert.equal(H.classifyStep('随便一段回答，没有工具字样'), '', '普通文本不归类')
+  assert.equal(H.classifyStep('读取 lib/x.js'), 'read', '中文标签「读取」归为 read')
+  assert.equal(H.classifyStep('查找文件 glob 通配'), 'search', '中文标签「查找文件」归为 search')
+  assert.equal(H.classifyStep('运行中 思考'), '', '瞬时状态不归类')
+  assert.equal(H.classifyStep('帮我修改这段代码，不要动别的文件'), '', '用户消息（长块/不含工具标签）不归类')
   H.noteStep('edit', 'Edit lib/a.js')
   assert.equal(H.lastStep().kind, 'edit', '最后一步是 edit')
   const after = H.suggestAfterStep(H.lastStep())
   assert.ok(after.length >= 1 && after[0].indexOf('测试') >= 0, '改完建议跑测试：' + JSON.stringify(after))
   assert.equal(H.suggestAfterStep(null).length, 0, '没有步骤时不给建议')
+})
+ok('步骤感知排序：刚改完文件后，文件候选分数高于通用词', () => {
+  const H = mod.__helpers__
+  const fileItem = { kind: 'file', value: 'lib/a.js', providerPriority: 50 }
+  const wordItem = { kind: 'word', value: 'apple', providerPriority: 50 }
+  H.noteStep('read', '读取 lib/b.js')
+  const before = H.scoreItem(fileItem, 'a') - H.scoreItem(wordItem, 'a')
+  H.noteStep('edit', '编辑 lib/b.js')
+  const after = H.scoreItem(fileItem, 'a') - H.scoreItem(wordItem, 'a')
+  assert.ok(after > before, '编辑之后文件候选应更占优：' + before + ' → ' + after)
 })
