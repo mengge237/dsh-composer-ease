@@ -1586,3 +1586,14 @@ ok('场景感知：代码草稿里英文候选靠前，中文草稿里中文候�
   assert.ok(enInCode > enInCjk, '同一英文词在代码草稿里分更高：' + enInCode + ' vs ' + enInCjk)
   assert.ok(zhInCjk > zhInCode, '同一中文词在中文草稿里分更高：' + zhInCjk + ' vs ' + zhInCode)
 })
+ok('agent 步骤模板：触发词命中时给骨架，草稿过长不介入', () => {
+  const H = mod.__helpers__
+  const ed = mkEd('帮我修复这个 bug')
+  const hits = H.stepCandidatesFor(ed)
+  assert.ok(hits && hits.length === 1, '应命中「排查并修复」一条：' + JSON.stringify(hits && hits.map((x) => x.label)))
+  assert.equal(hits[0].kind, 'snippet', '按片段接受')
+  assert.ok(hits[0].value.indexOf('${1:') > 0, '模板带占位符：' + hits[0].value.slice(0, 20))
+  const long = mkEd('修复'.repeat(30))
+  assert.equal(H.stepCandidatesFor(long), null, '草稿超过 40 字不介入')
+  assert.equal(H.stepCandidatesFor(mkEd('随便写点东西')), null, '没命中触发词不介入')
+})
