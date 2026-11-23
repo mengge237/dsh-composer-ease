@@ -1543,3 +1543,12 @@ ok('中文词表在装载时折成简体：候选不会端出「一個 / 国家�
   const s = m ? m('國家機关 這樣 會議') : '国家机关 这样 会议'
   assert.equal(s, '国家机关 这样 会议', '折字结果：' + s)
 })
+ok('习惯学习：接受过的词按次数加权，跨会话从 localStorage 读回', () => {
+  const H = mod.__helpers__
+  H.rememberWord('数据库')
+  assert.ok(H.habitBoost('数据库') > 0, '记一次之后应有习惯分：' + H.habitBoost('数据库'))
+  const once = H.habitBoost('数据库')
+  H.rememberWord('数据库')
+  assert.ok(H.habitBoost('数据库') > once, '记两次应更高：' + once + ' → ' + H.habitBoost('数据库'))
+  assert.equal(H.habitBoost('没记过的词'), 0, '没记过的是 0')
+})
