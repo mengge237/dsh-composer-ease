@@ -1606,3 +1606,15 @@ ok('工作流历史挖「下一步」：只读本机历史，草稿非空不介�
   assert.ok(got && got.indexOf('整理失败的用例并修复') >= 0, '历史上「跑一遍…」后面跟过「整理…」：' + JSON.stringify(got))
   assert.equal(H.nextStepCandidates('已有草稿'), null, '草稿非空不介入')
 })
+ok('步骤观察（不依赖宿主包）：按可见文字归类，并给出上一步之后的建议', () => {
+  const H = mod.__helpers__
+  assert.equal(H.classifyStep('Edit lib/a.js'), 'edit', 'Edit 块归为 edit')
+  assert.equal(H.classifyStep('Bash npm test'), 'run', 'Bash 块归为 run')
+  assert.equal(H.classifyStep('报错：Cannot read property'), 'fail', '报错文字归为 fail')
+  assert.equal(H.classifyStep('随便一段回答，没有工具字样'), '', '普通文本不归类')
+  H.noteStep('edit', 'Edit lib/a.js')
+  assert.equal(H.lastStep().kind, 'edit', '最后一步是 edit')
+  const after = H.suggestAfterStep(H.lastStep())
+  assert.ok(after.length >= 1 && after[0].indexOf('测试') >= 0, '改完建议跑测试：' + JSON.stringify(after))
+  assert.equal(H.suggestAfterStep(null).length, 0, '没有步骤时不给建议')
+})
