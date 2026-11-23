@@ -1572,3 +1572,17 @@ ok('历史召回：↑ 翻上一条、↓ 回退，支持前缀过滤', () => {
   H.histReset()
   assert.equal(H.histOlder('第一'), '第一个 prompt：跑测试', '带前缀只翻匹配的那条')
 })
+ok('场景感知：代码草稿里英文候选靠前，中文草稿里中文候选靠前', () => {
+  const H = mod.__helpers__
+  assert.equal(H.scenarioOf('const a = 1\nfunction foo() {'), 'code', '代码草稿判为 code')
+  assert.equal(H.scenarioOf('请把这段中文说明再润色一下'), 'cjk', '中文草稿判为 cjk')
+  assert.equal(H.scenarioOf(''), 'plain', '空草稿是 plain')
+  const en = { value: 'function', providerPriority: 50 }
+  const zh = { value: '数据库', providerPriority: 50 }
+  H.setScenarioDraft('const a = 1 function foo()')
+  const enInCode = H.scoreItem(en, ''), zhInCode = H.scoreItem(zh, '')
+  H.setScenarioDraft('请把这段中文说明再润色一下')
+  const enInCjk = H.scoreItem(en, ''), zhInCjk = H.scoreItem(zh, '')
+  assert.ok(enInCode > enInCjk, '同一英文词在代码草稿里分更高：' + enInCode + ' vs ' + enInCjk)
+  assert.ok(zhInCjk > zhInCode, '同一中文词在中文草稿里分更高：' + zhInCjk + ' vs ' + zhInCode)
+})
