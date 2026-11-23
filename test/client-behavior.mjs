@@ -1516,11 +1516,19 @@ ok('引号族越过：已经写成 "hi" 时再打全角引号，不再多插一�
 })
 ok('空前缀也给草稿词：Ctrl+Space 直接要候选时，本文里的标识符排在关键字前面', () => {
   const H = mod.__helpers__
-  const ed = mkEd('alpha beta gamma alpha')
+  const ed = mkEd('beta alpha beta gamma')
   const got = H.builtinSources('', ed).local.map((i) => i.value)
-  assert.equal(JSON.stringify(got.slice(0, 3)), JSON.stringify(['alpha', 'beta', 'gamma']), '按出现次数排：' + JSON.stringify(got))
+  assert.equal(JSON.stringify(got.slice(0, 3)), JSON.stringify(['beta', 'alpha', 'gamma']), '按出现次数排：' + JSON.stringify(got))
   const withPrefix = H.builtinSources('al', ed).local.map((i) => i.value)
   assert.equal(withPrefix[0], 'alpha', '有前缀时仍按前缀过滤：' + JSON.stringify(withPrefix))
+})
+
+ok('上下文预测：上一个词在草稿里有更长的搭配时，把它排在第一位', () => {
+  const H = mod.__helpers__
+  const ed = mkEd('数据库管理系统 设计规范 数据库 ')
+  const local = H.builtinSources('', ed).local
+  assert.equal(String(local[0] && local[0].value), '数据库管理系统', '续写应排第一：' + JSON.stringify(local.map((x) => x.value)))
+  assert.equal(local[0].src, 'predict', '应标记为预测来源：' + local[0].src)
 })
 ok('闭符不该镜像成对：已有开符时上屏闭符按字面落一个', () => {
   const H = mod.__helpers__
