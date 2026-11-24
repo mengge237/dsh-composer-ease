@@ -25,7 +25,17 @@ for (let round = 1; round <= ROUNDS; round++) {
  // 剪贴板权限：C27 要真粘一次（合成粘贴在宿主上不落字，必须走真实 Ctrl+V）
   try { await page.context().grantPermissions(['clipboard-read', 'clipboard-write']) } catch (e0) {}
   const errors = [];
-  page.on('console', (m) => { if (m.type() === 'error' && String(m.text()).indexOf('deepseek-account') < 0) errors.push(m.text()) });
+ // 只把「跟本插件有关」的错误算红：别的插件（pet / task-board / auth-cookie-guard）的 400/404
+ // 是本机 profile 里那几个插件的既有噪声，不该让本插件的稳定性判据永远红（实测 URL 见 probe-f2）。
+  const FOREIGN = /\/api\/(pet|task-board|dsh-auth-cookie-guard)\//
+  page.on('response', (r) => { if (r.status() >= 400 && !FOREIGN.test(r.url())) errors.push('http ' + r.status() + ' ' + r.url()) })
+  page.on('console', (m) => {
+    if (m.type() !== 'error') return
+    const t = String(m.text())
+    if (t.indexOf('deepseek-account') >= 0) return
+    if (/status of (400|404)/.test(t)) return   // 资源加载失败的原文不带 URL，前面 response 那条已经按 URL 判过了
+    errors.push(t)
+  });
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
   await page.goto(URL_, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(4200);
