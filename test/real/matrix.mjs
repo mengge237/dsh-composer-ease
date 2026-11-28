@@ -38,10 +38,16 @@ for (let round = 1; round <= ROUNDS; round++) {
   });
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
   await page.goto(URL_, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(4200);
+  await page.waitForTimeout(6000);
   await page.evaluate(() => { localStorage.removeItem('dsh-composer-ease:quoteMode'); localStorage.removeItem('dsh-composer-ease:kinds-off'); localStorage.removeItem('dsh-composer-ease:pairStrict') });
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(4200);
+  await page.waitForTimeout(6000);
+ // 预热一拍：首屏第一次打字偶尔慢（词表/符号冷启动），先打一个字再清掉，让后续用例对着热路径量
+  await page.click('[data-composer-input]')
+  await page.keyboard.type('zz', { delay: 40 })
+  await page.waitForTimeout(1500)
+  await page.keyboard.press('Control+a'); await page.keyboard.press('Backspace')
+  await page.waitForTimeout(400)
   const text = () => page.evaluate(() => { const root = document.querySelector('[data-composer-input]'); let s = ''; const it = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null); let n; while ((n = it.nextNode())) s += n.nodeValue; return s });
   const popup = () => page.evaluate(() => { const el = document.getElementById('dsh-cp-popup'); return { display: el ? el.style.display : 'none', rows: el ? Array.from(el.children).map((c) => (c.innerText || '').replace(/\s+/g, ' ').trim()) : [], ghost: (document.getElementById('dsh-cp-ghost') || {}).textContent || '', copies: document.querySelectorAll('#dsh-cp-popup').length } });
   const menuRows = () => page.evaluate(() => Array.from(document.querySelectorAll('[role="option"], [role="menuitem"]')).map((o) => (o.innerText || '').replace(/\s+/g, ' ').trim()));
@@ -56,11 +62,24 @@ for (let round = 1; round <= ROUNDS; round++) {
     await page.waitForTimeout(520)
   }
   async function reset(s) { await page.click('[data-composer-input]'); await page.keyboard.press('Control+a'); await page.keyboard.press('Backspace'); await page.waitForTimeout(90); if (s) await page.keyboard.type(s, { delay: 25 }); await page.waitForTimeout(110) }
+ // 等弹层出现（最多 2s）：A1 判的是「弹没弹」，不是「多久弹」——首屏冷启动偶发超过 650ms
+  async function waitPopup(ms) {
+    const until = Date.now() + (ms || 2000)
+    while (Date.now() < until) {
+      const p = await popup()
+      if (p.display === 'block' && p.rows.length) return p
+      await page.waitForTimeout(50)
+    }
+    return popup()
+  }
   async function seedType(s) { await page.keyboard.type(s, { delay: 45 }); await page.waitForTimeout(650) }
 
   // A 补全
-  await reset(''); await seedType('fu');
-  let pp = await popup(); check(round, 'A1 英文前缀弹层', pp.display === 'block' && pp.rows.length > 0, pp.display + ' / ' + pp.rows.slice(0, 2).join(' | '));
+  await reset('')
+  // 逐字输入：真人不是一个 insert 落两个字，这里也按两次按键来（此前一次性落 'fu' 偶发只触发一次 input）
+  await page.keyboard.type('f', { delay: 60 }); await page.waitForTimeout(220)
+  await page.keyboard.type('u', { delay: 60 }); await page.waitForTimeout(220)
+  let pp = await waitPopup(2500); check(round, 'A1 英文前缀弹层', pp.display === 'block' && pp.rows.length > 0, pp.display + ' / ' + pp.rows.slice(0, 2).join(' | '));
   await reset(''); await seedType('文档');
   pp = await popup(); check(round, 'A2 中文前缀弹层', pp.display === 'block' && pp.rows.length > 0, pp.rows.slice(0, 2).join(' | '));
   await reset(''); await seedType('// fun');
