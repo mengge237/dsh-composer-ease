@@ -1690,3 +1690,14 @@ ok('中文起手字给骨架：两个字起就能看到，六个字以上不再�
   assert.equal(H.starterCandidatesFor('这是一段很长的中文句子啊'), null, '超过 6 字不介入')
   assert.equal(H.starterCandidatesFor('xyz'), null, '非起手字不介入')
 })
+ok('提示词变量：; 触发候选，接受后落成真实文本', async () => {
+  const H = mod.__helpers__
+  assert.equal(H.expandVariables('今天 {{ date }} 好', { date: '2026-11-23' }), '今天 2026-11-23 好', '日期变量展开')
+  assert.equal(H.expandVariables('{{selection}} 和 {{clipboard}}', { selection: 'A', clipboard: 'B' }), 'A 和 B', '选区与剪贴板变量展开')
+  assert.equal(H.expandVariables('没有变量的句子', {}), '没有变量的句子', '不含变量时原样返回')
+  const ed = mkEd('请总结 ;')
+  const list = await H.variableCandidates(ed, '请总结 ;')
+  assert.ok(list && list.length >= 1, '应至少给出一条变量：' + JSON.stringify(list && list.map((x) => x.label)))
+  assert.ok(list.every((x) => x.value.indexOf(';') < 0), '值里不许留触发符')
+  assert.equal(await H.variableCandidates(mkEd('普通文本'), '普通文本'), null, '没有 ; 时不出候选')
+})
